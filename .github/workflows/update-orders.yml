@@ -1,0 +1,74 @@
+name: Update Orders
+
+on:
+  repository_dispatch:
+    types: [new_order]
+  workflow_dispatch:  # 允许手动触发
+  schedule:
+    - cron: '*/5 * * * *'  # 每5分钟运行一次
+
+jobs:
+  update-orders:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+    
+    - name: Process New Order
+      env:
+        ORDER_DATA: ${{ toJSON(github.event.client_payload.order) }}
+      run: |
+        # 如果通过repository_dispatch触发，处理新订单
+        if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+          echo "Processing new order..."
+          
+          # 读取现有的订单文件
+          if [ -f "orders.json" ]; then
+            # 备份当前订单
+            cp orders.json orders-backup.json
+            
+            # 读取并更新订单
+            node -e "
+              const fs = require('fs');
+              
+              // 读取现有订单
+              let orders = [];
+              try {
+                orders = JSON.parse(fs.readFileSync('orders.json', 'utf8'));
+              } catch (e) {
+                console.log('创建新的订单文件');
+              }
+              
+              // 添加新订单
+              const newOrder = JSON.parse(process.env.ORDER_DATA);
+              orders.push(newOrder);
+              
+              // 只保留最近100个订单（防止文件过大）
+              if (orders.length > 100) {
+                orders = orders.slice(-100);
+              }
+              
+              // 保存回文件
+              fs.writeFileSync('orders.json', JSON.stringify(orders, null, 2));
+              console.log('订单已更新，当前订单数：' + orders.length);
+            "
+          else
+            # 创建新的订单文件
+            echo "[\${{ github.event.client_payload.order }}]" > orders.json
+          fi
+        else
+          echo "定期更新，不添加新订单"
+        fi
+    
+    - name: Commit and Push Changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add orders.json
+        git commit -m "Update orders [skip ci]" || echo "No changes to commit"
+        git push
