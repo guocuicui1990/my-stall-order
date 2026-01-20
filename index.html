@@ -1,0 +1,249 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的摊位 - 扫码点餐</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* 防止表单自动填充样式干扰 */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px white inset !important;
+            box-shadow: 0 0 0 30px white inset !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 座位号输入页面 -->
+    <div id="seatPage" class="page active">
+        <div class="logo-container">
+            <i class="fas fa-utensils logo-icon"></i>
+            <h1>欢迎光临</h1>
+            <p class="subtitle">扫码点餐系统</p>
+        </div>
+        
+        <div class="input-card">
+            <div class="input-group">
+                <label for="tableNumber">
+                    <i class="fas fa-chair"></i> 请输入桌号
+                </label>
+                <input 
+                    type="text" 
+                    id="tableNumber" 
+                    placeholder="例如: 1, A2, 打包"
+                    maxlength="10"
+                    autocomplete="off"
+                >
+                <div class="quick-tables">
+                    <span class="quick-btn" onclick="setQuickTable('1')">1号桌</span>
+                    <span class="quick-btn" onclick="setQuickTable('2')">2号桌</span>
+                    <span class="quick-btn" onclick="setQuickTable('3')">3号桌</span>
+                    <span class="quick-btn" onclick="setQuickTable('打包')">打包</span>
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="enterMenu()" id="enterMenuBtn">
+                <i class="fas fa-arrow-right"></i> 开始点餐
+            </button>
+        </div>
+        
+        <div class="footer-info">
+            <p><i class="fas fa-info-circle"></i> 请告知服务员您的桌号，稍后送餐到桌</p>
+        </div>
+    </div>
+
+    <!-- 菜单页面 -->
+    <div id="menuPage" class="page">
+        <div class="menu-header">
+            <div class="header-left">
+                <button class="btn-back" onclick="backToSeat()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div>
+                    <div class="table-display">
+                        <i class="fas fa-chair"></i> 桌号: <span id="currentTableDisplay">-</span>
+                    </div>
+                    <div class="order-count" id="cartSummary">未选择菜品</div>
+                </div>
+            </div>
+            <div class="cart-icon" onclick="showCart()">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-badge" id="cartBadge">0</span>
+            </div>
+        </div>
+
+        <!-- 菜品分类 -->
+        <div class="category-tabs">
+            <div class="categories-container">
+                <button class="category-btn active" data-category="all">全部</button>
+                <button class="category-btn" data-category="热菜">热菜</button>
+                <button class="category-btn" data-category="凉菜">凉菜</button>
+                <button class="category-btn" data-category="主食">主食</button>
+                <button class="category-btn" data-category="饮料">饮料</button>
+            </div>
+        </div>
+
+        <!-- 菜品列表 -->
+        <div class="dishes-container" id="dishesContainer">
+            <!-- 菜品将通过JS动态加载 -->
+        </div>
+
+        <!-- 底部购物车栏 -->
+        <div class="bottom-cart">
+            <div class="cart-preview">
+                <div class="cart-info">
+                    <span id="totalItems">0个菜品</span>
+                    <span class="total-price">总计: ¥<span id="previewTotal">0</span></span>
+                </div>
+                <button class="btn-checkout" onclick="goToCheckout()" disabled id="checkoutBtnMain">
+                    去结算 <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 购物车弹窗 -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shopping-cart"></i> 购物车</h3>
+                <button class="btn-close" onclick="hideCart()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="cart-items" id="cartItems">
+                <!-- 购物车项目动态加载 -->
+            </div>
+            
+            <div class="cart-footer">
+                <div class="cart-total">
+                    <span>合计</span>
+                    <span class="total-amount">¥<span id="cartTotal">0</span></span>
+                </div>
+                <div class="cart-actions">
+                    <button class="btn-secondary" onclick="clearCart()">
+                        <i class="fas fa-trash"></i> 清空
+                    </button>
+                    <button class="btn-primary" onclick="goToCheckout()" id="checkoutBtnModal" disabled>
+                        去结算 <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结账页面 -->
+    <div id="checkoutPage" class="page">
+        <div class="checkout-header">
+            <button class="btn-back" onclick="backToMenu()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <h2>订单确认</h2>
+        </div>
+
+        <div class="order-summary">
+            <div class="order-info-card">
+                <div class="info-row">
+                    <span><i class="fas fa-chair"></i> 桌号</span>
+                    <span id="orderTable">-</span>
+                </div>
+                <div class="info-row">
+                    <span><i class="fas fa-receipt"></i> 订单号</span>
+                    <span id="orderNumber">-</span>
+                </div>
+                <div class="info-row">
+                    <span><i class="fas fa-clock"></i> 时间</span>
+                    <span id="orderTime">-</span>
+                </div>
+            </div>
+
+            <div class="order-items-card">
+                <h3><i class="fas fa-list"></i> 订单明细</h3>
+                <div id="orderItemsList">
+                    <!-- 订单项目动态加载 -->
+                </div>
+                <div class="order-total-row">
+                    <span>应付金额</span>
+                    <span class="final-amount">¥<span id="finalAmount">0</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 支付方式 -->
+        <div class="payment-section">
+            <h3><i class="fas fa-qrcode"></i> 扫码支付</h3>
+            <p class="payment-tip">请使用微信或支付宝扫描下方二维码付款</p>
+            
+            <div class="qrcode-container">
+                <img src="./images/qrcode.jpg" alt="收款码" id="paymentQR" onerror="this.src='data:image/svg+xml;charset=utf-8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"%23f0f0f0\"/><text x=\"50\" y=\"50\" font-family=\"Arial\" font-size=\"10\" text-anchor=\"middle\" dy=\".3em\">收款码</text></svg>'">
+                <div class="qrcode-overlay">
+                    <div class="amount-display">¥<span id="qrcodeAmount">0</span></div>
+                </div>
+            </div>
+            
+            <div class="payment-actions">
+                <button class="btn-secondary" onclick="backToMenu()">
+                    <i class="fas fa-edit"></i> 修改订单
+                </button>
+                <button class="btn-success" onclick="submitOrderToGoogleSheet()">
+                    <i class="fas fa-paper-plane"></i> 提交订单到厨房
+                </button>
+            </div>
+            
+            <div class="payment-notice">
+                <p><i class="fas fa-lightbulb"></i> 提示：支付完成后请点击"提交订单"，订单将自动发送到厨房</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 订单提交成功页面 -->
+    <div id="successPage" class="page">
+        <div class="success-container">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>订单提交成功！</h2>
+            <p class="success-message">订单号: <span id="successOrderNumber">-</span></p>
+            <p class="success-detail">桌号 <span id="successTable">-</span> 的订单已发送到厨房</p>
+            
+            <div class="success-info">
+                <div class="info-item">
+                    <span>状态</span>
+                    <strong class="status-new">新订单</strong>
+                </div>
+                <div class="info-item">
+                    <span>取餐时间</span>
+                    <strong>约5-10分钟</strong>
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="newOrder()">
+                <i class="fas fa-plus"></i> 再来一单
+            </button>
+            
+            <div class="success-footer">
+                <p><i class="fas fa-star"></i> 感谢惠顾，请稍候取餐！</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p id="loadingText">正在提交订单...</p>
+    </div>
+
+    <!-- 配置信息（隐藏） -->
+    <div id="config" style="display: none;">
+        <!-- 在这里配置您的 Google Apps Script Web App URL -->
+        <div data-script-url="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
