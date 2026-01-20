@@ -3,7 +3,7 @@
 // ============================================
 const GITHUB_USERNAME = 'guocuicui1990';
 const GITHUB_REPO = 'my-stall-order';
-const GITHUB_TOKEN = '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';
+const GITHUB_TOKEN = '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';
 
 // ============================================
 // 全局变量
@@ -664,3 +664,4 @@ window.newOrder = newOrder;
 window.setQuickTable = setQuickTable;
 window.updateCartItem = updateCartItem;
 window.addToCart = addToCart;
+
