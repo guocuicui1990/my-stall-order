@@ -1,9 +1,9 @@
 ﻿// ============================================
 // 配置区域 - 替换为你的GitHub信息
 // ============================================
-const GITHUB_USERNAME = '你的GitHub用户名';  // 例如：zhangsan
-const GITHUB_REPO = '你的仓库名';           // 例如：restaurant-order
-const GITHUB_TOKEN = 'ghp_xxxxxxxxxxxx';   // GitHub个人访问令牌
+const GITHUB_USERNAME = 'guocuicui1990';  // 例如：zhangsan
+const GITHUB_REPO = 'my-stall-order';           // 例如：restaurant-order
+const GITHUB_TOKEN = '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';   // GitHub个人访问令牌
 
 // ============================================
 // 订单提交函数（修改）
@@ -164,4 +164,5 @@ function saveOrderToLocal(orderData) {
     } catch (error) {
         console.error('保存到本地失败:', error);
     }
+
 }
