@@ -1,3 +1,19 @@
+// 临时测试：在控制台手动调用enterMenu函数
+window.enterMenu = function() {
+    console.log('测试：enterMenu被调用');
+    
+    const tableInput = document.getElementById('tableNumber');
+    if (tableInput) {
+        tableInput.value = '1'; // 自动设置桌号
+    }
+    
+    // 模拟点击后的操作
+    alert('测试：开始点餐功能正常！');
+    
+    // 实际切换页面
+    document.getElementById('seatPage').classList.remove('active');
+    document.getElementById('menuPage').classList.add('active');
+};
 // ============================================
 // 菜品数据
 // ============================================
@@ -521,3 +537,4 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('初始化完成');
 });
+
