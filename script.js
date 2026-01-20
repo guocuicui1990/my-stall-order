@@ -1,19 +1,3 @@
-// 临时测试：在控制台手动调用enterMenu函数
-window.enterMenu = function() {
-    console.log('测试：enterMenu被调用');
-    
-    const tableInput = document.getElementById('tableNumber');
-    if (tableInput) {
-        tableInput.value = '1'; // 自动设置桌号
-    }
-    
-    // 模拟点击后的操作
-    alert('测试：开始点餐功能正常！');
-    
-    // 实际切换页面
-    document.getElementById('seatPage').classList.remove('active');
-    document.getElementById('menuPage').classList.add('active');
-};
 // ============================================
 // 菜品数据
 // ============================================
@@ -43,13 +27,13 @@ function setQuickTable(tableNum) {
     const tableInput = document.getElementById('tableNumber');
     if (tableInput) {
         tableInput.value = tableNum;
-        // 触发输入事件以更新按钮状态
+        tableInput.focus();
         tableInput.dispatchEvent(new Event('input'));
     }
 }
 
 // ============================================
-// 进入菜单页面（修复版）
+// 进入菜单页面
 // ============================================
 function enterMenu() {
     console.log('enterMenu函数被调用');
@@ -80,8 +64,6 @@ function enterMenu() {
     const tableDisplay = document.getElementById('currentTableDisplay');
     if (tableDisplay) {
         tableDisplay.textContent = currentTable;
-    } else {
-        console.error('未找到currentTableDisplay元素');
     }
     
     // 加载菜品
@@ -130,10 +112,7 @@ function goToCheckout() {
         cart.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.className = 'order-item-row';
-            itemElement.innerHTML = `
-                <span>${item.name} × ${item.quantity}</span>
-                <span>¥${item.price * item.quantity}</span>
-            `;
+            itemElement.innerHTML = `<span>${item.name} × ${item.quantity}</span><span>¥${item.price * item.quantity}</span>`;
             orderItemsContainer.appendChild(itemElement);
         });
     }
@@ -175,12 +154,7 @@ function loadDishes() {
         : dishes.filter(dish => dish.category === currentCategory);
     
     if (filteredDishes.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center;padding:40px;color:#999;">
-                <i class="fas fa-utensils" style="font-size:48px;opacity:0.3;"></i>
-                <p>暂无菜品</p>
-            </div>
-        `;
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">暂无菜品</div>';
         return;
     }
     
@@ -191,7 +165,7 @@ function loadDishes() {
         const dishCard = document.createElement('div');
         dishCard.className = 'dish-card';
         dishCard.innerHTML = `
-            <img src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3Ctext x='50' y='50' font-family='Arial' font-size='10' text-anchor='middle' dy='.3em' fill='%23666'%3E🍽️%3C/text%3E%3C/svg%3E" 
+            <img src="data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f8f9fa'/><text x='50' y='50' font-family='Arial' font-size='10' text-anchor='middle' dy='.3em' fill='%23666'>🍽️</text></svg>" 
                  alt="${dish.name}" class="dish-image">
             <div class="dish-info">
                 <div>
@@ -308,12 +282,7 @@ function updateCartModal() {
     container.innerHTML = '';
     
     if (cart.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center;padding:40px;color:#999;">
-                <i class="fas fa-shopping-cart" style="font-size:48px;opacity:0.3;"></i>
-                <p>购物车为空</p>
-            </div>
-        `;
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">购物车为空</div>';
         cartTotalEl.textContent = '0';
         return;
     }
@@ -537,4 +506,3 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('初始化完成');
 });
-
