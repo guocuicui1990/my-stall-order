@@ -6,7 +6,7 @@ const GITHUB_REPO = 'my-stall-order';
 // ⚠️ 重要：请立即撤销旧token并生成新的token
 // 前往: https://github.com/settings/tokens
 // 权限需要: repo (完整权限)
-const GITHUB_TOKEN = 'GITHUB_TOKEN'; // 替换为新token
+const GITHUB_TOKEN = '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'; // 替换为新token
 
 // ============================================
 // 全局变量
@@ -473,4 +473,5 @@ function newOrder() {
 function switchPage(fromPage, toPage) {
     document.getElementById(fromPage).classList.remove('active');
     document.getElementById(toPage).classList.add('active');
+
 }
