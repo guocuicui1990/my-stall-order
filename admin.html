@@ -1,0 +1,862 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商家后台 - 自动同步订单</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Admin specific styles */
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .admin-header {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .admin-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-header p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        /* 自动刷新样式 */
+        .auto-refresh {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .refresh-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .refresh-status {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .refresh-interval {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .interval-input {
+            width: 60px;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* 标签页 */
+        .tabs-container {
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-badge {
+            background: #ff4757;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .tab.active .tab-badge {
+            background: white;
+            color: #667eea;
+        }
+
+        /* 订单容器 */
+        .orders-container {
+            min-height: 400px;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            border: 1px solid #f0f0f0;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* 实时通知 */
+        .new-order-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            display: none;
+            max-width: 300px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        /* 浮动按钮 */
+        .floating-actions {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+        }
+
+        .floating-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+        .floating-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        .floating-btn:active {
+            transform: scale(0.95);
+        }
+        /* 空状态 */
+        .empty-cart {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-cart i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- 头部 -->
+        <div class="admin-header">
+            <div class="admin-header-content">
+                <h1><i class="fas fa-store"></i> 我的摊位 - 自动订单管理</h1>
+                <p>订单自动同步，无需手动操作</p>
+                <div class="admin-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalOrders">0</div>
+                        <div class="stat-label">总订单</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="newOrders">0</div>
+                        <div class="stat-label">新订单</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="processingOrders">0</div>
+                        <div class="stat-label">处理中</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="todayRevenue">0</div>
+                        <div class="stat-label">今日营收</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 自动刷新控制 -->
+        <div class="auto-refresh">
+            <h3 style="margin-bottom: 15px; font-size: 14px; color: #333;">
+                <i class="fas fa-sync-alt"></i> 自动刷新设置
+            </h3>
+            <div class="refresh-controls">
+                <div class="refresh-toggle">
+                    <span style="font-size: 13px;">自动刷新:</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autoRefreshToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="refresh-interval">
+                    <span style="font-size: 13px;">间隔:</span>
+                    <input type="number" id="refreshInterval" class="interval-input" value="10" min="5" max="60">
+                    <span style="font-size: 13px;">秒</span>
+                </div>
+                <div class="refresh-status">
+                    最后更新: <span id="lastUpdateTime">-</span>
+                </div>
+            </div>
+        </div>
+        <!-- 标签页 -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('new')">
+                    <i class="fas fa-bell"></i> 新订单
+                    <span class="tab-badge" id="newOrdersBadge">0</span>
+                </button>
+                <button class="tab" onclick="switchTab('processing')">
+                    <i class="fas fa-clock"></i> 处理中
+                    <span class="tab-badge" id="processingOrdersBadge">0</span>
+                </button>
+                <button class="tab" onclick="switchTab('completed')">
+                    <i class="fas fa-check"></i> 已完成
+                    <span class="tab-badge" id="completedOrdersBadge">0</span>
+                </button>
+                <button class="tab" onclick="switchTab('all')">
+                    <i class="fas fa-list"></i> 全部订单
+                </button>
+            </div>
+        </div>
+        <!-- 订单容器 -->
+        <div class="orders-container" id="newOrdersTab">
+            <div class="empty-cart">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>正在加载订单...</p>
+            </div>
+        </div>
+        <!-- 实时通知 -->
+        <div class="new-order-notification" id="newOrderNotification">
+            <div class="notification-content">
+                <i class="fas fa-bell" style="font-size: 18px;"></i>
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 3px;">新订单提醒</div>
+                    <div style="font-size: 12px;" id="notificationMessage">有新订单到达！</div>
+                </div>
+                <button class="notification-close" onclick="hideNotification()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <!-- 浮动按钮 -->
+        <div class="floating-actions">
+            <button class="floating-btn" onclick="loadOrders(false)" title="立即刷新">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </div>
+    <script>
+        // ============================================
+        // 配置 - ⚠️ 替换为你的GitHub信息
+        // ============================================
+        const GITHUB_USERNAME = 'guocuicui1990';
+        const GITHUB_REPO = 'my-stall-order';
+        // ============================================
+        // 全局变量
+        // ============================================
+        let currentTab = 'new';
+        let allOrders = [];
+        let refreshInterval = null;
+        let autoRefreshEnabled = true;
+        let refreshIntervalTime = 10; // 秒
+        // ============================================
+        // 页面加载完成后初始化
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('商家后台初始化...');
+            
+            // 加载设置
+            loadSettings();
+            
+            // 初始加载订单
+            loadOrders();
+            
+            // 设置自动刷新
+            setupAutoRefresh();
+            
+            // 监听页面可见性变化
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    // 页面重新激活时立即刷新
+                    loadOrders(true);
+                }
+            });
+            
+            console.log('商家后台初始化完成');
+        });
+        // ============================================
+        // 设置管理
+        // ============================================
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('admin_settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                autoRefreshEnabled = settings.autoRefresh !== false;
+                refreshIntervalTime = settings.refreshInterval || 10;
+                
+                // 更新UI
+                document.getElementById('autoRefreshToggle').checked = autoRefreshEnabled;
+                document.getElementById('refreshInterval').value = refreshIntervalTime;
+            }
+        }
+        function saveSettings() {
+            const settings = {
+                autoRefresh: autoRefreshEnabled,
+                refreshInterval: refreshIntervalTime
+            };
+            localStorage.setItem('admin_settings', JSON.stringify(settings));
+        }
+        // ============================================
+        // 自动刷新设置
+        // ============================================
+        function setupAutoRefresh() {
+            // 清除旧的定时器
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            
+            // 设置新的定时器
+            if (autoRefreshEnabled) {
+                refreshInterval = setInterval(() => {
+                    loadOrders(true);
+                }, refreshIntervalTime * 1000);
+                console.log(`✅ 自动刷新已开启: ${refreshIntervalTime}秒`);
+            } else {
+                console.log('❌ 自动刷新已关闭');
+            }
+        }
+        // 切换自动刷新
+        document.getElementById('autoRefreshToggle').addEventListener('change', function() {
+            autoRefreshEnabled = this.checked;
+            saveSettings();
+            setupAutoRefresh();
+            showToast(autoRefreshEnabled ? '✅ 自动刷新已开启' : '❌ 自动刷新已关闭');
+        });
+        // 更新刷新间隔
+        document.getElementById('refreshInterval').addEventListener('change', function() {
+            refreshIntervalTime = parseInt(this.value) || 10;
+            if (refreshIntervalTime < 5) refreshIntervalTime = 5;
+            if (refreshIntervalTime > 60) refreshIntervalTime = 60;
+            this.value = refreshIntervalTime;
+            saveSettings();
+            setupAutoRefresh();
+            showToast(`刷新间隔已更新为 ${refreshIntervalTime} 秒`);
+        });
+        // ============================================
+        // 从GitHub获取订单数据 (修复版)
+        // ============================================
+        async function loadOrders(silent = false) {
+            try {
+                if (!silent) {
+                    showLoading();
+                }
+                console.log('正在从GitHub加载订单...');
+                // 方法1: 从GitHub API直接获取
+                const apiResponse = await fetch(
+                    `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/orders.json?ref=main&t=${Date.now()}`,
+                    {
+                        cache: 'no-cache',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+                if (apiResponse.ok) {
+                    const fileData = await apiResponse.json();
+                    // 解码 base64 内容
+                    const content = atob(fileData.content);
+                    const orders = JSON.parse(content);
+                    
+                    console.log('✅ 从GitHub API获取订单成功:', orders.length, '条');
+                    // 检查是否有新订单
+                    const previousOrderCount = allOrders.length;
+                    allOrders = orders;
+                    // 保存到本地备份
+                    localStorage.setItem('admin_orders_backup', JSON.stringify(orders));
+                    // 更新显示
+                    displayOrders();
+                    updateStats();
+                    updateLastUpdateTime();
+                    // 如果有新订单且不是静默刷新，显示通知
+                    if (!silent && orders.length > previousOrderCount) {
+                        const newOrdersCount = orders.length - previousOrderCount;
+                        showNewOrderNotification(newOrdersCount);
+                    }
+                    if (!silent) {
+                        showToast(`✅ 已加载 ${allOrders.length} 个订单`);
+                    }
+                    return;
+                }
+                // 方法2: 从GitHub Pages获取
+                console.log('尝试从GitHub Pages获取...');
+                const pagesResponse = await fetch(
+                    `https://${GITHUB_USERNAME}.github.io/${GITHUB_REPO}/orders.json?t=${Date.now()}`,
+                    { cache: 'no-cache' }
+                );
+                if (pagesResponse.ok) {
+                    const orders = await pagesResponse.json();
+                    console.log('✅ 从GitHub Pages获取订单成功:', orders.length, '条');
+                    
+                    allOrders = orders;
+                    localStorage.setItem('admin_orders_backup', JSON.stringify(orders));
+                    displayOrders();
+                    updateStats();
+                    updateLastUpdateTime();
+                    if (!silent) {
+                        showToast(`✅ 已加载 ${allOrders.length} 个订单`);
+                    }
+                    return;
+                }
+                // 方法3: 从本地备份获取
+                console.log('尝试从本地备份获取...');
+                const backupData = localStorage.getItem('admin_orders_backup');
+                if (backupData) {
+                    allOrders = JSON.parse(backupData);
+                    console.log('✅ 从本地备份获取订单:', allOrders.length, '条');
+                    displayOrders();
+                    updateStats();
+                    updateLastUpdateTime();
+                    if (!silent) {
+                        showToast(`⚠️ 已加载本地备份订单 ${allOrders.length} 个`, 'warning');
+                    }
+                    return;
+                }
+                throw new Error('无法获取订单数据');
+            } catch (error) {
+                console.error('❌ 加载订单失败:', error);
+                if (!silent) {
+                    showToast('❌ 加载失败: ' + error.message, 'error');
+                }
+            } finally {
+                if (!silent) {
+                    hideLoading();
+                }
+            }
+        }
+        // ============================================
+        // 显示订单列表
+        // ============================================
+        function displayOrders() {
+            let filteredOrders = [];
+            
+            // 根据标签页筛选
+            if (currentTab === 'new') {
+                filteredOrders = allOrders.filter(o => o.status === '新订单');
+            } else if (currentTab === 'processing') {
+                filteredOrders = allOrders.filter(o => o.status === '处理中');
+            } else if (currentTab === 'completed') {
+                filteredOrders = allOrders.filter(o => o.status === '已完成');
+            } else {
+                filteredOrders = allOrders;
+            }
+            
+            // 按时间倒序
+            filteredOrders.sort((a, b) => b.timestamp - a.timestamp);
+            
+            // 显示订单
+            const container = document.getElementById('newOrdersTab');
+            if (!container) return;
+            
+            if (filteredOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-inbox"></i>
+                        <p>暂无${currentTab === 'all' ? '' : currentTab === 'new' ? '新' : currentTab === 'processing' ? '处理中的' : '已完成的'}订单</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filteredOrders.map(order => `
+                <div class="order-card">
+                    <div class="order-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span class="order-number" style="font-weight: 600; font-size: 16px;">
+                            <i class="fas fa-receipt"></i> #${order.orderNumber}
+                        </span>
+                        <span class="order-status" style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; ${
+                            order.status === '新订单' ? 'background: #e3f2fd; color: #1976d2;' :
+                            order.status === '处理中' ? 'background: #fff3e0; color: #f57c00;' :
+                            'background: #e8f5e9; color: #388e3c;'
+                        }">
+                            ${order.status}
+                        </span>
+                    </div>
+                    <div class="order-body">
+                        <div class="order-info" style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 13px; color: #666;">
+                            <span><i class="fas fa-chair" style="color: #667eea;"></i> 桌号: <strong>${order.table}</strong></span>
+                            <span><i class="fas fa-clock" style="color: #667eea;"></i> ${order.orderTime}</span>
+                        </div>
+                        <div class="order-dishes" style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; line-height: 1.6;">
+                            ${order.dishes}
+                        </div>
+                        <div class="order-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="order-total" style="font-weight: 600; color: #ff6b6b; font-size: 18px;">
+                                总计: ¥${order.totalAmount}
+                            </div>
+                            <div class="order-actions" style="display: flex; gap: 8px;">
+                                ${order.status === '新订单' ? `
+                                    <button onclick="updateOrderStatus('${order.orderNumber}', '处理中')" 
+                                        style="padding: 6px 12px; background: #ff9800; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.3s;">
+                                        <i class="fas fa-clock"></i> 开始制作
+                                    </button>
+                                ` : ''}
+                                ${order.status === '处理中' ? `
+                                    <button onclick="updateOrderStatus('${order.orderNumber}', '已完成')" 
+                                        style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.3s;">
+                                        <i class="fas fa-check"></i> 完成
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        // ============================================
+        // 更新统计数据
+        // ============================================
+        function updateStats() {
+            const newCount = allOrders.filter(o => o.status === '新订单').length;
+            const processingCount = allOrders.filter(o => o.status === '处理中').length;
+            const completedCount = allOrders.filter(o => o.status === '已完成').length;
+            
+            document.getElementById('totalOrders').textContent = allOrders.length;
+            document.getElementById('newOrders').textContent = newCount;
+            document.getElementById('processingOrders').textContent = processingCount;
+            
+            // 更新徽章
+            document.getElementById('newOrdersBadge').textContent = newCount;
+            document.getElementById('processingOrdersBadge').textContent = processingCount;
+            document.getElementById('completedOrdersBadge').textContent = completedCount;
+            
+            // 计算今日营收
+            const today = new Date().toLocaleDateString('zh-CN');
+            const todayRevenue = allOrders
+                .filter(o => {
+                    try {
+                        return new Date(o.orderTime).toLocaleDateString('zh-CN') === today;
+                    } catch {
+                        return false;
+                    }
+                })
+                .reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
+            
+            document.getElementById('todayRevenue').textContent = '¥' + todayRevenue.toFixed(2);
+        }
+        // ============================================
+        // 切换标签页
+        // ============================================
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // 更新按钮样式
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.tab').classList.add('active');
+            
+            // 重新显示订单
+            displayOrders();
+        }
+
+        // ============================================
+        // 更新订单状态
+        // ============================================
+        async function updateOrderStatus(orderNumber, newStatus) {
+            try {
+                showLoading();
+                
+                // 找到订单
+                const orderIndex = allOrders.findIndex(o => o.orderNumber === orderNumber);
+                if (orderIndex === -1) {
+                    throw new Error('订单不存在');
+                }
+                
+                // 更新状态
+                allOrders[orderIndex].status = newStatus;
+                allOrders[orderIndex].statusUpdateTime = new Date().toLocaleString('zh-CN');
+                
+                // 提交到GitHub (需要token，这里先更新本地)
+                // 保存到本地备份
+                localStorage.setItem('admin_orders_backup', JSON.stringify(allOrders));
+                
+                // 刷新显示
+                displayOrders();
+                updateStats();
+                
+                showToast(`✅ 订单 #${orderNumber} 已更新为 ${newStatus}`);
+                
+                // 如果有GitHub token，可以提交到远程
+                // await submitToGitHub(allOrders);
+                
+            } catch (error) {
+                console.error('更新订单状态失败:', error);
+                showToast('❌ 更新失败: ' + error.message, 'error');
+                // 恢复原数据
+                loadOrders(true);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ============================================
+        // 显示新订单通知
+        // ============================================
+        function showNewOrderNotification(count) {
+            const notification = document.getElementById('newOrderNotification');
+            const message = document.getElementById('notificationMessage');
+            if (notification && message) {
+                message.textContent = `有 ${count} 个新订单到达！`;
+                notification.style.display = 'block';
+                
+                // 5秒后自动隐藏
+                setTimeout(() => {
+                    hideNotification();
+                }, 5000);
+                
+                // 播放提示音
+                playNotificationSound();
+            }
+        }
+
+        function hideNotification() {
+            const notification = document.getElementById('newOrderNotification');
+            if (notification) {
+                notification.style.display = 'none';
+            }
+        }
+
+        function playNotificationSound() {
+            // 简单的提示音
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
+                audio.volume = 0.3;
+                audio.play().catch(e => console.log('音频播放失败:', e));
+            } catch (e) {
+                console.log('音频错误:', e);
+            }
+        }
+        // ============================================
+        // 更新最后更新时间
+        // ============================================
+        function updateLastUpdateTime() {
+            const element = document.getElementById('lastUpdateTime');
+            if (element) {
+                const now = new Date();
+                element.textContent = now.toLocaleTimeString('zh-CN');
+            }
+        }
+        // ============================================
+        // 辅助函数
+        // ============================================
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${type === 'success' ? '#4CAF50' : type === 'warning' ? '#ff9800' : '#f44336'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        function showLoading() {
+            const container = document.getElementById('newOrdersTab');
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-cart">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>正在加载订单...</p>
+                    </div>
+                `;
+            }
+        }
+        function hideLoading() {
+            // 加载完成后会自动更新内容
+        }
+        // ============================================
+        // 页面焦点监听
+        // ============================================
+        let lastFocusTime = Date.now();
+        window.addEventListener('focus', function() {
+            const now = Date.now();
+            // 如果超过30秒没刷新，则立即刷新
+            if (now - lastFocusTime > 30000) {
+                loadOrders(true);
+            }
+            lastFocusTime = now;
+        });
+    </script>
+</body>
+</html>
