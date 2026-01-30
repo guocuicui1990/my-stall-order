@@ -1,0 +1,2430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商家自助注册系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .register-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .register-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .register-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .register-header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .register-stepper {
+            display: flex;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            position: relative;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #e0e0e0;
+            color: #666;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .step.active .step-number {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .step.completed .step-number {
+            background: #2E7D32;
+            color: white;
+        }
+        
+        .step-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .step.active .step-label {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+        
+        .form-content {
+            padding: 30px;
+            min-height: 500px;
+        }
+        
+        .form-step {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .form-step.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-group label.required::after {
+            content: ' *';
+            color: #f44336;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        /* 菜品管理区域 */
+        .dishes-management {
+            border: 2px dashed #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .dish-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .dish-item input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .dish-item input[type="number"] {
+            width: 100px;
+        }
+        
+        .btn-add-dish {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        .btn-remove-dish {
+            background: #f44336;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 配置预览 */
+        .config-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .preview-item {
+            margin-bottom: 5px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .preview-key {
+            color: #667eea;
+            min-width: 120px;
+        }
+        
+        .preview-value {
+            color: #333;
+        }
+        
+        /* 进度条 */
+        .progress-bar {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #2E7D32);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        /* 按钮区域 */
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-prev {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-next {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 15px 30px;
+            font-size: 16px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* 状态指示器 */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e0e0e0;
+        }
+        
+        .status-dot.active {
+            background: #4CAF50;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* 成功页面 */
+        .success-screen {
+            text-align: center;
+            padding: 50px 20px;
+            display: none;
+        }
+        
+        .success-icon {
+            font-size: 60px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        .success-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .config-details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 500px;
+            text-align: left;
+        }
+        
+        .config-item {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .config-label {
+            color: #666;
+        }
+        
+        .config-value {
+            font-weight: 600;
+            color: #333;
+            font-family: monospace;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 新增：配置下载区域样式 */
+        .config-download-area {
+            background: #e8f5e9;
+            border: 2px dashed #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .config-download-area h4 {
+            color: #2E7D32;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .config-download-area p {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        /* 新增：手动配置说明弹窗样式 */
+        .manual-config-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+        
+        .manual-config-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 100%;
+        }
+        
+        .manual-config-title {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .manual-config-code {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .manual-config-steps {
+            background: #fff8e1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .manual-config-steps ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .manual-config-steps li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <!-- 注册头部 -->
+        <div class="register-header">
+            <h1><i class="fas fa-store-plus"></i> 商家自助注册系统</h1>
+            <p>只需5分钟，快速创建您的专属点餐系统</p>
+        </div>
+        
+        <!-- 步骤指示器 -->
+        <div class="register-stepper">
+            <div class="step completed" id="step1">
+                <div class="step-number">1</div>
+                <div class="step-label">基本信息</div>
+            </div>
+            <div class="step active" id="step2">
+                <div class="step-number">2</div>
+                <div class="step-label">菜品配置</div>
+            </div>
+            <div class="step" id="step3">
+                <div class="step-number">3</div>
+                <div class="step-label">收款设置</div>
+            </div>
+            <div class="step" id="step4">
+                <div class="step-number">4</div>
+                <div class="step-label">系统配置</div>
+            </div>
+        </div>
+        
+        <!-- 进度条 -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 25%"></div>
+        </div>
+        
+        <!-- 表单内容 -->
+        <div class="form-content">
+            <!-- 步骤1: 基本信息 -->
+            <div class="form-step active" id="stepForm1">
+                <h2 style="margin-bottom: 20px; color: #333;">基本信息设置</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">商家名称</label>
+                        <input type="text" class="form-control" id="shopName" placeholder="例如：老王煎饼" maxlength="20">
+                        <div class="status-indicator">
+                            <div class="status-dot active"></div>
+                            <span>名称将显示在顾客端和后台</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>商家简称（英文/拼音）</label>
+                        <input type="text" class="form-control" id="shopSlug" placeholder="例如：laowang" maxlength="20">
+                        <div class="status-indicator">
+                            <div class="status-dot"></div>
+                            <span>用于生成唯一标识，建议使用拼音</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">联系人姓名</label>
+                        <input type="text" class="form-control" id="contactName" placeholder="请输入联系人姓名">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="required">联系电话</label>
+                        <input type="tel" class="form-control" id="contactPhone" placeholder="请输入手机号码" pattern="[0-9]{11}">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>邮箱地址</label>
+                        <input type="email" class="form-control" id="contactEmail" placeholder="用于接收订单通知">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>商家类型</label>
+                        <select class="form-control" id="shopType">
+                            <option value="food">餐饮小吃</option>
+                            <option value="drink">饮品奶茶</option>
+                            <option value="snack">零食甜品</option>
+                            <option value="other">其他类型</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>商家描述</label>
+                    <textarea class="form-control" id="shopDescription" rows="3" placeholder="简单描述您的店铺特色..." maxlength="200"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>主题颜色</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="color" id="themeColor" value="#E63946" style="width: 50px; height: 40px;">
+                        <input type="text" class="form-control" id="themeColorText" value="#E63946" style="flex: 1;">
+                        <button type="button" onclick="resetThemeColor()" style="padding: 8px 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            重置
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 步骤2: 菜品配置 -->
+            <div class="form-step" id="stepForm2">
+                <h2 style="margin-bottom: 20px; color: #333;">菜品管理</h2>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">添加您的招牌菜品，顾客将在这里选择</p>
+                
+                <div class="dishes-management">
+                    <div id="dishesList">
+                        <!-- 动态添加的菜品项 -->
+                        <div class="dish-item">
+                            <input type="text" class="dish-name" placeholder="菜品名称" value="招牌炸酱面">
+                            <input type="number" class="dish-price" placeholder="价格" value="15" min="0" step="0.01">
+                            <select class="dish-category">
+                                <option value="主食">主食</option>
+                                <option value="热菜">热菜</option>
+                                <option value="小吃">小吃</option>
+                                <option value="凉菜">凉菜</option>
+                                <option value="饮料">饮料</option>
+                            </select>
+                            <input type="text" class="dish-emoji" placeholder="图标" value="🍜" maxlength="2">
+                            <button type="button" class="btn-remove-dish" onclick="removeDish(this)" disabled>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="dish-item">
+                            <input type="text" class="dish-name" placeholder="菜品名称" value="麻辣烫套餐">
+                            <input type="number" class="dish-price" placeholder="价格" value="18" min="0" step="0.01">
+                            <select class="dish-category">
+                                <option value="热菜">热菜</option>
+                                <option value="主食" selected>主食</option>
+                                <option value="小吃">小吃</option>
+                                <option value="凉菜">凉菜</option>
+                                <option value="饮料">饮料</option>
+                            </select>
+                            <input type="text" class="dish-emoji" placeholder="图标" value="🥘" maxlength="2">
+                            <button type="button" class="btn-remove-dish" onclick="removeDish(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn-add-dish" onclick="addDish()">
+                        <i class="fas fa-plus"></i> 添加菜品
+                    </button>
+                </div>
+                
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>默认推荐菜品</label>
+                    <select class="form-control" id="recommendDishes" multiple style="height: 120px;">
+                        <!-- 动态填充 -->
+                    </select>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        按住Ctrl键可选择多个菜品作为默认推荐
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 步骤3: 收款设置 -->
+            <div class="form-step" id="stepForm3">
+                <h2 style="margin-bottom: 20px; color: #333;">收款设置</h2>
+                
+                <div class="form-group">
+                    <label class="required">微信收款码</label>
+                    <div style="border: 2px dashed #e0e0e0; border-radius: 10px; padding: 20px; text-align: center;">
+                        <div id="wechatUploadArea" style="cursor: pointer;">
+                            <i class="fas fa-qrcode" style="font-size: 40px; color: #07C160; margin-bottom: 10px;"></i>
+                            <p style="color: #666; margin-bottom: 10px;">点击上传微信收款码图片</p>
+                            <p style="font-size: 12px; color: #999;">建议尺寸：300×300像素，支持 JPG/PNG 格式</p>
+                        </div>
+                        <input type="file" id="wechatQR" accept="image/*" style="display: none;" onchange="previewQRImage(this, 'wechat')">
+                        <div id="wechatPreview" style="display: none; margin-top: 15px;">
+                            <img id="wechatPreviewImg" style="max-width: 200px; border-radius: 8px;">
+                            <button type="button" onclick="removeQRImage('wechat')" style="margin-left: 10px; padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                移除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>支付宝收款码</label>
+                    <div style="border: 2px dashed #e0e0e0; border-radius: 10px; padding: 20px; text-align: center;">
+                        <div id="alipayUploadArea" style="cursor: pointer;">
+                            <i class="fas fa-qrcode" style="font-size: 40px; color: #00A0E9; margin-bottom: 10px;"></i>
+                            <p style="color: #666; margin-bottom: 10px;">点击上传支付宝收款码图片</p>
+                            <p style="font-size: 12px; color: #999;">建议尺寸：300×300像素，支持 JPG/PNG 格式</p>
+                        </div>
+                        <input type="file" id="alipayQR" accept="image/*" style="display: none;" onchange="previewQRImage(this, 'alipay')">
+                        <div id="alipayPreview" style="display: none; margin-top: 15px;">
+                            <img id="alipayPreviewImg" style="max-width: 200px; border-radius: 8px;">
+                            <button type="button" onclick="removeQRImage('alipay')" style="margin-left: 10px; padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                移除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>收款备注</label>
+                    <textarea class="form-control" id="paymentNote" rows="2" placeholder="例如：付款时请备注取餐号"></textarea>
+                </div>
+            </div>
+            
+            <!-- 步骤4: 系统配置 -->
+            <div class="form-step" id="stepForm4">
+                <h2 style="margin-bottom: 20px; color: #333;">系统配置预览</h2>
+                
+                <div class="config-preview" id="configPreview">
+                    <div class="preview-item">
+                        <span class="preview-key">商家ID:</span>
+                        <span class="preview-value" id="previewShopId">生成中...</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-key">商家名称:</span>
+                        <span class="preview-value" id="previewShopName">-</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-key">联系人:</span>
+                        <span class="preview-value" id="previewContact">-</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-key">菜品数量:</span>
+                        <span class="preview-value" id="previewDishCount">0</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-key">主题颜色:</span>
+                        <span class="preview-value" id="previewThemeColor">#E63946</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-key">取餐码前缀:</span>
+                        <span class="preview-value" id="previewSequencePrefix">A</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-key">后台链接:</span>
+                        <span class="preview-value" id="previewAdminLink">-</span>
+                    </div>
+                    <div class="preview-item">
+                        <span class="preview-key">顾客端链接:</span>
+                        <span class="preview-value" id="previewCustomerLink">-</span>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>
+                        <input type="checkbox" id="acceptTerms" checked>
+                        我同意并接受
+                        <a href="#" style="color: #2196F3;">《服务条款》</a>
+                        和
+                        <a href="#" style="color: #2196F3;">《隐私政策》</a>
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enableMonitoring" checked>
+                        启用系统监控和告警（推荐）
+                    </label>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        监控系统将实时监测您的订单状态、系统连接等，并在异常时发送告警
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>管理密码</label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="password" class="form-control" id="adminPassword" placeholder="设置后台管理密码" minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" class="form-control" id="confirmPassword" placeholder="确认密码" minlength="6">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="status-indicator" id="configStatus">
+                    <div class="status-dot active"></div>
+                    <span>正在验证配置...</span>
+                </div>
+            </div>
+            
+            <!-- 按钮区域 -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-prev" onclick="prevStep()" id="prevBtn" style="display: none;">
+                    <i class="fas fa-arrow-left"></i> 上一步
+                </button>
+                <button type="button" class="btn btn-next" onclick="nextStep()" id="nextBtn">
+                    下一步 <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 成功页面（注册完成后显示） -->
+        <div class="success-screen" id="successScreen">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="success-title">注册成功！</h2>
+            <p style="color: #666; margin-bottom: 30px; max-width: 500px; margin: 0 auto 30px;">
+                您的点餐系统已创建完成，以下是您的系统配置信息：
+            </p>
+            
+            <div class="config-details">
+                <div class="config-item">
+                    <span class="config-label">商家ID：</span>
+                    <span class="config-value" id="finalShopId">-</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">商家名称：</span>
+                    <span class="config-value" id="finalShopName">-</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">后台管理：</span>
+                    <span class="config-value">
+                        <a href="#" id="finalAdminLink" target="_blank" style="color: #2196F3;">点击进入</a>
+                    </span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">顾客点餐：</span>
+                    <span class="config-value">
+                        <a href="#" id="finalCustomerLink" target="_blank" style="color: #2196F3;">点击访问</a>
+                    </span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">管理密码：</span>
+                    <span class="config-value" id="finalPassword">-</span>
+                </div>
+            </div>
+            
+            <!-- 新增：配置文件下载区域 -->
+            <div class="config-download-area" id="configDownloadArea" style="display: none;">
+                <h4><i class="fas fa-file-download"></i> 配置文件已生成</h4>
+                <p>请下载更新后的配置文件并替换项目中的 config.js 文件，这样新注册的商家才能正常访问。</p>
+                <button class="btn" onclick="downloadUpdatedConfig()" style="background: #2196F3;">
+                    <i class="fas fa-download"></i> 下载配置文件
+                </button>
+                <button class="btn" onclick="showManualConfigInstructions()" style="background: #ff9800; margin-left: 10px;">
+                    <i class="fas fa-question-circle"></i> 查看手动配置说明
+                </button>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn" onclick="openAdminPanel()" style="background: #4CAF50;">
+                    <i class="fas fa-chart-line"></i> 进入商家后台
+                </button>
+                <button class="btn" onclick="showQRCode()" style="background: #9C27B0;">
+                    <i class="fas fa-qrcode"></i> 生成顾客二维码
+                </button>
+                <button class="btn" onclick="startNewRegistration()" style="background: #607D8B;">
+                    <i class="fas fa-plus"></i> 注册新商家
+                </button>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 12px; color: #666;">
+                <p><strong>重要提示：</strong>请妥善保管您的商家ID和管理密码，这是您管理系统的唯一凭证。</p>
+                <p>系统已自动配置Supabase数据库，您可以在商家后台查看实时订单数据。</p>
+                <p id="configStatusMessage" style="color: #4CAF50; margin-top: 5px;">本地配置已更新，新商家可以正常访问。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入Font Awesome -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <!-- 引入Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // ============================================
+        // 全局变量和配置
+        // ============================================
+        const SUPABASE_URL = 'https://slonbvmhsxqgpoodwazj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsb25idm1oc3hxZ3Bvb2R3YXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzMyNjQsImV4cCI6MjA4NDYwOTI2NH0.YLZqdnZl1vDTOrT6bzi2ulN1BGRxKGyW30AuccuWJq4';
+        
+        let currentStep = 1;
+        let totalSteps = 4;
+        let shopConfig = {
+            id: '',
+            name: '',
+            slug: '',
+            contact: {},
+            themeColor: '#E63946',
+            dishes: [],
+            qrCodes: {},
+            settings: {},
+            createdAt: new Date().toISOString()
+        };
+        
+        let supabaseClient = null;
+        let generatedShopId = '';
+        let updatedConfigJS = null; // 存储更新后的配置文件
+        
+        // ============================================
+        // 初始化函数
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 商家自助注册系统初始化...');
+            
+            // 初始化Supabase客户端
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
+            // 绑定事件
+            initEventListeners();
+            
+            // 初始化菜品推荐选择
+            updateRecommendSelect();
+            
+            // 更新预览
+            updateConfigPreview();
+            
+            console.log('✅ 初始化完成');
+        });
+        
+        function initEventListeners() {
+            // 商家名称输入时自动生成简称
+            document.getElementById('shopName').addEventListener('input', function() {
+                const name = this.value.trim();
+                const slugInput = document.getElementById('shopSlug');
+                
+                if (name && !slugInput.value) {
+                    // 转换为拼音（简化版，实际应使用拼音库）
+                    const slug = convertToSlug(name);
+                    slugInput.value = slug;
+                }
+                
+                updateConfigPreview();
+            });
+            
+            // 主题颜色同步
+            document.getElementById('themeColor').addEventListener('input', function() {
+                document.getElementById('themeColorText').value = this.value;
+                shopConfig.themeColor = this.value;
+                updateConfigPreview();
+            });
+            
+            document.getElementById('themeColorText').addEventListener('input', function() {
+                const color = this.value;
+                if (/^#[0-9A-F]{6}$/i.test(color)) {
+                    document.getElementById('themeColor').value = color;
+                    shopConfig.themeColor = color;
+                }
+                updateConfigPreview();
+            });
+            
+            // 联系人信息更新
+            document.getElementById('contactName').addEventListener('input', updateConfigPreview);
+            document.getElementById('contactPhone').addEventListener('input', updateConfigPreview);
+            document.getElementById('contactEmail').addEventListener('input', updateConfigPreview);
+            
+            // 文件上传区域点击事件
+            document.getElementById('wechatUploadArea').addEventListener('click', function() {
+                document.getElementById('wechatQR').click();
+            });
+            
+            document.getElementById('alipayUploadArea').addEventListener('click', function() {
+                document.getElementById('alipayQR').click();
+            });
+            
+            // 密码验证
+            document.getElementById('confirmPassword').addEventListener('input', function() {
+                const password = document.getElementById('adminPassword').value;
+                const confirm = this.value;
+                
+                if (password && confirm && password !== confirm) {
+                    this.style.borderColor = '#f44336';
+                    document.getElementById('adminPassword').style.borderColor = '#f44336';
+                } else {
+                    this.style.borderColor = '#e0e0e0';
+                    document.getElementById('adminPassword').style.borderColor = '#e0e0e0';
+                }
+            });
+            
+            // 接受条款
+            document.getElementById('acceptTerms').addEventListener('change', function() {
+                updateConfigPreview();
+            });
+            
+            // 监控开关
+            document.getElementById('enableMonitoring').addEventListener('change', function() {
+                updateConfigPreview();
+            });
+        }
+        
+        // ============================================
+        // 步骤导航函数
+        // ============================================
+        function nextStep() {
+            // 验证当前步骤
+            if (!validateCurrentStep()) {
+                return;
+            }
+            
+            // 保存当前步骤数据
+            saveStepData(currentStep);
+            
+            if (currentStep < totalSteps) {
+                // 切换到下一步
+                document.getElementById(`stepForm${currentStep}`).classList.remove('active');
+                document.getElementById(`step${currentStep}`).classList.remove('active');
+                
+                currentStep++;
+                
+                document.getElementById(`stepForm${currentStep}`).classList.add('active');
+                document.getElementById(`step${currentStep}`).classList.add('active');
+                
+                // 更新进度条
+                const progress = (currentStep / totalSteps) * 100;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+                
+                // 更新按钮显示
+                document.getElementById('prevBtn').style.display = 'inline-flex';
+                
+                if (currentStep === totalSteps) {
+                    document.getElementById('nextBtn').innerHTML = '提交注册 <i class="fas fa-check"></i>';
+                    document.getElementById('nextBtn').className = 'btn btn-submit';
+                    document.getElementById('nextBtn').onclick = submitRegistration;
+                } else {
+                    document.getElementById('nextBtn').innerHTML = '下一步 <i class="fas fa-arrow-right"></i>';
+                    document.getElementById('nextBtn').className = 'btn btn-next';
+                    document.getElementById('nextBtn').onclick = nextStep;
+                }
+                
+                // 如果是最后一步，更新预览
+                if (currentStep === totalSteps) {
+                    updateConfigPreview();
+                }
+            }
+        }
+        
+        function prevStep() {
+            if (currentStep > 1) {
+                // 保存当前步骤数据
+                saveStepData(currentStep);
+                
+                // 切换到上一步
+                document.getElementById(`stepForm${currentStep}`).classList.remove('active');
+                document.getElementById(`step${currentStep}`).classList.remove('active');
+                
+                currentStep--;
+                
+                document.getElementById(`stepForm${currentStep}`).classList.add('active');
+                document.getElementById(`step${currentStep}`).classList.add('active');
+                
+                // 更新进度条
+                const progress = (currentStep / totalSteps) * 100;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+                
+                // 更新按钮显示
+                if (currentStep === 1) {
+                    document.getElementById('prevBtn').style.display = 'none';
+                }
+                
+                document.getElementById('nextBtn').innerHTML = '下一步 <i class="fas fa-arrow-right"></i>';
+                document.getElementById('nextBtn').className = 'btn btn-next';
+                document.getElementById('nextBtn').onclick = nextStep;
+            }
+        }
+        
+        // ============================================
+        // 步骤验证函数
+        // ============================================
+        function validateCurrentStep() {
+            switch (currentStep) {
+                case 1: // 基本信息
+                    const shopName = document.getElementById('shopName').value.trim();
+                    const contactName = document.getElementById('contactName').value.trim();
+                    const contactPhone = document.getElementById('contactPhone').value.trim();
+                    
+                    if (!shopName) {
+                        alert('请输入商家名称');
+                        document.getElementById('shopName').focus();
+                        return false;
+                    }
+                    
+                    if (!contactName) {
+                        alert('请输入联系人姓名');
+                        document.getElementById('contactName').focus();
+                        return false;
+                    }
+                    
+                    if (!contactPhone || !/^1[3-9]\d{9}$/.test(contactPhone)) {
+                        alert('请输入正确的手机号码');
+                        document.getElementById('contactPhone').focus();
+                        return false;
+                    }
+                    
+                    return true;
+                    
+                case 2: // 菜品配置
+                    const dishes = getDishesData();
+                    if (dishes.length === 0) {
+                        alert('请至少添加一个菜品');
+                        return false;
+                    }
+                    
+                    // 检查菜品名称和价格
+                    for (let i = 0; i < dishes.length; i++) {
+                        const dish = dishes[i];
+                        if (!dish.name || !dish.price) {
+                            alert(`第${i + 1}个菜品信息不完整`);
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                    
+                case 3: // 收款设置
+                    // 检查是否有收款码
+                    const wechatFile = document.getElementById('wechatQR').files[0];
+                    const alipayFile = document.getElementById('alipayQR').files[0];
+                    
+                    if (!wechatFile && !alipayFile) {
+                        if (!confirm('您还没有上传任何收款码，顾客将无法付款。确定要继续吗？')) {
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                    
+                case 4: // 系统配置
+                    const acceptTerms = document.getElementById('acceptTerms').checked;
+                    if (!acceptTerms) {
+                        alert('请接受服务条款和隐私政策');
+                        return false;
+                    }
+                    
+                    const password = document.getElementById('adminPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    if (!password || password.length < 6) {
+                        alert('请设置至少6位数的管理密码');
+                        document.getElementById('adminPassword').focus();
+                        return false;
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        alert('两次输入的密码不一致');
+                        document.getElementById('confirmPassword').focus();
+                        return false;
+                    }
+                    
+                    return true;
+                    
+                default:
+                    return true;
+            }
+        }
+        
+        // ============================================
+        // 数据保存函数
+        // ============================================
+        function saveStepData(step) {
+            switch (step) {
+                case 1:
+                    shopConfig.name = document.getElementById('shopName').value.trim();
+                    shopConfig.slug = document.getElementById('shopSlug').value.trim() || 
+                                     convertToSlug(shopConfig.name);
+                    shopConfig.contact = {
+                        name: document.getElementById('contactName').value.trim(),
+                        phone: document.getElementById('contactPhone').value.trim(),
+                        email: document.getElementById('contactEmail').value.trim(),
+                    };
+                    shopConfig.description = document.getElementById('shopDescription').value.trim();
+                    shopConfig.type = document.getElementById('shopType').value;
+                    shopConfig.themeColor = document.getElementById('themeColor').value;
+                    break;
+                    
+                case 2:
+                    shopConfig.dishes = getDishesData();
+                    shopConfig.recommendDishes = Array.from(
+                        document.getElementById('recommendDishes').selectedOptions
+                    ).map(option => option.value);
+                    break;
+                    
+                case 3:
+                    // 文件将在提交时处理
+                    break;
+                    
+                case 4:
+                    shopConfig.password = document.getElementById('adminPassword').value;
+                    shopConfig.enableMonitoring = document.getElementById('enableMonitoring').checked;
+                    break;
+            }
+        }
+        
+        // ============================================
+        // 菜品管理函数
+        // ============================================
+        function addDish() {
+            const dishesList = document.getElementById('dishesList');
+            const dishItem = document.createElement('div');
+            dishItem.className = 'dish-item';
+            dishItem.innerHTML = `
+                <input type="text" class="dish-name" placeholder="菜品名称">
+                <input type="number" class="dish-price" placeholder="价格" min="0" step="0.01" value="10">
+                <select class="dish-category">
+                    <option value="主食">主食</option>
+                    <option value="热菜">热菜</option>
+                    <option value="小吃" selected>小吃</option>
+                    <option value="凉菜">凉菜</option>
+                    <option value="饮料">饮料</option>
+                </select>
+                <input type="text" class="dish-emoji" placeholder="图标" value="🍜" maxlength="2">
+                <button type="button" class="btn-remove-dish" onclick="removeDish(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            dishesList.appendChild(dishItem);
+            
+            // 更新推荐选择
+            updateRecommendSelect();
+            
+            // 为新增的菜品输入框绑定事件
+            const inputs = dishItem.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', updateConfigPreview);
+            });
+        }
+        
+        function removeDish(button) {
+            const dishItem = button.closest('.dish-item');
+            const dishesList = document.getElementById('dishesList');
+            
+            if (dishesList.children.length > 1) {
+                dishItem.remove();
+                updateRecommendSelect();
+                updateConfigPreview();
+            }
+        }
+        
+        function getDishesData() {
+            const dishes = [];
+            const dishItems = document.querySelectorAll('.dish-item');
+            
+            dishItems.forEach((item, index) => {
+                const name = item.querySelector('.dish-name').value.trim();
+                const price = parseFloat(item.querySelector('.dish-price').value);
+                const category = item.querySelector('.dish-category').value;
+                const emoji = item.querySelector('.dish-emoji').value.trim();
+                
+                if (name && !isNaN(price)) {
+                    dishes.push({
+                        id: index + 1,
+                        name: name,
+                        price: price,
+                        category: category,
+                        emoji: emoji || '🍽️',
+                        tags: []
+                    });
+                }
+            });
+            
+            return dishes;
+        }
+        
+        function updateRecommendSelect() {
+            const select = document.getElementById('recommendDishes');
+            const dishes = getDishesData();
+            
+            // 保存当前选中的值
+            const selectedValues = Array.from(select.selectedOptions).map(opt => opt.value);
+            
+            // 清空选项
+            select.innerHTML = '';
+            
+            // 添加新选项
+            dishes.forEach((dish, index) => {
+                const option = document.createElement('option');
+                option.value = dish.id;
+                option.textContent = `${dish.name} - ¥${dish.price}`;
+                
+                // 如果是前两个菜品，默认选中
+                if (index < 2 || selectedValues.includes(dish.id.toString())) {
+                    option.selected = true;
+                }
+                
+                select.appendChild(option);
+            });
+        }
+        
+        // ============================================
+        // 图片上传预览
+        // ============================================
+        function previewQRImage(input, type) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // 检查文件类型
+            if (!file.type.match('image.*')) {
+                alert('请选择图片文件');
+                return;
+            }
+            
+            // 检查文件大小（限制2MB）
+            if (file.size > 2 * 1024 * 1024) {
+                alert('图片大小不能超过2MB');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewDiv = document.getElementById(`${type}Preview`);
+                const previewImg = document.getElementById(`${type}PreviewImg`);
+                const uploadArea = document.getElementById(`${type}UploadArea`);
+                
+                previewImg.src = e.target.result;
+                previewDiv.style.display = 'block';
+                uploadArea.style.display = 'none';
+                
+                // 保存到配置
+                shopConfig.qrCodes = shopConfig.qrCodes || {};
+                shopConfig.qrCodes[type] = {
+                    fileName: file.name,
+                    dataUrl: e.target.result,
+                    uploaded: false
+                };
+                
+                updateConfigPreview();
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        
+        function removeQRImage(type) {
+            const previewDiv = document.getElementById(`${type}Preview`);
+            const uploadArea = document.getElementById(`${type}UploadArea`);
+            const fileInput = document.getElementById(`${type}QR`);
+            
+            previewDiv.style.display = 'none';
+            uploadArea.style.display = 'block';
+            fileInput.value = '';
+            
+            // 从配置中移除
+            if (shopConfig.qrCodes && shopConfig.qrCodes[type]) {
+                delete shopConfig.qrCodes[type];
+            }
+            
+            updateConfigPreview();
+        }
+        
+        // ============================================
+        // 配置预览更新
+        // ============================================
+        function updateConfigPreview() {
+            // 保存当前步骤数据
+            saveStepData(currentStep);
+            
+            // 生成商家ID（如果还没有）
+            if (!generatedShopId) {
+                generatedShopId = generateShopId();
+            }
+            
+            // 更新预览显示
+            document.getElementById('previewShopId').textContent = generatedShopId;
+            document.getElementById('previewShopName').textContent = shopConfig.name || '-';
+            document.getElementById('previewContact').textContent = shopConfig.contact ? 
+                `${shopConfig.contact.name} (${shopConfig.contact.phone})` : '-';
+            document.getElementById('previewDishCount').textContent = shopConfig.dishes ? shopConfig.dishes.length : 0;
+            document.getElementById('previewThemeColor').textContent = shopConfig.themeColor || '#E63946';
+            document.getElementById('previewSequencePrefix').textContent = getSequencePrefix();
+            
+            // 生成链接预览 - 使用相对路径
+            document.getElementById('previewAdminLink').textContent = 
+                `admin.html?shop=${generatedShopId}`;
+            document.getElementById('previewCustomerLink').textContent = 
+                `index.html?shop=${generatedShopId}`;
+            
+            // 更新状态指示器
+            const statusDot = document.querySelector('#configStatus .status-dot');
+            const statusText = document.querySelector('#configStatus span');
+            
+            if (validateConfig()) {
+                statusDot.style.background = '#4CAF50';
+                statusText.textContent = '配置验证通过，可以提交注册';
+            } else {
+                statusDot.style.background = '#ff9800';
+                statusText.textContent = '配置不完整，请检查';
+            }
+        }
+        
+        function getSequencePrefix() {
+            return 'A';
+        }
+        
+        function generateShopId() {
+            // 生成唯一商家ID：时间戳 + 随机数 + 名称缩写
+            const timestamp = Date.now().toString(36);
+            const random = Math.random().toString(36).substr(2, 4);
+            const slug = shopConfig.slug ? shopConfig.slug.substr(0, 3) : 'shop';
+            
+            return `${slug}_${timestamp}${random}`.toLowerCase();
+        }
+        
+        function validateConfig() {
+            return shopConfig.name && 
+                   shopConfig.contact && 
+                   shopConfig.contact.name && 
+                   shopConfig.contact.phone && 
+                   shopConfig.dishes && 
+                   shopConfig.dishes.length > 0 &&
+                   document.getElementById('acceptTerms').checked;
+        }
+        
+        // ============================================
+        // 提交注册函数（核心）
+        // ============================================
+        async function submitRegistration() {
+            console.log('📤 提交商家注册...');
+            
+            // 显示加载状态
+            document.getElementById('nextBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在提交...';
+            document.getElementById('nextBtn').disabled = true;
+            
+            try {
+                // 1. 验证配置
+                if (!validateConfig()) {
+                    throw new Error('配置信息不完整');
+                }
+                
+                // 2. 生成最终商家ID
+                generatedShopId = generateShopId();
+                shopConfig.id = generatedShopId;
+                shopConfig.createdAt = new Date().toISOString();
+                
+                // 3. 上传图片到Supabase存储（如果存在）
+                await uploadQRImages();
+                
+                // 4. 创建商家记录（写入Supabase）
+                await createShopInSupabase();
+                
+                // 5. 初始化商家设置
+                await initializeShopSettings();
+                
+                // 6. 创建菜品数据
+                await createDishesInSupabase();
+                
+                // 7. 创建推荐菜品（如果有）
+                await createRecommendations();
+                
+                // 8. 创建监控配置（如果启用）
+                if (shopConfig.enableMonitoring) {
+                    await createMonitoringConfig();
+                }
+                
+                // 9. 更新配置文件（config.js）并保存到本地
+                await updateGlobalConfig();
+                
+                // 10. 显示成功页面
+                showSuccessScreen();
+                
+                console.log('✅ 商家注册成功！');
+                
+            } catch (error) {
+                console.error('❌ 注册失败:', error);
+                alert(`注册失败: ${error.message}`);
+                
+                // 恢复按钮状态
+                document.getElementById('nextBtn').innerHTML = '提交注册 <i class="fas fa-check"></i>';
+                document.getElementById('nextBtn').disabled = false;
+            }
+        }
+        
+        async function uploadQRImages() {
+            if (!shopConfig.qrCodes || Object.keys(shopConfig.qrCodes).length === 0) {
+                console.log('📝 未上传收款码，跳过图片上传');
+                return;
+            }
+            
+            console.log('📤 开始上传收款码图片...');
+            
+            for (const [type, qrData] of Object.entries(shopConfig.qrCodes)) {
+                try {
+                    // 将DataURL转换为Blob
+                    const blob = dataURLtoBlob(qrData.dataUrl);
+                    
+                    // 创建文件名
+                    const fileName = `${generatedShopId}_${type}_qrcode_${Date.now()}.png`;
+                    
+                    // 上传到Supabase存储
+                    const { data, error } = await supabaseClient.storage
+                        .from('shop-qrcodes')
+                        .upload(fileName, blob, {
+                            contentType: 'image/png',
+                            upsert: true
+                        });
+                    
+                    if (error) throw error;
+                    
+                    console.log(`✅ ${type}收款码上传成功:`, data);
+                    
+                    // 更新配置中的图片URL
+                    const { data: urlData } = supabaseClient.storage
+                        .from('shop-qrcodes')
+                        .getPublicUrl(fileName);
+                    
+                    shopConfig.qrCodes[type].url = urlData.publicUrl;
+                    shopConfig.qrCodes[type].uploaded = true;
+                    
+                } catch (error) {
+                    console.warn(`⚠️ ${type}收款码上传失败:`, error.message);
+                    // 继续执行，不阻止注册
+                }
+            }
+        }
+        
+        async function createShopInSupabase() {
+            console.log('🏪 创建商家记录...');
+            
+            const shopData = {
+                tenant_id: generatedShopId,
+                name: shopConfig.name,
+                slug: shopConfig.slug,
+                contact_name: shopConfig.contact.name,
+                contact_phone: shopConfig.contact.phone,
+                contact_email: shopConfig.contact.email || null,
+                description: shopConfig.description || null,
+                shop_type: shopConfig.type,
+                theme_color: shopConfig.themeColor,
+                wechat_qr_url: shopConfig.qrCodes?.wechat?.url || null,
+                alipay_qr_url: shopConfig.qrCodes?.alipay?.url || null,
+                admin_password: shopConfig.password,
+                is_active: true,
+                created_at: shopConfig.createdAt,
+                updated_at: shopConfig.createdAt
+            };
+            
+            // 插入商家记录
+            const { data, error } = await supabaseClient
+                .from('shops')
+                .insert([shopData])
+                .select();
+            
+            if (error) {
+                // 如果表不存在，先创建表
+                if (error.message.includes('relation') && error.message.includes('does not exist')) {
+                    console.log('📊 shops表不存在，尝试创建...');
+                    await createShopsTable();
+                    
+                    // 重新插入数据
+                    const { data: retryData, error: retryError } = await supabaseClient
+                        .from('shops')
+                        .insert([shopData])
+                        .select();
+                    
+                    if (retryError) throw retryError;
+                    
+                    console.log('✅ 商家记录创建成功');
+                    return retryData[0];
+                }
+                throw error;
+            }
+            
+            console.log('✅ 商家记录创建成功');
+            return data[0];
+        }
+        
+        async function createShopsTable() {
+            console.log('⚠️ 需要手动创建shops表或使用Supabase SQL执行');
+            // 这里可以调用一个Edge Function或使用Supabase的SQL API
+        }
+        
+        async function initializeShopSettings() {
+            console.log('⚙️ 初始化商家设置...');
+            
+            // 注意：我们移除了description字段，因为settings表没有这个列
+            const settings = [
+                {
+                    tenant_id: generatedShopId,
+                    setting_key: 'sequence_prefix',
+                    setting_value: getSequencePrefix()
+                },
+                {
+                    tenant_id: generatedShopId,
+                    setting_key: 'sequence_counter',
+                    setting_value: '1'
+                },
+                {
+                    tenant_id: generatedShopId,
+                    setting_key: 'shop_status',
+                    setting_value: 'active'
+                },
+                {
+                    tenant_id: generatedShopId,
+                    setting_key: 'auto_refresh',
+                    setting_value: 'true'
+                },
+                {
+                    tenant_id: generatedShopId,
+                    setting_key: 'notification_enabled',
+                    setting_value: 'true'
+                }
+            ];
+            
+            // 插入设置记录
+            const { error } = await supabaseClient
+                .from('settings')
+                .insert(settings);
+            
+            if (error) {
+                // 如果是RLS错误，提供解决方案
+                if (error.message.includes('row-level security')) {
+                    console.error('❌ RLS策略阻止插入，请设置Supabase RLS策略');
+                    showRLSErrorMessage();
+                }
+                throw error;
+            }
+            
+            console.log('✅ 商家设置初始化成功');
+        }
+        
+        function showRLSErrorMessage() {
+            alert(`
+⚠️ 数据库权限配置问题
+
+错误：行级安全策略阻止插入数据
+
+解决方案：
+1. 登录 Supabase 控制台
+2. 进入 Table Editor → settings 表
+3. 点击 "Policies" 标签
+4. 点击 "New Policy" 或编辑现有策略
+5. 或执行以下 SQL：
+
+-- 允许插入
+CREATE POLICY "允许插入设置" ON settings
+FOR INSERT WITH CHECK (true);
+
+-- 允许查询
+CREATE POLICY "允许查询设置" ON settings
+FOR SELECT USING (true);
+            `);
+        }
+        
+        async function createDishesInSupabase() {
+            console.log('🍜 创建菜品数据...');
+            
+            const dishesData = shopConfig.dishes.map(dish => ({
+                tenant_id: generatedShopId,
+                name: dish.name,
+                price: dish.price,
+                category: dish.category,
+                emoji: dish.emoji,
+                tags: dish.tags || [],
+                is_active: true,
+                sort_order: dish.id,
+                created_at: new Date().toISOString()
+            }));
+            
+            const { error } = await supabaseClient
+                .from('dishes')
+                .insert(dishesData);
+            
+            if (error) {
+                // 如果表不存在，记录错误但不阻止注册
+                console.warn('⚠️ dishes表不存在，菜品数据未保存:', error.message);
+                return;
+            }
+            
+            console.log(`✅ 创建了 ${dishesData.length} 个菜品`);
+        }
+        
+        async function createRecommendations() {
+            if (!shopConfig.recommendDishes || shopConfig.recommendDishes.length === 0) {
+                console.log('📝 未设置推荐菜品，跳过创建');
+                return;
+            }
+            
+            console.log('⭐ 创建推荐菜品...');
+            
+            const recommendations = shopConfig.recommendDishes.map((dishId, index) => ({
+                tenant_id: generatedShopId,
+                dish_id: parseInt(dishId),
+                sort_order: index + 1,
+                created_at: new Date().toISOString()
+            }));
+            
+            const { error } = await supabaseClient
+                .from('recommendations')
+                .insert(recommendations);
+            
+            if (error) {
+                console.warn('⚠️ 创建推荐菜品失败:', error.message);
+                return;
+            }
+            
+            console.log(`✅ 创建了 ${recommendations.length} 个推荐菜品`);
+        }
+        
+        async function createMonitoringConfig() {
+            console.log('🔍 创建监控配置...');
+            
+            const monitoringConfig = {
+                tenant_id: generatedShopId,
+                shop_name: shopConfig.name,
+                alert_rules: {
+                    max_pending_orders: 10,
+                    max_waiting_time: 30,
+                    check_interval: 5,
+                    alert_channels: ['dashboard']
+                },
+                is_active: true,
+                created_at: new Date().toISOString()
+            };
+            
+            const { error } = await supabaseClient
+                .from('monitoring_configs')
+                .insert([monitoringConfig]);
+            
+            if (error) {
+                console.warn('⚠️ 创建监控配置失败:', error.message);
+                return;
+            }
+            
+            console.log('✅ 监控配置创建成功');
+        }
+        
+        // ============================================
+        // 更新全局配置文件函数（修复后的核心逻辑）
+        // ============================================
+        async function updateGlobalConfig() {
+            console.log('📝 更新全局配置文件...');
+            
+            // 生成当前商家的配置
+            const newShopConfig = {
+                [generatedShopId]: {
+                    name: shopConfig.name,
+                    themeColor: shopConfig.themeColor,
+                    logo: shopConfig.qrCodes?.wechat?.url || 'images/logo.png',
+                    qrcode: shopConfig.qrCodes?.wechat?.url || shopConfig.qrCodes?.alipay?.url || 'images/qrcode.jpg',
+                    dishes: shopConfig.dishes
+                }
+            };
+            
+            try {
+                // 1. 保存到localStorage
+                localStorage.setItem('shop_config_' + generatedShopId, JSON.stringify(newShopConfig));
+                
+                // 2. 更新已注册商家列表
+                const allShops = JSON.parse(localStorage.getItem('registered_shops') || '{}');
+                allShops[generatedShopId] = {
+                    id: generatedShopId,
+                    name: shopConfig.name,
+                    created: shopConfig.createdAt,
+                    themeColor: shopConfig.themeColor,
+                    dishes: shopConfig.dishes
+                };
+                localStorage.setItem('registered_shops', JSON.stringify(allShops));
+                
+                // 3. 动态生成包含所有商家的配置文件
+                updatedConfigJS = await generateCompleteConfigJS(allShops);
+                
+                console.log('✅ 全局配置已更新');
+                
+            } catch (error) {
+                console.error('❌ 更新配置文件失败:', error);
+                // 继续执行，不阻止注册
+            }
+        }
+        
+        // 修复：生成完整的配置文件，包含所有已注册商家
+        async function generateCompleteConfigJS(allShops) {
+            console.log('🔧 生成完整的配置文件...');
+            
+            // 从localStorage加载所有商家的完整配置
+            const allShopConfigs = {};
+            
+            // 首先添加默认商家配置
+            allShopConfigs['default_shop'] = {
+                name: '我的摊位',
+                themeColor: '#E63946',
+                logo: 'images/logo.png',
+                qrcode: 'images/qrcode.jpg',
+                dishes: [
+                    { id: 1, name: '招牌炸酱面', price: 15, emoji: '🍜', category: '主食', tags: ['招牌'] },
+                    { id: 2, name: '麻辣烫套餐', price: 18, emoji: '🥘', category: '热菜', tags: ['套餐'] },
+                    { id: 3, name: '烤冷面', price: 10, emoji: '🥞', category: '小吃', tags: [] },
+                    { id: 4, name: '煎饼果子', price: 12, emoji: '🌯', category: '小吃', tags: ['招牌'] },
+                    { id: 5, name: '凉拌黄瓜', price: 8, emoji: '🥒', category: '凉菜', tags: [] },
+                    { id: 6, name: '米饭', price: 2, emoji: '🍚', category: '主食', tags: [] },
+                    { id: 7, name: '可乐', price: 4, emoji: '🥤', category: '饮料', tags: [] },
+                ]
+            };
+            
+            // 添加所有已注册商家
+            for (const shopId in allShops) {
+                try {
+                    const shopData = allShops[shopId];
+                    const fullConfig = JSON.parse(localStorage.getItem('shop_config_' + shopId));
+                    
+                    if (fullConfig && fullConfig[shopId]) {
+                        allShopConfigs[shopId] = fullConfig[shopId];
+                    } else {
+                        // 如果找不到完整配置，使用基本信息创建配置
+                        allShopConfigs[shopId] = {
+                            name: shopData.name,
+                            themeColor: shopData.themeColor || '#E63946',
+                            logo: 'images/logo.png',
+                            qrcode: 'images/qrcode.jpg',
+                            dishes: shopData.dishes || []
+                        };
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ 无法加载商家 ${shopId} 的配置:`, error.message);
+                }
+            }
+            
+            // 生成配置文件内容
+            const configContent = `// ============================================
+// 动态商家配置加载器
+// ============================================
+
+// 从本地存储或Supabase加载已注册的商家
+async function loadRegisteredShops() {
+    try {
+        // 1. 先从本地存储加载
+        const localShops = JSON.parse(localStorage.getItem('registered_shops') || '{}');
+        
+        // 2. 如果有本地商家数据，合并到配置中
+        Object.keys(localShops).forEach(shopId => {
+            if (!window.shopConfigs[shopId]) {
+                window.shopConfigs[shopId] = {
+                    name: localShops[shopId].name,
+                    themeColor: localShops[shopId].themeColor || '#E63946',
+                    logo: 'images/logo.png',
+                    qrcode: 'images/qrcode.jpg',
+                    dishes: [] // 菜品从Supabase动态加载
+                };
+            }
+        });
+        
+        console.log('✅ 动态加载商家配置:', Object.keys(window.shopConfigs));
+        
+    } catch (error) {
+        console.error('❌ 加载商家配置失败:', error);
+    }
+}
+
+// ============================================
+// 从Supabase动态加载商家菜品
+// ============================================
+async function loadShopDishesFromSupabase(shopId) {
+    try {
+        console.log('📋 从Supabase加载商家菜品，商家ID:', shopId);
+        
+        // 检查Supabase是否已初始化
+        if (!window.supabaseClient) {
+            console.log('📝 Supabase客户端未初始化，使用默认菜品');
+            return [];
+        }
+        
+        // 从Supabase加载商家的菜品
+        const { data: dishes, error } = await window.supabaseClient
+            .from('dishes')
+            .select('*')
+            .eq('tenant_id', shopId)
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true });
+        
+        if (error) throw error;
+        
+        if (dishes && dishes.length > 0) {
+            console.log('✅ 从Supabase加载到菜品:', dishes.length, '个');
+            
+            // 转换数据格式
+            const formattedDishes = dishes.map(dish => ({
+                id: dish.id,
+                name: dish.name,
+                price: parseFloat(dish.price),
+                emoji: dish.emoji || '🍽️',
+                category: dish.category || '未分类',
+                tags: dish.tags || [],
+                description: dish.description || ''
+            }));
+            
+            return formattedDishes;
+        }
+        
+        console.log('📝 Supabase中没有找到菜品，返回空数组');
+        return [];
+        
+    } catch (error) {
+        console.error('❌ 从Supabase加载菜品失败:', error);
+        return [];
+    }
+}
+
+// ============================================
+// 更新菜品数据的函数（供外部调用）
+// ============================================
+async function updateShopDishes(shopId) {
+    try {
+        console.log('🔄 更新商家菜品数据，商家ID:', shopId);
+        
+        // 从Supabase加载菜品
+        const supabaseDishes = await loadShopDishesFromSupabase(shopId);
+        
+        // 获取当前商家配置
+        const shopConfig = window.shopConfigs[shopId] || window.shopConfigs['default_shop'];
+        
+        if (supabaseDishes.length > 0) {
+            // 使用Supabase中的菜品数据
+            shopConfig.dishes = supabaseDishes;
+            console.log('✅ 已更新商家菜品数据（来自Supabase）:', shopConfig.name);
+        } else if (!shopConfig.dishes || shopConfig.dishes.length === 0) {
+            // 如果Supabase没有数据且配置中也没有菜品，使用默认菜品
+            console.log('📝 使用默认菜品数据');
+            shopConfig.dishes = window.shopConfigs['default_shop'].dishes || [];
+        }
+        
+        return shopConfig.dishes;
+        
+    } catch (error) {
+        console.error('❌ 更新菜品数据失败:', error);
+        return [];
+    }
+}
+
+// 修改获取当前商家的函数
+function getCurrentShopConfig() {
+    const shopId = getCurrentShopId();
+    
+    // 如果配置中不存在，尝试从本地存储加载
+    if (!window.shopConfigs[shopId]) {
+        const localShops = JSON.parse(localStorage.getItem('registered_shops') || '{}');
+        if (localShops[shopId]) {
+            window.shopConfigs[shopId] = {
+                name: localShops[shopId].name,
+                themeColor: localShops[shopId].themeColor || '#E63946',
+                logo: 'images/logo.png',
+                qrcode: 'images/qrcode.jpg',
+                dishes: [] // 初始为空，稍后从Supabase加载
+            };
+        }
+    }
+    
+    return window.shopConfigs[shopId] || window.shopConfigs['default_shop'];
+}
+
+// 页面加载时调用
+document.addEventListener('DOMContentLoaded', async function() {
+    // 加载已注册的商家
+    await loadRegisteredShops();
+    
+    // 如果是顾客端或管理端页面，初始化Supabase并加载菜品
+    if (typeof window.supabaseClient !== 'undefined') {
+        // 获取当前商家ID
+        const currentShopId = getCurrentShopId();
+        
+        // 更新当前商家的菜品数据
+        if (currentShopId) {
+            await updateShopDishes(currentShopId);
+        }
+    }
+    
+    console.log('✅ 商家配置加载完成');
+});
+
+// ============================================
+// 商家配置文件 - 多商家支持
+// ============================================
+
+// 支持的商家列表
+window.shopConfigs = ${JSON.stringify(allShopConfigs, null, 4)};
+
+// 获取当前商家ID - 管理员专用版本（完全从URL获取）
+function getCurrentShopId() {
+    // 只从URL参数获取，如 ?shop=老王煎饼
+    const urlParams = new URLSearchParams(window.location.search);
+    let shopId = urlParams.get('shop');
+    
+    // 如果没有URL参数，使用默认
+    if (!shopId || !window.shopConfigs[shopId]) {
+        shopId = 'default_shop';
+    }
+    
+    return shopId;
+}
+
+// 获取当前商家配置
+function getCurrentShopConfig() {
+    const shopId = getCurrentShopId();
+    return window.shopConfigs[shopId] || window.shopConfigs['default_shop'];
+}
+
+// 更新页面主题
+function updateThemeForShop(shopConfig) {
+    // 更新CSS变量
+    if (shopConfig && shopConfig.themeColor) {
+        document.documentElement.style.setProperty('--primary-color', shopConfig.themeColor);
+    }
+    
+    // 更新页面标题
+    if (shopConfig && shopConfig.name) {
+        document.title = \`\${shopConfig.name} - 扫码点餐\`;
+    }
+    
+    // 更新Logo（如果有）
+    if (shopConfig && shopConfig.logo) {
+        const logoImg = document.querySelector('.logo-image');
+        if (logoImg) {
+            logoImg.src = shopConfig.logo;
+            logoImg.alt = shopConfig.name;
+        }
+    }
+}
+
+console.log('✅ 商家配置加载完成');`;
+            
+            return configContent;
+        }
+        
+        // ============================================
+        // 成功页面显示
+        // ============================================
+        function showSuccessScreen() {
+            // 隐藏表单，显示成功页面
+            document.querySelector('.form-content').style.display = 'none';
+            document.querySelector('.register-stepper').style.display = 'none';
+            document.querySelector('.progress-bar').style.display = 'none';
+            
+            // 填充成功页面信息
+            document.getElementById('finalShopId').textContent = generatedShopId;
+            document.getElementById('finalShopName').textContent = shopConfig.name;
+            
+            // 使用相对路径链接
+            const adminLink = `admin.html?shop=${generatedShopId}`;
+            const customerLink = `index.html?shop=${generatedShopId}`;
+            
+            document.getElementById('finalAdminLink').href = adminLink;
+            document.getElementById('finalCustomerLink').href = customerLink;
+            
+            // 设置链接点击事件，确保先保存配置
+            document.getElementById('finalAdminLink').onclick = function(e) {
+                updateLocalConfigBeforeNavigate();
+                // 允许默认链接行为
+                return true;
+            };
+            
+            document.getElementById('finalCustomerLink').onclick = function(e) {
+                updateLocalConfigBeforeNavigate();
+                return true;
+            };
+            
+            document.getElementById('finalPassword').textContent = shopConfig.password;
+            
+            // 显示配置文件下载区域
+            if (updatedConfigJS) {
+                document.getElementById('configDownloadArea').style.display = 'block';
+                document.getElementById('configStatusMessage').textContent = '请下载并替换配置文件，这样新商家才能正常访问。';
+                document.getElementById('configStatusMessage').style.color = '#ff9800';
+            } else {
+                document.getElementById('configStatusMessage').textContent = '本地配置已更新，新商家可以正常访问。';
+                document.getElementById('configStatusMessage').style.color = '#4CAF50';
+            }
+            
+            // 显示成功页面
+            document.getElementById('successScreen').style.display = 'block';
+        }
+        
+        function updateLocalConfigBeforeNavigate() {
+            // 确保新商家配置已保存到localStorage
+            const newShopConfig = {
+                [generatedShopId]: {
+                    name: shopConfig.name,
+                    themeColor: shopConfig.themeColor,
+                    logo: 'images/logo.png',
+                    qrcode: 'images/qrcode.jpg',
+                    dishes: shopConfig.dishes
+                }
+            };
+            
+            // 保存到localStorage
+            localStorage.setItem('shop_config_' + generatedShopId, JSON.stringify(newShopConfig));
+            
+            // 更新已注册商家列表
+            const registeredShops = JSON.parse(localStorage.getItem('registered_shops') || '{}');
+            registeredShops[generatedShopId] = {
+                id: generatedShopId,
+                name: shopConfig.name,
+                themeColor: shopConfig.themeColor,
+                dishes: shopConfig.dishes,
+                created: new Date().toISOString()
+            };
+            localStorage.setItem('registered_shops', JSON.stringify(registeredShops));
+            
+            console.log('✅ 商家配置已保存到localStorage，可以访问了');
+        }
+        
+        // ============================================
+        // 工具函数
+        // ============================================
+        function convertToSlug(text) {
+            // 简化的中文转拼音/英文处理
+            return text.toLowerCase()
+                .replace(/[^\w\u4e00-\u9fa5]+/g, '')
+                .replace(/[\u4e00-\u9fa5]/g, function(char) {
+                    // 简单的中文转拼音映射（实际应使用拼音库）
+                    const map = {
+                        '王': 'wang', '李': 'li', '张': 'zhang', '刘': 'liu', '陈': 'chen',
+                        '杨': 'yang', '黄': 'huang', '赵': 'zhao', '周': 'zhou', '吴': 'wu',
+                        '煎': 'jian', '饼': 'bing', '烧': 'shao', '烤': 'kao', '面': 'mian',
+                        '饭': 'fan', '菜': 'cai', '店': 'dian', '铺': 'pu', '摊': 'tan'
+                    };
+                    return map[char] || char;
+                })
+                .replace(/[^a-z0-9]/g, '');
+        }
+        
+        function dataURLtoBlob(dataurl) {
+            const arr = dataurl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], { type: mime });
+        }
+        
+        function resetThemeColor() {
+            document.getElementById('themeColor').value = '#E63946';
+            document.getElementById('themeColorText').value = '#E63946';
+            shopConfig.themeColor = '#E63946';
+            updateConfigPreview();
+        }
+        
+        // ============================================
+        // 成功页面操作函数
+        // ============================================
+        function openAdminPanel() {
+            const adminLink = document.getElementById('finalAdminLink').href;
+            updateLocalConfigBeforeNavigate();
+            window.open(adminLink, '_blank');
+        }
+        
+        function downloadUpdatedConfig() {
+            if (!updatedConfigJS) {
+                alert('没有可下载的配置文件');
+                return;
+            }
+            
+            const blob = new Blob([updatedConfigJS], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'config_updated.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('配置文件已下载，请替换项目中的 config.js 文件。\n\n替换步骤：\n1. 下载文件 config_updated.js\n2. 重命名为 config.js\n3. 替换项目中的 config.js 文件');
+        }
+        
+        function showManualConfigInstructions() {
+            // 获取所有已注册商家
+            const registeredShops = JSON.parse(localStorage.getItem('registered_shops') || '{}');
+            let manualConfig = '// ============================================\n';
+            manualConfig += '// 手动添加商家配置 - 复制以下代码到 config.js\n';
+            manualConfig += '// ============================================\n\n';
+            
+            // 添加默认商家
+            manualConfig += "'default_shop': {\n";
+            manualConfig += "    name: '我的摊位',\n";
+            manualConfig += "    themeColor: '#E63946',\n";
+            manualConfig += "    logo: 'images/logo.png',\n";
+            manualConfig += "    qrcode: 'images/qrcode.jpg',\n";
+            manualConfig += "    dishes: [\n";
+            manualConfig += "        { id: 1, name: '招牌炸酱面', price: 15, emoji: '🍜', category: '主食', tags: ['招牌'] },\n";
+            manualConfig += "        { id: 2, name: '麻辣烫套餐', price: 18, emoji: '🥘', category: '热菜', tags: ['套餐'] },\n";
+            manualConfig += "        { id: 3, name: '烤冷面', price: 10, emoji: '🥞', category: '小吃', tags: [] },\n";
+            manualConfig += "        { id: 4, name: '煎饼果子', price: 12, emoji: '🌯', category: '小吃', tags: ['招牌'] },\n";
+            manualConfig += "        { id: 5, name: '凉拌黄瓜', price: 8, emoji: '🥒', category: '凉菜', tags: [] },\n";
+            manualConfig += "        { id: 6, name: '米饭', price: 2, emoji: '🍚', category: '主食', tags: [] },\n";
+            manualConfig += "        { id: 7, name: '可乐', price: 4, emoji: '🥤', category: '饮料', tags: [] },\n";
+            manualConfig += "    ]\n";
+            manualConfig += "},\n\n";
+            
+            // 添加所有已注册商家
+            for (const shopId in registeredShops) {
+                const shopData = registeredShops[shopId];
+                const fullConfig = JSON.parse(localStorage.getItem('shop_config_' + shopId) || '{}');
+                
+                manualConfig += `'${shopId}': {\n`;
+                manualConfig += `    name: '${shopData.name}',\n`;
+                manualConfig += `    themeColor: '${shopData.themeColor || '#E63946'}',\n`;
+                manualConfig += `    logo: 'images/logo.png',\n`;
+                manualConfig += `    qrcode: 'images/qrcode.jpg',\n`;
+                
+                if (fullConfig[shopId] && fullConfig[shopId].dishes) {
+                    manualConfig += `    dishes: ${JSON.stringify(fullConfig[shopId].dishes, null, 4)}\n`;
+                } else {
+                    manualConfig += "    dishes: []\n";
+                }
+                
+                manualConfig += "},\n\n";
+            }
+            
+            manualConfig += "// 将此配置添加到 window.shopConfigs 对象中";
+            
+            // 创建弹窗显示手动配置说明
+            const modal = document.createElement('div');
+            modal.className = 'manual-config-modal';
+            modal.innerHTML = `
+                <div class="manual-config-content">
+                    <h3 class="manual-config-title">
+                        <i class="fas fa-code"></i> 手动配置说明
+                    </h3>
+                    
+                    <div class="manual-config-steps">
+                        <p><strong>操作步骤：</strong></p>
+                        <ol>
+                            <li>打开项目中的 <code>config.js</code> 文件</li>
+                            <li>找到 <code>window.shopConfigs = {}</code> 部分</li>
+                            <li>将以下代码添加到配置对象中</li>
+                            <li>保存文件并刷新页面</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="manual-config-code">${manualConfig}</div>
+                    
+                    <div style="text-align: center;">
+                        <button onclick="copyConfigToClipboard()" style="padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px;">
+                            <i class="fas fa-copy"></i> 复制配置代码
+                        </button>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding: 10px 20px; background: #f8f9fa; color: #666; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            关闭
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 添加复制功能
+            window.copyConfigToClipboard = function() {
+                navigator.clipboard.writeText(manualConfig).then(function() {
+                    alert('配置代码已复制到剪贴板！');
+                }, function(err) {
+                    console.error('复制失败: ', err);
+                    alert('复制失败，请手动选择并复制上面的代码。');
+                });
+            };
+        }
+        
+        function showQRCode() {
+            const customerLink = document.getElementById('finalCustomerLink').href;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                padding: 20px;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    border-radius: 15px;
+                    padding: 30px;
+                    max-width: 400px;
+                    width: 100%;
+                    text-align: center;
+                ">
+                    <h3 style="margin-bottom: 20px; color: #333;">
+                        <i class="fas fa-qrcode"></i> 顾客点餐二维码
+                    </h3>
+                    <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                        <div id="qrcodeContainer" style="width: 200px; height: 200px; margin: 0 auto;"></div>
+                    </div>
+                    <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                        将二维码打印出来，顾客扫码即可点餐
+                    </p>
+                    <p style="color: #999; font-size: 12px; margin-bottom: 20px;">
+                        链接: ${customerLink}
+                    </p>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button onclick="printQRCode()" style="
+                            padding: 10px 20px;
+                            background: #2196F3;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                        ">
+                            <i class="fas fa-print"></i> 打印二维码
+                        </button>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="
+                            padding: 10px 20px;
+                            background: #f8f9fa;
+                            color: #666;
+                            border: 1px solid #ddd;
+                            border-radius: 6px;
+                            cursor: pointer;
+                        ">
+                            关闭
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 生成二维码（简单版本）
+            generateSimpleQRCode(customerLink, 'qrcodeContainer');
+        }
+        
+        function generateSimpleQRCode(text, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // 创建Canvas绘制二维码
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            
+            // 清空画布
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, 200, 200);
+            
+            // 绘制简单二维码图案
+            ctx.fillStyle = 'black';
+            
+            // 绘制定位点
+            ctx.fillRect(20, 20, 40, 40);
+            ctx.fillRect(140, 20, 40, 40);
+            ctx.fillRect(20, 140, 40, 40);
+            
+            // 绘制简单文字
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            ctx.fillText('扫码点餐', 100, 180);
+            ctx.font = '10px Arial';
+            ctx.fillText(shopConfig.name.substr(0, 10), 100, 195);
+            
+            container.innerHTML = '';
+            container.appendChild(canvas);
+        }
+        
+        function printQRCode() {
+            window.print();
+        }
+        
+        function startNewRegistration() {
+            // 重置页面状态
+            currentStep = 1;
+            shopConfig = {
+                id: '',
+                name: '',
+                slug: '',
+                contact: {},
+                themeColor: '#E63946',
+                dishes: [],
+                qrCodes: {},
+                settings: {},
+                createdAt: new Date().toISOString()
+            };
+            generatedShopId = '';
+            updatedConfigJS = null;
+            
+            // 重置表单
+            document.getElementById('shopName').value = '';
+            document.getElementById('shopSlug').value = '';
+            document.getElementById('contactName').value = '';
+            document.getElementById('contactPhone').value = '';
+            document.getElementById('contactEmail').value = '';
+            document.getElementById('shopDescription').value = '';
+            document.getElementById('themeColor').value = '#E63946';
+            document.getElementById('themeColorText').value = '#E63946';
+            
+            // 重置菜品
+            document.getElementById('dishesList').innerHTML = `
+                <div class="dish-item">
+                    <input type="text" class="dish-name" placeholder="菜品名称" value="招牌炸酱面">
+                    <input type="number" class="dish-price" placeholder="价格" value="15" min="0" step="0.01">
+                    <select class="dish-category">
+                        <option value="主食">主食</option>
+                        <option value="热菜">热菜</option>
+                        <option value="小吃">小吃</option>
+                        <option value="凉菜">凉菜</option>
+                        <option value="饮料">饮料</option>
+                    </select>
+                    <input type="text" class="dish-emoji" placeholder="图标" value="🍜" maxlength="2">
+                    <button type="button" class="btn-remove-dish" onclick="removeDish(this)" disabled>
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="dish-item">
+                    <input type="text" class="dish-name" placeholder="菜品名称" value="麻辣烫套餐">
+                    <input type="number" class="dish-price" placeholder="价格" value="18" min="0" step="0.01">
+                    <select class="dish-category">
+                        <option value="热菜">热菜</option>
+                        <option value="主食" selected>主食</option>
+                        <option value="小吃">小吃</option>
+                        <option value="凉菜">凉菜</option>
+                        <option value="饮料">饮料</option>
+                    </select>
+                    <input type="text" class="dish-emoji" placeholder="图标" value="🥘" maxlength="2">
+                    <button type="button" class="btn-remove-dish" onclick="removeDish(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            updateRecommendSelect();
+            
+            // 重置文件上传
+            document.getElementById('wechatQR').value = '';
+            document.getElementById('alipayQR').value = '';
+            document.getElementById('wechatPreview').style.display = 'none';
+            document.getElementById('alipayPreview').style.display = 'none';
+            document.getElementById('wechatUploadArea').style.display = 'block';
+            document.getElementById('alipayUploadArea').style.display = 'block';
+            
+            // 重置密码
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            
+            // 重置步骤指示器
+            document.querySelectorAll('.step').forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index === 0) {
+                    step.classList.add('completed');
+                }
+                if (index === 1) {
+                    step.classList.add('active');
+                }
+            });
+            
+            // 重置进度条
+            document.getElementById('progressFill').style.width = '25%';
+            
+            // 重置按钮
+            document.getElementById('prevBtn').style.display = 'none';
+            document.getElementById('nextBtn').innerHTML = '下一步 <i class="fas fa-arrow-right"></i>';
+            document.getElementById('nextBtn').className = 'btn btn-next';
+            document.getElementById('nextBtn').onclick = nextStep;
+            document.getElementById('nextBtn').disabled = false;
+            
+            // 显示表单，隐藏成功页面
+            document.querySelector('.form-content').style.display = 'block';
+            document.querySelector('.register-stepper').style.display = 'flex';
+            document.querySelector('.progress-bar').style.display = 'block';
+            document.getElementById('successScreen').style.display = 'none';
+            
+            // 激活第一步
+            document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
+            document.getElementById('stepForm1').classList.add('active');
+            
+            // 更新预览
+            updateConfigPreview();
+        }
+    </script>
+</body>
+</html>
