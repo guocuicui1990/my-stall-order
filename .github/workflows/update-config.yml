@@ -1,142 +1,114 @@
 name: Update Config from Issue
 
 on:
-  issues:
-    types: [opened, labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+        type: string
 
 jobs:
   update-config:
-    if: contains(github.event.issue.labels.*.name, 'config-update')
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        token: ${{ secrets.GH_TOKEN }}
+        # 移除token参数，使用默认的GITHUB_TOKEN
         fetch-depth: 0
+
+    - name: Debug info
+      run: |
+        echo "✅ 工作流开始运行"
+        echo "Issue编号: ${{ github.event.inputs.issue_number }}"
+        echo "仓库: ${{ github.repository }}"
+        echo "触发者: ${{ github.actor }}"
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '16'
+        node-version: '18'
 
-    - name: Extract config from issue
-      id: extract-config
+    - name: Create simple test file
       run: |
-        # 从Issue中提取JSON配置
-        CONFIG_CONTENT=$(echo '${{ github.event.issue.body }}' | grep -o '```json.*```' | sed 's/```json//' | sed 's/```//')
+        echo "🔄 创建测试文件..."
         
-        if [ -z "$CONFIG_CONTENT" ]; then
-          echo "未找到JSON配置"
-          exit 1
+        # 创建一个简单的测试，确保工作流能运行
+        cat > test_output.txt << 'EOF'
+        GitHub Actions 测试运行
+        时间: $(date)
+        仓库: ${{ github.repository }}
+        Issue编号: ${{ github.event.inputs.issue_number }}
+        EOF
+        
+        echo "✅ 测试文件已创建"
+        
+        # 显示当前目录内容
+        echo "📁 当前目录内容:"
+        ls -la
+
+    - name: Check config.js
+      run: |
+        echo "🔍 检查config.js..."
+        
+        if [ -f "config.js" ]; then
+          echo "✅ config.js 存在"
+          echo "文件大小: $(wc -l < config.js) 行"
+        else
+          echo "⚠️ config.js 不存在，创建基础版本"
+          
+          cat > config.js << 'EOF'
+// 基础配置文件
+window.shopConfigs = {
+  "default_shop": {
+    "name": "默认商家",
+    "themeColor": "#E63946",
+    "logo": "images/logo.png",
+    "qrcode": "images/qrcode.jpg",
+    "dishes": []
+  }
+};
+
+function getCurrentShopId() {
+  const urlParams = new URLSearchParams(window.location.search);
+  let shopId = urlParams.get('shop');
+  if (!shopId || !window.shopConfigs[shopId]) {
+    shopId = 'default_shop';
+  }
+  return shopId;
+}
+
+function getCurrentShopConfig() {
+  const shopId = getCurrentShopId();
+  return window.shopConfigs[shopId] || window.shopConfigs['default_shop'];
+}
+
+console.log('配置加载完成');
+EOF
         fi
-        
-        # 保存配置到文件
-        echo "$CONFIG_CONTENT" > new_config.json
-        echo "配置已提取"
-        
-        # 解析商家ID
-        SHOP_ID=$(echo "$CONFIG_CONTENT" | grep -o '"\([^"]*\)":' | head -1 | sed 's/"//g' | sed 's/://')
-        echo "商家ID: $SHOP_ID"
-        echo "shop_id=$SHOP_ID" >> $GITHUB_OUTPUT
 
-    - name: Update config.js
+    - name: Create test commit
       run: |
-        # 读取现有的config.js
-        CONFIG_FILE="config.js"
+        echo "📝 创建测试提交..."
         
-        if [ ! -f "$CONFIG_FILE" ]; then
-          echo "错误: config.js文件不存在"
-          exit 1
-        fi
-        
-        # 读取新配置
-        NEW_CONFIG=$(cat new_config.json)
-        SHOP_ID="${{ steps.extract-config.outputs.shop_id }}"
-        
-        # 更新config.js
-        node -e "
-        const fs = require('fs');
-        let content = fs.readFileSync('$CONFIG_FILE', 'utf8');
-        
-        // 查找shopConfigs对象
-        const configMatch = content.match(/window\\.shopConfigs\\s*=\\s*({[\\s\\S]*?});/);
-        if (!configMatch) {
-          console.error('未找到shopConfigs对象');
-          process.exit(1);
-        }
-        
-        // 替换或添加新商家配置
-        const newConfig = $NEW_CONFIG;
-        const newShopId = '$SHOP_ID';
-        
-        // 转换为字符串并移除尾随逗号
-        let newConfigStr = JSON.stringify(newConfig[newShopId], null, 4);
-        
-        // 检查是否已存在该商家
-        if (content.includes(\`'\${newShopId}':\`)) {
-          // 更新现有配置
-          console.log('更新现有商家配置:', newShopId);
-          const pattern = new RegExp(\`'\\\${newShopId}': {[^}]+}\`, 's');
-          content = content.replace(pattern, \`'\${newShopId}': \${newConfigStr}\`);
-        } else {
-          // 添加新配置
-          console.log('添加新商家配置:', newShopId);
-          // 找到最后一个商家配置后添加
-          const lastEntryPattern = /('([^']+)':\s*{[^}]+},?\s*)(\n\s*)(};)/s;
-          if (content.match(lastEntryPattern)) {
-            content = content.replace(lastEntryPattern, \`\$1,\n    '\${newShopId}': \${newConfigStr}\$3\$4\`);
-          }
-        }
-        
-        // 确保格式正确
-        content = content.replace(/,\s*}/g, '\n}');
-        
-        fs.writeFileSync('$CONFIG_FILE', content);
-        console.log('config.js已更新');
-        "
-
-    - name: Commit and push changes
-      run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         
-        git add config.js
-        git commit -m "更新商家配置: ${{ steps.extract-config.outputs.shop_id }}"
-        git push
+        # 检查是否有更改
+        if git status --porcelain | grep -q "config.js\|test_output.txt"; then
+          echo "检测到更改，准备提交..."
+          git add .
+          git commit -m "测试工作流运行 - $(date)"
+          git push
+          echo "✅ 提交并推送成功"
+        else
+          echo "没有检测到更改"
+        fi
 
-    - name: Comment on issue
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const issueNumber = context.issue.number;
-          const shopId = '${{ steps.extract-config.outputs.shop_id }}';
-          
-          await github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: issueNumber,
-            body: `✅ 配置已自动更新！\n\n商家 **${shopId}** 的配置已成功添加到config.js文件中。\n\n您可以立即访问：\n- 顾客端: index.html?shop=${shopId}\n- 管理端: admin.html?shop=${shopId}\n\n此Issue将在10秒后自动关闭。`
-          });
-          
-          // 关闭Issue
-          setTimeout(async () => {
-            await github.rest.issues.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              state: 'closed'
-            });
-          }, 10000);
-
-    - name: Update issue labels
-      uses: actions/github-script@v6
-      with:
-        script: |
-          await github.rest.issues.addLabels({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            labels: ['auto-updated', 'config-complete']
-          });
+    - name: Success message
+      run: |
+        echo "🎉 工作流成功完成！"
+        echo "下一步：在register.html中手动添加商家配置"
+        echo "或者使用GitHub Issues手动更新"
