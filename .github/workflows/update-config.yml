@@ -1,9 +1,9 @@
 name: Update Config from Issue
 
 on:
-  # 监听Issue的创建和标签添加
+  # 监听所有Issue事件
   issues:
-    types: [opened, labeled]
+    types: [opened, edited, labeled]
   
   # 允许手动触发
   workflow_dispatch:
@@ -15,14 +15,27 @@ on:
 
 jobs:
   update-config:
-    # 简化条件，确保工作流会运行
-    if: |
-      github.event_name == 'issues' ||
-      github.event_name == 'workflow_dispatch'
-    
+    # 总是运行这个工作流（用于调试）
     runs-on: ubuntu-latest
     
     steps:
+    - name: Debug - Show event info
+      run: |
+        echo "🎯 工作流被触发"
+        echo "事件名称: ${{ github.event_name }}"
+        echo "仓库: ${{ github.repository }}"
+        echo "触发者: ${{ github.actor }}"
+        echo "Issue编号: ${{ github.event.issue.number }}"
+        echo "Issue标题: ${{ github.event.issue.title }}"
+        echo "Issue标签: ${{ toJson(github.event.issue.labels) }}"
+        echo "手动触发Issue号: ${{ github.event.inputs.issue_number }}"
+        
+        # 保存事件信息到文件，便于查看
+        echo "Event: ${{ github.event_name }}" > event_info.txt
+        echo "Issue #: ${{ github.event.issue.number }}" >> event_info.txt
+        echo "Manual: ${{ github.event.inputs.issue_number }}" >> event_info.txt
+        cat event_info.txt
+
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
@@ -34,119 +47,132 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Debug - Show event info
-      run: |
-        echo "Event name: ${{ github.event_name }}"
-        echo "Repository: ${{ github.repository }}"
-        echo "Event action: ${{ github.event.action }}"
-        echo "Issue number: ${{ github.event.issue.number }}"
-        echo "Issue title: ${{ github.event.issue.title }}"
-        echo "Issue labels: ${{ toJson(github.event.issue.labels) }}"
-        echo "Manual trigger issue number: ${{ github.event.inputs.issue_number }}"
-
     - name: Determine Issue number
       id: get-issue
       run: |
+        ISSUE_NUMBER=""
+        
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
           ISSUE_NUMBER="${{ github.event.inputs.issue_number }}"
-          echo "Using manually provided issue number: ${ISSUE_NUMBER}"
-        else
+          echo "使用手动提供的Issue编号: ${ISSUE_NUMBER}"
+        elif [ -n "${{ github.event.issue.number }}" ]; then
           ISSUE_NUMBER="${{ github.event.issue.number }}"
-          echo "Using event issue number: ${ISSUE_NUMBER}"
-        fi
-        
-        if [ -z "${ISSUE_NUMBER}" ]; then
-          echo "ERROR: No issue number found"
+          echo "使用事件中的Issue编号: ${ISSUE_NUMBER}"
+        else
+          echo "❌ 错误: 没有找到Issue编号"
+          echo "Event info:"
+          echo "Event name: ${{ github.event_name }}"
+          echo "Issue number from event: ${{ github.event.issue.number }}"
           exit 1
         fi
         
+        echo "✅ 将要处理的Issue编号: ${ISSUE_NUMBER}"
         echo "issue_number=${ISSUE_NUMBER}" >> $GITHUB_OUTPUT
-        echo "Will process issue #${ISSUE_NUMBER}"
 
-    - name: Get Issue content
+    - name: Get Issue content via API
       id: get-issue-content
       run: |
         ISSUE_NUMBER="${{ steps.get-issue.outputs.issue_number }}"
         
-        echo "Fetching issue #${ISSUE_NUMBER}..."
+        echo "📋 获取Issue #${ISSUE_NUMBER}的内容..."
         
-        # 使用GitHub API获取Issue内容
+        # 使用GitHub API获取Issue
+        API_URL="https://api.github.com/repos/${{ github.repository }}/issues/${ISSUE_NUMBER}"
+        echo "API URL: ${API_URL}"
+        
         ISSUE_DATA=$(curl -s \
           -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
           -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ github.repository }}/issues/${ISSUE_NUMBER}")
+          -H "User-Agent: GitHub-Actions" \
+          "${API_URL}")
         
-        # 提取Issue信息
+        # 检查是否获取成功
+        if echo "${ISSUE_DATA}" | grep -q "message"; then
+          ERROR_MSG=$(echo "${ISSUE_DATA}" | jq -r '.message' 2>/dev/null || echo "${ISSUE_DATA}")
+          echo "❌ API错误: ${ERROR_MSG}"
+          exit 1
+        fi
+        
+        # 提取数据
         ISSUE_TITLE=$(echo "${ISSUE_DATA}" | jq -r '.title')
         ISSUE_BODY=$(echo "${ISSUE_DATA}" | jq -r '.body')
         ISSUE_LABELS=$(echo "${ISSUE_DATA}" | jq -r '[.labels[].name] | join(",")')
         
-        echo "Issue Title: ${ISSUE_TITLE}"
-        echo "Issue Labels: ${ISSUE_LABELS}"
+        echo "✅ Issue标题: ${ISSUE_TITLE}"
+        echo "✅ Issue标签: ${ISSUE_LABELS}"
         
         # 检查是否包含config-update标签
         if [[ "${ISSUE_LABELS}" != *"config-update"* ]]; then
-          echo "WARNING: Issue does not have 'config-update' label"
-          echo "But we'll still try to process it..."
+          echo "⚠️ 警告: Issue没有'config-update'标签"
+          echo "但我们会继续处理..."
         fi
         
-        # 保存Issue内容用于调试
+        # 保存Issue内容
         echo "${ISSUE_BODY}" > issue_body.txt
         
-        # 提取JSON配置部分
+        # 提取JSON配置（简化版）
+        echo "🔍 尝试从Issue中提取JSON配置..."
+        
+        # 方法1: 提取```json和```之间的内容
         if echo "${ISSUE_BODY}" | grep -q '```json'; then
-          # 提取```json和```之间的内容
-          CONFIG_CONTENT=$(echo "${ISSUE_BODY}" | awk '/```json/,/```/' | sed '1d;$d')
+          echo "使用方法1: 提取```json标记的内容"
+          CONFIG_CONTENT=$(echo "${ISSUE_BODY}" | awk '/```json/{flag=1; next} /```/{flag=0} flag')
+        # 方法2: 直接提取JSON对象
         elif echo "${ISSUE_BODY}" | grep -q '{'; then
-          # 尝试直接提取第一个JSON对象
-          CONFIG_CONTENT=$(echo "${ISSUE_BODY}" | grep -o '{.*}' | head -1)
+          echo "使用方法2: 直接提取JSON对象"
+          # 提取第一个完整的JSON对象
+          CONFIG_CONTENT=$(echo "${ISSUE_BODY}" | grep -o '{[^}]*}' | head -1)
         else
-          echo "ERROR: Could not find JSON config in issue body"
-          echo "Issue body preview:"
-          echo "${ISSUE_BODY}" | head -20
+          echo "❌ 错误: 无法从Issue中找到JSON配置"
+          echo "Issue内容预览（前500字符）:"
+          echo "${ISSUE_BODY:0:500}"
           exit 1
         fi
+        
+        # 清理配置内容
+        CONFIG_CONTENT=$(echo "${CONFIG_CONTENT}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         
         if [ -z "${CONFIG_CONTENT}" ]; then
-          echo "ERROR: No config content found"
+          echo "❌ 错误: 配置内容为空"
           exit 1
         fi
         
-        echo "Found config content:"
+        echo "✅ 提取的配置内容:"
         echo "${CONFIG_CONTENT}"
         
         # 保存配置到文件
         echo "${CONFIG_CONTENT}" > new_shop_config.json
         
         # 解析商家ID
-        SHOP_ID=$(echo "${CONFIG_CONTENT}" | grep -o '"\([^"]*\)":' | head -1 | sed 's/"//g' | sed 's/://')
+        SHOP_ID=$(echo "${CONFIG_CONTENT}" | grep -o '\"[^\"]*\"' | head -1 | tr -d '"' | tr -d ':')
         
         if [ -z "${SHOP_ID}" ]; then
-          # 尝试其他方式提取ID
-          SHOP_ID=$(echo "${CONFIG_CONTENT}" | grep -o '\w\+_ml[^"]*' | head -1 || true)
+          # 尝试其他方式
+          SHOP_ID=$(echo "${CONFIG_CONTENT}" | grep -o "'[^']*'" | head -1 | tr -d "'")
         fi
         
         if [ -z "${SHOP_ID}" ]; then
-          echo "ERROR: Could not extract shop ID from config"
-          echo "Config content:"
-          echo "${CONFIG_CONTENT}"
-          exit 1
+          # 使用默认格式
+          SHOP_ID="shop_${ISSUE_NUMBER}_$(date +%s)"
+          echo "⚠️ 无法提取商家ID，使用默认: ${SHOP_ID}"
         fi
         
-        echo "Extracted Shop ID: ${SHOP_ID}"
+        echo "✅ 商家ID: ${SHOP_ID}"
         echo "shop_id=${SHOP_ID}" >> $GITHUB_OUTPUT
 
-    - name: Check if config.js exists
+    - name: Check config.js file
       run: |
+        echo "📄 检查config.js文件..."
+        
         if [ -f "config.js" ]; then
-          echo "✅ config.js exists"
-          echo "First few lines of config.js:"
-          head -20 config.js
+          echo "✅ config.js文件存在"
+          echo "文件大小: $(wc -l < config.js) 行"
+          echo "前3行内容:"
+          head -3 config.js
         else
-          echo "❌ config.js does not exist!"
-          echo "Creating a basic config.js file..."
+          echo "❌ config.js文件不存在，创建基本配置..."
           
-          # 创建基本的config.js文件
+          # 创建基本配置文件
           cat > config.js << 'EOF'
 // ============================================
 // 商家配置文件 - 多商家支持
@@ -201,202 +227,143 @@ function getCurrentShopConfig() {
 console.log('✅ 商家配置加载完成');
 EOF
           
-          echo "Created basic config.js file"
+          echo "✅ 已创建config.js文件"
         fi
 
-    - name: Update config.js with new shop
+    - name: Create update script
       run: |
-        SHOP_ID="${{ steps.get-issue-content.outputs.shop_id }}"
-        CONFIG_FILE="config.js"
+        echo "📝 创建配置更新脚本..."
         
-        echo "Updating ${CONFIG_FILE} with shop: ${SHOP_ID}"
-        
-        # 创建更新脚本
-        cat > update_config.js << 'EOF'
+        cat > simple_update.js << 'EOF'
         const fs = require('fs');
         const path = require('path');
         
-        // 读取新配置
-        const newConfigPath = path.join(__dirname, 'new_shop_config.json');
-        const newConfigData = fs.readFileSync(newConfigPath, 'utf8');
-        let newConfig;
+        console.log('🔄 开始更新config.js...');
         
         try {
-          newConfig = JSON.parse(newConfigData);
-        } catch (error) {
-          console.error('Error parsing new config:', error.message);
-          console.error('Config data:', newConfigData);
-          process.exit(1);
-        }
-        
-        console.log('New config loaded:', Object.keys(newConfig));
-        
-        const shopId = Object.keys(newConfig)[0];
-        const shopConfig = newConfig[shopId];
-        
-        console.log(`Processing shop: ${shopId}`);
-        console.log('Shop name:', shopConfig.name);
-        
-        // 读取现有的config.js
-        const configFile = path.join(__dirname, 'config.js');
-        let content = fs.readFileSync(configFile, 'utf8');
-        
-        // 准备新的商家配置字符串
-        const newShopConfigStr = \`'\${shopId}': {
-    name: '\${shopConfig.name}',
-    themeColor: '\${shopConfig.themeColor || '#E63946'}',
-    logo: '\${shopConfig.logo || 'images/logo.png'}',
-    qrcode: '\${shopConfig.qrcode || 'images/qrcode.jpg'}',
-    dishes: \${JSON.stringify(shopConfig.dishes || [], null, 4)}
-}\`;
-        
-        // 查找window.shopConfigs对象
-        const configMatch = content.match(/window\\.shopConfigs\\s*=\\s*(\\{[\\s\\S]*?\\};)/);
-        if (!configMatch) {
-          console.error('Could not find window.shopConfigs object');
-          process.exit(1);
-        }
-        
-        const fullConfigMatch = configMatch[1];
-        
-        // 检查是否已存在该商家
-        if (content.includes(\`'\${shopId}':\`)) {
-          console.log(\`Updating existing shop: \${shopId}\`);
+          // 读取新配置
+          const newConfigPath = path.join(__dirname, 'new_shop_config.json');
+          const newConfigData = fs.readFileSync(newConfigPath, 'utf8');
           
-          // 创建正则表达式匹配现有配置
-          const existingPattern = new RegExp(\`'\\\${shopId}'\\s*:\\s*\\{[^}]+\\}\`, 's');
+          console.log('新配置数据:', newConfigData);
           
-          if (content.match(existingPattern)) {
-            content = content.replace(existingPattern, newShopConfigStr);
-            console.log(\`Updated shop \${shopId}\`);
+          let newConfig;
+          try {
+            newConfig = JSON.parse(newConfigData);
+          } catch (error) {
+            console.error('解析JSON失败:', error.message);
+            // 尝试修复JSON格式
+            const fixedData = newConfigData.replace(/'/g, '"').replace(/(\w+):/g, '"$1":');
+            newConfig = JSON.parse(fixedData);
+          }
+          
+          const shopId = Object.keys(newConfig)[0];
+          const shopConfig = newConfig[shopId];
+          
+          console.log(`处理商家: ${shopId}`);
+          console.log(`商家名称: ${shopConfig.name}`);
+          
+          // 读取现有配置
+          const configFile = path.join(__dirname, 'config.js');
+          let content = fs.readFileSync(configFile, 'utf8');
+          
+          // 准备新的商家配置字符串
+          const newShopConfig = {
+            name: shopConfig.name || '新商家',
+            themeColor: shopConfig.themeColor || '#E63946',
+            logo: shopConfig.logo || 'images/logo.png',
+            qrcode: shopConfig.qrcode || 'images/qrcode.jpg',
+            dishes: shopConfig.dishes || []
+          };
+          
+          const newConfigStr = \`'\${shopId}': \${JSON.stringify(newShopConfig, null, 4)}\`;
+          
+          // 查找window.shopConfigs对象
+          const configMatch = content.match(/window\\.shopConfigs\\s*=\\s*(\{[\\s\\S]*?\\};)/);
+          
+          if (!configMatch) {
+            throw new Error('找不到window.shopConfigs对象');
+          }
+          
+          const fullConfig = configMatch[0];
+          
+          // 检查是否已存在该商家
+          if (content.includes(\`'\${shopId}':\`)) {
+            console.log(\`更新现有商家: \${shopId}\`);
+            // 替换现有配置
+            const existingPattern = new RegExp(\`'\\\${shopId}'[\\s\\S]*?\\n\\s*\\}\`, 'm');
+            content = content.replace(existingPattern, newConfigStr);
           } else {
-            console.error(\`Could not find existing shop pattern for \${shopId}\`);
-            process.exit(1);
-          }
-        } else {
-          console.log(\`Adding new shop: \${shopId}\`);
-          
-          // 找到最后一个商家配置后添加
-          // 首先找到window.shopConfigs = { ... };中的内容
-          const configStart = content.indexOf('window.shopConfigs = {');
-          if (configStart === -1) {
-            console.error('Could not find window.shopConfigs declaration');
-            process.exit(1);
-          }
-          
-          // 找到配置块的结束位置
-          let braceCount = 0;
-          let inConfig = false;
-          let configEnd = -1;
-          
-          for (let i = configStart; i < content.length; i++) {
-            if (content[i] === '{') {
-              braceCount++;
-              inConfig = true;
-            } else if (content[i] === '}') {
-              braceCount--;
-              if (inConfig && braceCount === 0) {
-                configEnd = i;
-                break;
-              }
+            console.log(\`添加新商家: \${shopId}\`);
+            // 在最后一个商家后添加
+            const lastEntryMatch = content.match(/(\\}\\s*,?\\s*\\n\\s*)(\\}\\);)/);
+            if (lastEntryMatch) {
+              content = content.replace(lastEntryMatch[0], \`\${newConfigStr},\\n\\}\\n\`);
+            } else {
+              // 简单方法：在倒数第二行前插入
+              const lines = content.split('\\n');
+              lines.splice(lines.length - 2, 0, \`    \${newConfigStr},\`);
+              content = lines.join('\\n');
             }
           }
           
-          if (configEnd === -1) {
-            console.error('Could not find end of shopConfigs object');
-            process.exit(1);
+          // 保存更新
+          fs.writeFileSync(configFile, content);
+          console.log('✅ config.js更新成功！');
+          
+          // 显示更新后的部分
+          const updatedMatch = content.match(new RegExp(\`'\\\${shopId}'[\\s\\S]*?\\n\\s*\\}\`, 'm'));
+          if (updatedMatch) {
+            console.log('更新后的配置:');
+            console.log(updatedMatch[0]);
           }
           
-          // 在最后一个大括号前插入新配置
-          const beforeConfig = content.substring(0, configEnd);
-          const afterConfig = content.substring(configEnd);
-          
-          // 检查最后一个字符是否是逗号
-          const lastChar = beforeConfig.trim().slice(-1);
-          const needsComma = lastChar !== ',' && lastChar !== '{';
-          
-          content = beforeConfig + (needsComma ? ',' : '') + '\\n    ' + newShopConfigStr + afterConfig;
-        }
-        
-        // 保存更新
-        fs.writeFileSync(configFile, content);
-        console.log('✅ config.js updated successfully');
-        
-        // 显示更新后的部分
-        console.log('\\nUpdated section preview:');
-        const updatedMatch = content.match(new RegExp(\`'\\\${shopId}'[\\s\\S]*?\\n\\s*}\\`, 'm'));
-        if (updatedMatch) {
-          console.log(updatedMatch[0]);
+        } catch (error) {
+          console.error('❌ 更新失败:', error.message);
+          console.error(error.stack);
+          process.exit(1);
         }
         EOF
         
-        # 运行更新脚本
-        node update_config.js
-        
-        # 显示更新后的config.js片段
-        echo "Updated config.js preview:"
-        grep -A 10 "'${SHOP_ID}'" config.js || echo "Could not find shop ${SHOP_ID} in config.js"
+        echo "✅ 更新脚本创建完成"
 
-    - name: Commit and push changes
+    - name: Update config.js
+      run: |
+        SHOP_ID="${{ steps.get-issue-content.outputs.shop_id }}"
+        echo "🔄 更新config.js，商家ID: ${SHOP_ID}"
+        
+        # 运行更新脚本
+        node simple_update.js
+        
+        echo "✅ config.js更新完成"
+        echo "更新后的文件预览:"
+        grep -n "${SHOP_ID}" config.js || echo "未找到商家ID，但更新可能成功"
+
+    - name: Commit changes
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         
-        # 检查是否有更改
+        echo "🔍 检查更改..."
+        git status
+        
         if git diff --quiet config.js; then
-          echo "No changes to config.js"
+          echo "⚠️ 没有检测到config.js的更改"
         else
-          echo "Changes detected in config.js"
+          echo "✅ 检测到config.js的更改"
           git add config.js
-          git commit -m "Update config.js with shop: ${{ steps.get-issue-content.outputs.shop_id }} [Auto-update]"
-          git push
-          echo "✅ Changes pushed to repository"
+          git commit -m "更新商家配置: ${{ steps.get-issue-content.outputs.shop_id }} [自动更新]"
+          echo "✅ 更改已提交"
         fi
 
-    - name: Comment on issue
-      if: success()
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const issueNumber = '${{ steps.get-issue.outputs.issue_number }}';
-          const shopId = '${{ steps.get-issue-content.outputs.shop_id }}';
-          
-          console.log(`Adding comment to issue #${issueNumber} for shop ${shopId}`);
-          
-          await github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: issueNumber,
-            body: `✅ 配置已自动更新！\n\n商家 **${shopId}** 的配置已成功添加到config.js文件中。\n\n您可以立即访问：\n- 顾客端: index.html?shop=${shopId}\n- 管理端: admin.html?shop=${shopId}\n\n此Issue将在10秒后自动关闭。`
-          });
-          
-          // 关闭Issue
-          setTimeout(async () => {
-            try {
-              await github.rest.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                state: 'closed'
-              });
-              console.log(`Issue #${issueNumber} closed successfully`);
-            } catch (error) {
-              console.error(`Failed to close issue #${issueNumber}:`, error.message);
-            }
-          }, 10000);
+    - name: Push changes
+      run: |
+        echo "🚀 推送更改到仓库..."
+        git push
+        echo "✅ 更改已推送"
 
-    - name: Add success labels
-      if: success()
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const issueNumber = '${{ steps.get-issue.outputs.issue_number }}';
-          
-          console.log(`Adding labels to issue #${issueNumber}`);
-          
-          await github.rest.issues.addLabels({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: issueNumber,
-            labels: ['auto-updated', 'config-complete']
-          });
+    - name: Success message
+      run: |
+        echo "🎉 工作流执行完成！"
+        echo "商家ID: ${{ steps.get-issue-content.outputs.shop_id }}"
+        echo "配置已更新到config.js文件"
