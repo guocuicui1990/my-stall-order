@@ -116,8 +116,8 @@ jobs:
         
         echo "🔄 开始更新config.js，商家ID: $SHOP_ID"
         
-        # 创建更新脚本
-        cat > update_script.js << 'EOF'
+        # 创建更新脚本 - 使用不同的方法避免转义问题
+        cat > update_script.js << "JAVASCRIPT"
         const fs = require('fs');
         const path = require('path');
         
@@ -148,19 +148,19 @@ jobs:
           const shopId = shopIds[0];
           const shopConfig = newConfig[shopId];
           
-          console.log(`商家ID: ${shopId}`);
-          console.log(`商家名称: ${shopConfig.name}`);
-          console.log(`菜品数量: ${shopConfig.dishes ? shopConfig.dishes.length : 0}`);
+          console.log('商家ID:', shopId);
+          console.log('商家名称:', shopConfig.name);
+          console.log('菜品数量:', shopConfig.dishes ? shopConfig.dishes.length : 0);
           
           // 读取现有的config.js
           const configFile = path.join(__dirname, 'config.js');
           let content = fs.readFileSync(configFile, 'utf8');
           
           // 准备新的商家配置字符串
-          const newShopConfigStr = \`'\${shopId}': \${JSON.stringify(shopConfig, null, 4)}\`;
+          const newShopConfigStr = "'" + shopId + "': " + JSON.stringify(shopConfig, null, 4);
           
           // 查找window.shopConfigs对象
-          const configMatch = content.match(/window\\.shopConfigs\\s*=\\s*(\\{[\\s\\S]*?\\};)/);
+          const configMatch = content.match(/window\.shopConfigs\s*=\s*(\{[\s\S]*?\};)/);
           
           if (!configMatch) {
             throw new Error('在config.js中找不到window.shopConfigs对象');
@@ -169,24 +169,24 @@ jobs:
           console.log('找到shopConfigs对象');
           
           // 检查是否已存在该商家
-          if (content.includes(\`'\${shopId}':\`)) {
-            console.log(\`更新现有商家配置: \${shopId}\`);
+          if (content.includes("'" + shopId + "':")) {
+            console.log('更新现有商家配置:', shopId);
             
             // 查找并替换现有配置
             // 创建匹配模式：'商家ID': { ... } (跨多行)
-            const existingPattern = new RegExp(\`'\\\${shopId}'\\s*:\\s*\\{[^}]+\\}\`, 's');
+            const existingPattern = new RegExp("'" + shopId + "'\\s*:\\s*\\{[^}]+\\}", 's');
             
             if (content.match(existingPattern)) {
               content = content.replace(existingPattern, newShopConfigStr);
-              console.log(\`已更新商家: \${shopId}\`);
+              console.log('已更新商家:', shopId);
             } else {
               // 如果模式不匹配，尝试更宽松的匹配
-              const loosePattern = new RegExp(\`'\\\${shopId}'[\\s\\S]*?\\n\\s*\\}\`, 'm');
+              const loosePattern = new RegExp("'" + shopId + "'[\\s\\S]*?\\n\\s*\\}", 'm');
               content = content.replace(loosePattern, newShopConfigStr);
-              console.log(\`使用宽松模式更新商家: \${shopId}\`);
+              console.log('使用宽松模式更新商家:', shopId);
             }
           } else {
-            console.log(\`添加新商家配置: \${shopId}\`);
+            console.log('添加新商家配置:', shopId);
             
             // 找到最后一个商家配置后添加
             // 查找模式：'商家ID': { ... },\n    };\n
@@ -194,13 +194,13 @@ jobs:
             
             if (content.match(lastEntryPattern)) {
               console.log('在最后一个商家后添加新配置');
-              content = content.replace(lastEntryPattern, \`\$1,\n    \${newShopConfigStr}\$3\$4\`);
+              content = content.replace(lastEntryPattern, '$1,\n    ' + newShopConfigStr + '$3$4');
             } else {
               // 如果上面的模式不匹配，尝试在window.shopConfigs = {后添加
               console.log('在shopConfigs对象开头添加新配置');
               content = content.replace(
                 /(window\.shopConfigs\s*=\s*\{)/,
-                \`\$1\n    \${newShopConfigStr},\`
+                '$1\n    ' + newShopConfigStr + ','
               );
             }
           }
@@ -210,12 +210,12 @@ jobs:
           console.log('✅ config.js已成功更新！');
           
           // 验证更新
-          console.log('\\n验证更新:');
+          console.log('\n验证更新:');
           const updatedContent = fs.readFileSync(configFile, 'utf8');
-          if (updatedContent.includes(\`'\${shopId}':\`)) {
-            console.log(\`✅ 商家 \${shopId} 已成功添加到config.js\`);
+          if (updatedContent.includes("'" + shopId + "':")) {
+            console.log('✅ 商家', shopId, '已成功添加到config.js');
           } else {
-            console.log(\`⚠️ 警告: 商家 \${shopId} 可能未正确添加\`);
+            console.log('⚠️ 警告: 商家', shopId, '可能未正确添加');
           }
           
         } catch (error) {
@@ -223,7 +223,7 @@ jobs:
           console.error(error.stack);
           process.exit(1);
         }
-        EOF
+        JAVASCRIPT
         
         # 运行更新脚本
         node update_script.js
