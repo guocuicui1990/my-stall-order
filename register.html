@@ -2352,13 +2352,16 @@ console.log('✅ 商家配置加载完成');`;
     // 更新按钮状态
     const createBtn = document.getElementById('createIssueBtn');
     createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
-    createBtn.disabled = false; // 确保按钮可用
+    createBtn.disabled = true;
     
-    // 生成配置数据
+    // 生成配置数据 - 确保是纯 JSON
     const configUpdate = generateGitHubConfigUpdate();
     
-    // 创建Issue标题和内容
+    // 创建 Issue 标题和内容
     const issueTitle = `[商家注册] ${shopConfig.name} - ${generatedShopId}`;
+    
+    // 重要：JSON 必须是干净、格式正确的 JSON，不要混入 Markdown
+    const configJson = JSON.stringify(configUpdate, null, 2);
     
     const issueBody = `# 🏪 商家注册配置更新
 
@@ -2373,12 +2376,12 @@ console.log('✅ 商家配置加载完成');`;
 请将以下配置添加到 \`config.js\` 文件的 \`window.shopConfigs\` 对象中：
 
 \`\`\`json
-${JSON.stringify(configUpdate, null, 2)}
+${configJson}
 \`\`\`
 
 ## 🤖 自动化处理说明
 
-此Issue由商家自助注册系统自动创建。
+此 Issue 由商家自助注册系统自动创建。
 
 **标签：** config-update, auto-merge
 **状态：** 待处理
@@ -2397,97 +2400,26 @@ ${JSON.stringify(configUpdate, null, 2)}
 
 ---
 
-*GitHub Actions会自动检测到此Issue并更新config.js文件，更新完成后会自动关闭此Issue。*`;
+*GitHub Actions 会自动检测到此 Issue 并更新 config.js 文件，更新完成后会自动关闭此 Issue。*`;
     
-    // 创建GitHub Issue链接
+    // 创建 GitHub Issue 链接
     const labels = 'config-update,auto-merge';
     const issueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels=${labels}`;
     
-    // 显示链接
+    console.log('生成的 Issue URL:', issueUrl);
+    console.log('配置 JSON:', configJson);
+    
+    // 显示链接并自动打开
     const issueLink = document.getElementById('issueLink');
     issueLink.href = issueUrl;
-    
     document.getElementById('issueLinkContainer').style.display = 'block';
     
-    // 立即自动打开新窗口
+    // 延迟打开新窗口
     setTimeout(() => {
-        console.log('🌐 正在打开GitHub Issue页面...');
-        const newWindow = window.open(issueUrl, '_blank');
-        
-        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-            // 如果浏览器阻止了弹出窗口，显示提示
-            console.log('⚠️ 浏览器阻止了弹出窗口');
-            
-            // 更新按钮状态
-            createBtn.innerHTML = '<i class="fab fa-github"></i> 点击手动打开';
-            createBtn.style.background = '#ff9800';
-            
-            // 显示提示信息
-            document.getElementById('autoUpdateStatus').innerHTML += `
-                <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; border-left: 4px solid #ff9800;">
-                    <p><i class="fas fa-exclamation-triangle"></i> <strong>浏览器阻止了自动弹出窗口</strong></p>
-                    <p>请手动点击上面的链接打开GitHub Issue页面。</p>
-                    <p>或者点击这里：<a href="${issueUrl}" target="_blank" style="color: #2196F3;">${issueUrl}</a></p>
-                </div>
-            `;
-        } else {
-            // 成功打开窗口
-            console.log('✅ 已打开GitHub Issue页面');
-            createBtn.innerHTML = '<i class="fas fa-check"></i> 已打开GitHub';
-            createBtn.style.background = '#4CAF50';
-            
-            // 显示成功消息
-            document.getElementById('autoUpdateStatus').innerHTML += `
-                <div style="margin-top: 15px; padding: 10px; background: #e8f5e9; border-radius: 6px; border-left: 4px solid #4CAF50;">
-                    <p><i class="fas fa-check-circle"></i> <strong>GitHub Issue页面已在新标签页中打开</strong></p>
-                    <p>请在新页面中点击"Submit new issue"按钮。</p>
-                </div>
-            `;
-        }
-    }, 500); // 延迟500ms，确保DOM更新完成
-    
-    // 显示成功消息
-    const statusDiv = document.getElementById('githubIssueStatus');
-    statusDiv.className = 'github-issue-status success';
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = `
-        <p><i class="fas fa-check-circle"></i> <strong>GitHub Issue链接已生成！</strong></p>
-        <p>正在尝试打开GitHub Issue创建页面...</p>
-        <p style="font-size: 12px; color: #666; margin-top: 10px;">
-            <i class="fas fa-info-circle"></i> 如果页面没有自动打开，请手动点击上面的链接。
-        </p>
-    `;
-    
-    // 添加复制链接功能
-    const copyLinkBtn = document.createElement('button');
-    copyLinkBtn.innerHTML = '<i class="fas fa-copy"></i> 复制链接';
-    copyLinkBtn.style.cssText = `
-        padding: 8px 15px;
-        background: #2196F3;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        margin-top: 10px;
-        font-size: 14px;
-    `;
-    copyLinkBtn.onclick = function() {
-        navigator.clipboard.writeText(issueUrl).then(function() {
-            alert('GitHub Issue链接已复制到剪贴板！');
-        }, function(err) {
-            console.error('复制失败: ', err);
-            // 备用方法
-            const tempInput = document.createElement('input');
-            tempInput.value = issueUrl;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-            alert('链接已复制到剪贴板！');
-        });
-    };
-    
-    statusDiv.appendChild(copyLinkBtn);
+        window.open(issueUrl, '_blank');
+        createBtn.innerHTML = '<i class="fab fa-github"></i> GitHub Issue 已生成';
+        createBtn.disabled = false;
+    }, 1000);
 }
         
         // ============================================
