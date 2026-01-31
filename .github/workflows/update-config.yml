@@ -1,0 +1,273 @@
+name: Auto Update Config.js
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  update-config:
+    # 只在特定标签的Issue触发
+    if: contains(github.event.issue.labels.*.name, 'config-update')
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GH_TOKEN }}
+        fetch-depth: 0
+
+    - name: 设置Git用户
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: 解析Issue内容
+      id: parse-issue
+      run: |
+        # 从Issue中提取JSON配置
+        ISSUE_BODY="${{ github.event.issue.body }}"
+        echo "ISSUE_BODY=${ISSUE_BODY}" >> $GITHUB_ENV
+        
+        # 提取JSON部分（在```json```之间）
+        if [[ "$ISSUE_BODY" =~ \`\`\`json(.*)\`\`\` ]]; then
+            JSON_CONTENT="${BASH_REMATCH[1]}"
+            echo "$JSON_CONTENT" > shop_config.json
+            echo "JSON提取成功"
+        else
+            # 如果没有代码块，尝试提取整个JSON
+            echo "$ISSUE_BODY" | grep -o '{.*}' > shop_config.json || true
+        fi
+        
+        # 读取商家信息
+        SHOP_ID=$(jq -r '.shopId // empty' shop_config.json 2>/dev/null || echo "")
+        SHOP_NAME=$(jq -r '.shopName // empty' shop_config.json 2>/dev/null || echo "")
+        
+        if [ -z "$SHOP_ID" ]; then
+          echo "无法提取商家ID，退出"
+          exit 1
+        fi
+        
+        echo "SHOP_ID=${SHOP_ID}" >> $GITHUB_ENV
+        echo "SHOP_NAME=${SHOP_NAME}" >> $GITHUB_ENV
+
+    - name: 读取当前config.js
+      id: read-config
+      run: |
+        # 读取现有config.js
+        if [ -f "config.js" ]; then
+          # 提取window.shopConfigs对象
+          CONFIG_CONTENT=$(sed -n '/window.shopConfigs = {/,/^};/p' config.js)
+          if [ -z "$CONFIG_CONTENT" ]; then
+            # 如果没有找到，尝试其他格式
+            CONFIG_CONTENT=$(grep -A 1000 'window.shopConfigs =' config.js | head -n 100)
+          fi
+          echo "现有配置读取成功"
+        else
+          echo "config.js不存在，创建新文件"
+          CONFIG_CONTENT="window.shopConfigs = {};"
+        fi
+        
+        echo "CONFIG_CONTENT<<EOF" >> $GITHUB_ENV
+        echo "$CONFIG_CONTENT" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: 生成新的config.js
+      id: generate-config
+      run: |
+        # 创建新配置对象
+        cat > new_config.js << 'EOF'
+// ============================================
+// 动态商家配置加载器
+// ============================================
+
+// 从本地存储或Supabase加载已注册的商家
+async function loadRegisteredShops() {
+    try {
+        // 1. 先从本地存储加载
+        const localShops = JSON.parse(localStorage.getItem('registered_shops') || '{}');
+        
+        // 2. 如果有本地商家数据，合并到配置中
+        Object.keys(localShops).forEach(shopId => {
+            if (!window.shopConfigs[shopId]) {
+                window.shopConfigs[shopId] = {
+                    name: localShops[shopId].name,
+                    themeColor: localShops[shopId].themeColor || '#E63946',
+                    logo: 'images/logo.png',
+                    qrcode: localShops[shopId].qrcode || 'images/qrcode.jpg',
+                    dishes: localShops[shopId].dishes || []
+                };
+            }
+        });
+        
+        console.log('✅ 动态加载商家配置:', Object.keys(window.shopConfigs));
+        
+    } catch (error) {
+        console.error('❌ 加载商家配置失败:', error);
+    }
+}
+
+// ...（这里包含你原有config.js的所有函数）...
+
+// ============================================
+// 商家配置文件 - 多商家支持
+// ============================================
+
+// 支持的商家列表
+window.shopConfigs = {
+    "default_shop": {
+        "name": "我的摊位",
+        "themeColor": "#E63946",
+        "logo": "images/logo.png",
+        "qrcode": "images/qrcode.jpg",
+        "dishes": [
+            {
+                "id": 1,
+                "name": "招牌炸酱面",
+                "price": 15,
+                "emoji": "🍜",
+                "category": "主食",
+                "tags": ["招牌"]
+            },
+            {
+                "id": 2,
+                "name": "麻辣烫套餐",
+                "price": 18,
+                "emoji": "🥘",
+                "category": "热菜",
+                "tags": ["套餐"]
+            }
+        ]
+    }
+};
+EOF
+
+        # 读取原始配置
+        if [ -f "config.js" ]; then
+          # 提取现有的所有配置（除了default_shop）
+          EXISTING_CONFIGS=$(node -e "
+            const fs = require('fs');
+            try {
+              const content = fs.readFileSync('config.js', 'utf8');
+              const match = content.match(/window\\.shopConfigs\\s*=\\s*({[\\s\\S]*?};?)/);
+              if (match) {
+                const configStr = match[1].replace(/;?\s*$/, '');
+                const configObj = eval('(' + configStr + ')');
+                
+                // 移除default_shop，重新构建
+                const { 'default_shop': defaultShop, ...otherShops } = configObj;
+                
+                // 输出除default_shop外的所有配置
+                console.log(JSON.stringify(otherShops, null, 4));
+              }
+            } catch(e) {
+              console.log('{}');
+            }
+          ")
+          
+          # 合并配置
+          cat > merge_config.js << 'EOF2'
+const fs = require('fs');
+const newShopConfig = require('./shop_config.json');
+
+// 读取模板
+let template = fs.readFileSync('new_config.js', 'utf8');
+
+// 提取现有配置
+let existingConfigs = {};
+try {
+  const existingMatch = template.match(/window\.shopConfigs = ({[\s\S]*?};?)/);
+  if (existingMatch) {
+    const configStr = existingMatch[1].replace(/;?\s*$/, '');
+    existingConfigs = eval('(' + configStr + ')');
+  }
+} catch(e) {
+  console.log('解析错误:', e);
+}
+
+// 添加新商家
+existingConfigs[newShopConfig.shopId] = {
+  name: newShopConfig.shopName,
+  themeColor: newShopConfig.themeColor || '#E63946',
+  logo: 'images/logo.png',
+  qrcode: newShopConfig.qrcode || 'images/qrcode.jpg',
+  dishes: newShopConfig.dishes || []
+};
+
+// 构建新的配置对象字符串
+const newConfigStr = JSON.stringify(existingConfigs, null, 4);
+
+// 替换配置
+const updatedTemplate = template.replace(
+  /window\.shopConfigs = {[\s\S]*?};?/,
+  `window.shopConfigs = ${newConfigStr};`
+);
+
+fs.writeFileSync('config_updated.js', updatedTemplate);
+console.log('配置更新完成');
+EOF2
+
+          node merge_config.js
+          
+          # 用新文件替换旧文件
+          cp config_updated.js config.js
+          
+        else
+          # 如果是第一次，直接使用模板
+          cp new_config.js config.js
+        fi
+        
+        echo "配置生成完成"
+
+    - name: 提交更改
+      id: commit
+      run: |
+        # 检查是否有更改
+        if git diff --quiet config.js; then
+          echo "没有更改需要提交"
+          echo "changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "检测到更改，准备提交"
+          
+          # 添加更改
+          git add config.js
+          
+          # 提交
+          git commit -m "自动更新config.js - 添加商家: $SHOP_NAME ($SHOP_ID) [通过Issue #${{ github.event.issue.number }}]"
+          
+          # 推送
+          git push origin main
+          
+          echo "changes=true" >> $GITHUB_OUTPUT
+          echo "提交完成"
+        fi
+
+    - name: 关闭Issue
+      if: steps.commit.outputs.changes == 'true'
+      run: |
+        # 关闭Issue
+        curl -X PATCH \
+          -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ secrets.GH_REPO }}/issues/${{ github.event.issue.number }} \
+          -d '{"state": "closed"}'
+        
+        # 添加评论
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ secrets.GH_REPO }}/issues/${{ github.event.issue.number }}/comments \
+          -d '{"body": "✅ **配置文件已自动更新！**\n\nconfig.js 已成功更新，添加了商家: **'$SHOP_NAME'** (`'$SHOP_ID'`)\n\n🎉 新商家现在可以正常访问点餐系统了。"}'
+        
+        echo "Issue已关闭"
+
+    - name: 失败处理
+      if: failure()
+      run: |
+        # 发送失败通知
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ secrets.GH_REPO }}/issues/${{ github.event.issue.number }}/comments \
+          -d '{"body": "❌ **配置文件更新失败**\n\n请手动检查以下步骤：\n1. 确保 config.js 文件格式正确\n2. 检查Issue中的JSON格式\n3. 运行GitHub Actions日志查看详细错误\n\n错误信息已记录在Actions日志中。"}'
