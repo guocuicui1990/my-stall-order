@@ -34,86 +34,66 @@ jobs:
         echo "${{ github.event.issue.body }}" | head -20
 
     - name: Extract config from issue
-  id: extract-config
-  run: |
-    echo "🔍 开始从Issue中提取JSON配置..."
-    
-    # 获取Issue内容
-    ISSUE_BODY=$(echo '${{ github.event.issue.body }}' | sed 's/\\n/\n/g')
-    echo "Issue内容长度: ${#ISSUE_BODY} 字符"
-    
-    # 保存Issue内容到文件，便于调试
-    echo "$ISSUE_BODY" > issue_content.txt
-    echo "📄 Issue内容已保存到 issue_content.txt"
-    
-    # 显示前200字符用于调试
-    echo "Issue内容前200字符:"
-    echo "$ISSUE_BODY" | head -c 200
-    echo ""
-    
-    # 提取JSON内容 - 更精确的方法
-    # 查找 ```json 和 ``` 之间的内容
-    CONFIG_CONTENT=$(echo "$ISSUE_BODY" | sed -n '/```json/,/```/p' | sed '/```/d')
-    
-    # 如果没找到，尝试找第一个JSON对象
-    if [ -z "$CONFIG_CONTENT" ]; then
-        echo "尝试方法2: 查找第一个JSON对象..."
-        CONFIG_CONTENT=$(echo "$ISSUE_BODY" | grep -o '\{.*\}' | head -1)
-    fi
-    
-    if [ -z "$CONFIG_CONTENT" ]; then
-        echo "❌ 错误: 未找到JSON配置"
-        echo "Issue内容预览:"
-        head -100 issue_content.txt
-        exit 1
-    fi
-    
-    echo "✅ 提取到的JSON配置:"
-    echo "$CONFIG_CONTENT"
-    
-    # 清理JSON内容：移除可能的多余字符
-    # 删除开头的 ```json 和结尾的 ```
-    CLEAN_CONFIG=$(echo "$CONFIG_CONTENT" | sed 's/^```json//g' | sed 's/```$//g')
-    
-    # 保存清理后的配置到文件
-    echo "$CLEAN_CONFIG" > new_config.json
-    echo "配置已保存到 new_config.json"
-    
-    # 验证JSON格式
-    if ! python3 -m json.tool new_config.json > /dev/null 2>&1; then
-        echo "⚠️ JSON格式验证失败，尝试修复..."
+      id: extract-config
+      run: |
+        echo "🔍 开始从Issue中提取JSON配置..."
         
-        # 尝试修复常见的JSON问题
-        # 1. 移除可能的控制字符
-        cat new_config.json | tr -cd '\11\12\15\40-\176' > new_config_clean.json
-        mv new_config_clean.json new_config.json
+        # 获取Issue内容
+        ISSUE_BODY='${{ github.event.issue.body }}'
+        echo "Issue内容长度: ${#ISSUE_BODY} 字符"
         
-        # 2. 验证是否有效JSON
-        if ! python3 -m json.tool new_config.json > /dev/null 2>&1; then
-            echo "❌ 无法修复JSON格式"
-            echo "JSON内容:"
-            cat new_config.json
-            exit 1
+        # 保存Issue内容到文件，便于调试
+        echo "$ISSUE_BODY" > issue_content.txt
+        echo "📄 Issue内容已保存到 issue_content.txt"
+        
+        # 方法1: 尝试提取JSON对象（从第一个{到最后一个}）
+        echo "尝试方法1: 提取JSON对象..."
+        CONFIG_CONTENT=$(echo "$ISSUE_BODY" | grep -o '{.*}' | head -1)
+        
+        if [ -n "$CONFIG_CONTENT" ]; then
+          echo "✅ 使用方法1提取到JSON配置"
+        else
+          # 方法2: 使用sed提取{和}之间的内容
+          echo "尝试方法2: 使用sed提取..."
+          CONFIG_CONTENT=$(echo "$ISSUE_BODY" | sed -n '/{/,/}/p' | sed ':a;N;$!ba;s/\n/ /g')
         fi
-    fi
-    
-    echo "✅ JSON格式验证通过"
-    
-    # 解析商家ID
-    SHOP_ID=$(python3 -c "import json, sys; data=json.load(open('new_config.json')); print(list(data.keys())[0])" 2>/dev/null)
-    
-    if [ -z "$SHOP_ID" ]; then
-        # 备选方法：从Issue标题中提取
-        ISSUE_TITLE='${{ github.event.issue.title }}'
-        SHOP_ID=$(echo "$ISSUE_TITLE" | grep -o 'l_ml[a-z0-9_]*' | head -1)
-    fi
-    
-    if [ -z "$SHOP_ID" ]; then
-        SHOP_ID="shop_${{ github.event.issue.number }}_$(date +%s)"
-    fi
-    
-    echo "✅ 商家ID: $SHOP_ID"
-    echo "shop_id=$SHOP_ID" >> $GITHUB_OUTPUT
+        
+        if [ -z "$CONFIG_CONTENT" ]; then
+          echo "❌ 错误: 未找到JSON配置"
+          echo "Issue内容预览:"
+          cat issue_content.txt | head -50
+          exit 1
+        fi
+        
+        echo "✅ 提取到的JSON配置:"
+        echo "$CONFIG_CONTENT"
+        
+        # 保存配置到文件
+        echo "$CONFIG_CONTENT" > new_config.json
+        echo "配置已保存到 new_config.json"
+        
+        # 解析商家ID - 提取第一个键名
+        SHOP_ID=$(echo "$CONFIG_CONTENT" | grep -o '\"[^\"]*\"' | head -1 | tr -d '"' | tr -d ':')
+        
+        # 如果没有找到，尝试其他方法
+        if [ -z "$SHOP_ID" ]; then
+          SHOP_ID=$(echo "$CONFIG_CONTENT" | grep -o "'[^']*'" | head -1 | tr -d "'")
+        fi
+        
+        if [ -z "$SHOP_ID" ]; then
+          # 从Issue标题中提取商家ID
+          ISSUE_TITLE='${{ github.event.issue.title }}'
+          SHOP_ID=$(echo "$ISSUE_TITLE" | grep -o 'l_ml[a-z0-9]*' | head -1)
+        fi
+        
+        if [ -z "$SHOP_ID" ]; then
+          echo "⚠️ 警告: 无法提取商家ID，使用默认格式"
+          SHOP_ID="shop_${{ github.event.issue.number }}_$(date +%s)"
+        fi
+        
+        echo "✅ 商家ID: $SHOP_ID"
+        echo "shop_id=$SHOP_ID" >> $GITHUB_OUTPUT
+
     - name: Check config.js file
       run: |
         echo "📄 检查config.js文件..."
