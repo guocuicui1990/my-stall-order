@@ -2347,19 +2347,22 @@ console.log('✅ 商家配置加载完成');`;
         }
         
         function createGitHubIssue() {
-    console.log('📤 创建GitHub Issue...');
+    console.log('📤 准备创建GitHub Issue...');
     
     // 更新按钮状态
     const createBtn = document.getElementById('createIssueBtn');
-    createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
+    createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成Issue链接...';
     createBtn.disabled = true;
     
-    // 生成配置数据
+    // 生成配置数据 - 确保是纯 JSON
     const configUpdate = generateGitHubConfigUpdate();
-    const configJson = JSON.stringify(configUpdate, null, 2);
     
     // 创建 Issue 标题和内容
     const issueTitle = `[商家注册] ${shopConfig.name} - ${generatedShopId}`;
+    
+    // JSON 必须是干净、格式正确的 JSON
+    const configJson = JSON.stringify(configUpdate, null, 2);
+    
     const issueBody = `# 🏪 商家注册配置更新
 **商家名称：** ${shopConfig.name}
 **商家ID：** ${generatedShopId}
@@ -2374,78 +2377,154 @@ ${configJson}
 ## 🤖 自动化处理说明
 此 Issue 由商家自助注册系统自动创建。
 **标签：** config-update, auto-merge
+**状态：** 待处理
+## 📋 系统信息
+- 菜品数量: ${shopConfig.dishes.length} 个
+- 主题颜色: ${shopConfig.themeColor}
+- 收款方式: ${shopConfig.qrCodes?.wechat ? '微信' : ''}${shopConfig.qrCodes?.alipay ? '支付宝' : ''}
+- 监控状态: ${shopConfig.enableMonitoring ? '已启用' : '未启用'}
+---
+### 访问链接
+- 顾客点餐: index.html?shop=${generatedShopId}
+- 后台管理: admin.html?shop=${generatedShopId}
 ---
 *GitHub Actions 会自动检测到此 Issue 并更新 config.js 文件，更新完成后会自动关闭此 Issue。*`;
     
-    // 创建 GitHub Issue 链接
+    // 创建 GitHub Issue URL（使用GitHub的新Issue页面，不是API）
     const labels = 'config-update,auto-merge';
-    const issueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels=${labels}`;
+    const issueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels=${encodeURIComponent(labels)}`;
     
-    console.log('生成的 Issue URL:', issueUrl);
+    console.log('✅ GitHub Issue URL 已生成');
+    console.log('🔗 URL:', issueUrl);
     
-    // 显示提示和链接（不自动打开）
-    const issueLink = document.getElementById('issueLink');
-    issueLink.href = issueUrl;
-    
-    // 创建提示信息
+    // 更新界面 - 显示提示信息
     const linkContainer = document.getElementById('issueLinkContainer');
     linkContainer.innerHTML = `
-        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3; margin-bottom: 15px;">
-            <p style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                <i class="fas fa-info-circle" style="color: #2196F3;"></i>
-                <strong>请点击下方按钮创建GitHub Issue</strong>
-            </p>
-            <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
-                点击后会打开GitHub页面，您需要：
-            </p>
-            <ol style="margin-left: 20px; margin-bottom: 10px; font-size: 14px; color: #666;">
-                <li>确认Issue内容正确</li>
-                <li>点击"Submit new issue"按钮</li>
-                <li>等待GitHub Actions自动更新配置</li>
-            </ol>
-        </div>
-        
-        <a href="${issueUrl}" target="_blank" id="openIssueLink" 
-           style="display: inline-flex; align-items: center; gap: 10px; padding: 12px 24px; 
-                  background: #2da44e; color: white; text-decoration: none; border-radius: 6px; 
-                  font-weight: 600; transition: all 0.3s;">
-            <i class="fab fa-github"></i> 
-            <span>打开GitHub创建Issue</span>
-            <i class="fas fa-external-link-alt" style="font-size: 12px;"></i>
-        </a>
-        
-        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; font-size: 13px;">
-            <i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i>
-            <strong>重要：</strong>请只点击一次按钮，避免创建重复的Issue
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 20px 0;">
+            <div style="display: flex; align-items: start; gap: 12px; margin-bottom: 15px;">
+                <i class="fas fa-info-circle" style="color: #2196F3; font-size: 24px; margin-top: 2px;"></i>
+                <div>
+                    <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #1976d2;">
+                        即将跳转到GitHub创建Issue
+                    </p>
+                    <p style="margin: 0 0 10px 0; font-size: 14px; color: #555;">
+                        页面将在 <strong>2秒后</strong> 自动打开GitHub，请在新打开的页面中：
+                    </p>
+                    <ol style="margin: 10px 0 10px 20px; padding: 0; font-size: 14px; color: #555; line-height: 1.8;">
+                        <li>确认Issue内容已自动填写</li>
+                        <li><strong style="color: #2196F3;">点击绿色的"Submit new issue"按钮</strong></li>
+                        <li>等待GitHub Actions自动更新配置（1-3分钟）</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 12px; border-radius: 6px; border-left: 3px solid #ff9800; margin-top: 15px;">
+                <p style="margin: 0; font-size: 13px; color: #856404; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>重要：</strong>只有在GitHub页面点击"Submit new issue"后才会触发工作流，请不要重复提交
+                </p>
+            </div>
+            
+            <div style="margin-top: 15px; text-align: center;">
+                <a href="${issueUrl}" target="_blank" id="manualIssueLink"
+                   style="display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; 
+                          background: #2da44e; color: white; text-decoration: none; border-radius: 6px; 
+                          font-size: 14px; transition: all 0.3s;">
+                    <i class="fab fa-github"></i>
+                    <span>如果未自动跳转，点击这里</span>
+                    <i class="fas fa-external-link-alt" style="font-size: 12px;"></i>
+                </a>
+            </div>
         </div>
     `;
-    
     linkContainer.style.display = 'block';
     
     // 更新按钮状态
-    createBtn.innerHTML = '<i class="fas fa-check-circle"></i> Issue链接已生成';
+    createBtn.innerHTML = '<i class="fas fa-check-circle"></i> Issue链接已生成，正在跳转...';
     createBtn.style.background = '#4CAF50';
     
-    // 禁用按钮防止重复点击
-    createBtn.onclick = function() {
-        alert('Issue链接已生成，请点击下方的绿色按钮打开GitHub');
-        return false;
-    };
-    
-    // 监听链接点击
+    // 2秒后自动打开GitHub（保留自动打开逻辑）
     setTimeout(() => {
-        const openLink = document.getElementById('openIssueLink');
-        if (openLink) {
-            openLink.onclick = function() {
-                // 标记已点击
-                this.style.background = '#6c757d';
-                this.innerHTML = '<i class="fas fa-check"></i> 已打开GitHub（请在新标签页中提交Issue）';
-                this.onclick = null; // 防止再次点击
-            };
+        console.log('🚀 自动打开GitHub Issue创建页面...');
+        
+        // 使用 window.open 打开新窗口
+        const newWindow = window.open(issueUrl, '_blank', 'noopener,noreferrer');
+        
+        // 检查是否被浏览器阻止
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+            console.warn('⚠️ 浏览器阻止了弹出窗口');
+            
+            // 如果被阻止，更新提示
+            linkContainer.innerHTML = `
+                <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <i class="fas fa-exclamation-triangle" style="color: #ff9800; font-size: 24px; margin-top: 2px;"></i>
+                        <div>
+                            <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #f57c00;">
+                                浏览器阻止了弹出窗口
+                            </p>
+                            <p style="margin: 0 0 15px 0; font-size: 14px; color: #555;">
+                                请点击下方按钮手动打开GitHub创建Issue
+                            </p>
+                            <a href="${issueUrl}" target="_blank"
+                               style="display: inline-flex; align-items: center; gap: 10px; padding: 12px 24px; 
+                                      background: #2da44e; color: white; text-decoration: none; border-radius: 6px; 
+                                      font-size: 16px; font-weight: 600;">
+                                <i class="fab fa-github"></i>
+                                <span>打开GitHub创建Issue</span>
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            console.log('✅ GitHub页面已打开');
+            
+            // 更新提示为成功状态
+            createBtn.innerHTML = '<i class="fas fa-check-circle"></i> 已跳转GitHub，请在新页面中提交Issue';
+            
+            // 更新提示内容
+            setTimeout(() => {
+                linkContainer.innerHTML = `
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; border-left: 4px solid #4CAF50; margin: 20px 0;">
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <i class="fas fa-check-circle" style="color: #4CAF50; font-size: 24px; margin-top: 2px;"></i>
+                            <div>
+                                <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #2e7d32;">
+                                    GitHub页面已打开
+                                </p>
+                                <p style="margin: 0 0 10px 0; font-size: 14px; color: #555;">
+                                    请在新打开的GitHub页面中：
+                                </p>
+                                <ol style="margin: 10px 0 0 20px; padding: 0; font-size: 14px; color: #555; line-height: 1.8;">
+                                    <li>确认Issue标题和内容正确</li>
+                                    <li><strong style="color: #2da44e;">点击"Submit new issue"按钮</strong></li>
+                                    <li>等待GitHub Actions自动更新配置文件</li>
+                                    <li>配置更新完成后Issue会自动关闭</li>
+                                </ol>
+                                <div style="margin-top: 15px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #c8e6c9;">
+                                    <p style="margin: 0; font-size: 13px; color: #2e7d32;">
+                                        <i class="fas fa-clock"></i> 
+                                        预计处理时间：1-3分钟
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }, 500);
         }
-    }, 100);
+        
+        // 禁用按钮，防止重复点击
+        createBtn.disabled = true;
+        createBtn.onclick = function() {
+            alert('Issue链接已生成并打开，请不要重复操作。\n\n如果GitHub页面未打开，请检查浏览器弹出窗口设置。');
+            return false;
+        };
+        
+    }, 2000); // 2秒延迟，给用户看到提示的时间
 }
-
 
         
         // ============================================
