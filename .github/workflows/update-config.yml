@@ -2,7 +2,7 @@ name: Update Config from Issue
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened, edited, labeled]
 
 jobs:
   update-config:
@@ -30,69 +30,121 @@ jobs:
         echo "Issue编号: ${{ github.event.issue.number }}"
         echo "Issue标题: ${{ github.event.issue.title }}"
         echo "Issue标签: ${{ toJson(github.event.issue.labels) }}"
-        echo "Issue内容预览:"
-        echo "${{ github.event.issue.body }}" | head -20
 
     - name: Extract config from issue
       id: extract-config
       run: |
         echo "🔍 开始从Issue中提取JSON配置..."
         
-        # 获取Issue内容
-        ISSUE_BODY='${{ github.event.issue.body }}'
-        echo "Issue内容长度: ${#ISSUE_BODY} 字符"
+        # 获取Issue内容并保存
+        cat > issue_content.txt << 'EOF'
+        ${{ github.event.issue.body }}
+        EOF
         
-        # 保存Issue内容到文件，便于调试
-        echo "$ISSUE_BODY" > issue_content.txt
-        echo "📄 Issue内容已保存到 issue_content.txt"
+        echo "📄 Issue内容已保存"
         
-        # 方法1: 尝试提取JSON对象（从第一个{到最后一个}）
-        echo "尝试方法1: 提取JSON对象..."
-        CONFIG_CONTENT=$(echo "$ISSUE_BODY" | grep -o '{.*}' | head -1)
+        # 创建Python脚本来提取JSON
+        cat > extract_json.py << 'PYTHON'
+import re
+import json
+import sys
+
+try:
+    with open('issue_content.txt', 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    print("原始内容长度:", len(content))
+    
+    # 方法1: 查找```json代码块
+    code_block_pattern = r'```json\s*([\s\S]*?)\s*```'
+    match = re.search(code_block_pattern, content)
+    
+    if match:
+        json_str = match.group(1).strip()
+        print("✅ 从代码块中提取到JSON")
+    else:
+        # 方法2: 查找普通代码块
+        code_block_pattern2 = r'```\s*([\s\S]*?)\s*```'
+        match = re.search(code_block_pattern2, content)
         
-        if [ -n "$CONFIG_CONTENT" ]; then
-          echo "✅ 使用方法1提取到JSON配置"
-        else
-          # 方法2: 使用sed提取{和}之间的内容
-          echo "尝试方法2: 使用sed提取..."
-          CONFIG_CONTENT=$(echo "$ISSUE_BODY" | sed -n '/{/,/}/p' | sed ':a;N;$!ba;s/\n/ /g')
-        fi
+        if match:
+            json_str = match.group(1).strip()
+            print("✅ 从普通代码块中提取到JSON")
+        else:
+            # 方法3: 直接查找JSON对象 (从第一个{到最后一个})
+            start = content.find('{')
+            if start != -1:
+                # 找到匹配的结束括号
+                depth = 0
+                end = start
+                for i in range(start, len(content)):
+                    if content[i] == '{':
+                        depth += 1
+                    elif content[i] == '}':
+                        depth -= 1
+                        if depth == 0:
+                            end = i + 1
+                            break
+                
+                if end > start:
+                    json_str = content[start:end]
+                    print("✅ 从文本中提取到JSON对象")
+                else:
+                    print("❌ 未找到完整的JSON对象")
+                    sys.exit(1)
+            else:
+                print("❌ 未找到JSON内容")
+                sys.exit(1)
+    
+    # 清理和验证JSON
+    json_str = json_str.strip()
+    
+    # 尝试解析
+    try:
+        config = json.loads(json_str)
+        print("✅ JSON解析成功")
+    except json.JSONDecodeError as e:
+        print(f"JSON解析失败，尝试修复: {e}")
+        # 尝试修复常见问题
+        # 1. 去除可能的BOM
+        json_str = json_str.replace('\ufeff', '')
+        # 2. 替换单引号为双引号
+        json_str = re.sub(r"'", '"', json_str)
+        # 3. 修复属性名没有引号的情况
+        json_str = re.sub(r'([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*):', r'\1"\2"\3:', json_str)
         
-        if [ -z "$CONFIG_CONTENT" ]; then
-          echo "❌ 错误: 未找到JSON配置"
-          echo "Issue内容预览:"
-          cat issue_content.txt | head -50
-          exit 1
-        fi
+        config = json.loads(json_str)
+        print("✅ 修复后JSON解析成功")
+    
+    # 保存清理后的JSON
+    with open('new_config.json', 'w', encoding='utf-8') as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+    
+    # 提取商家ID
+    shop_id = list(config.keys())[0]
+    print(f"✅ 商家ID: {shop_id}")
+    
+    # 输出到GitHub Actions
+    with open('shop_id.txt', 'w') as f:
+        f.write(shop_id)
+    
+    print("✅ 配置提取完成")
+    
+except Exception as e:
+    print(f"❌ 错误: {e}")
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
+PYTHON
         
-        echo "✅ 提取到的JSON配置:"
-        echo "$CONFIG_CONTENT"
+        # 运行Python脚本
+        python3 extract_json.py
         
-        # 保存配置到文件
-        echo "$CONFIG_CONTENT" > new_config.json
-        echo "配置已保存到 new_config.json"
-        
-        # 解析商家ID - 提取第一个键名
-        SHOP_ID=$(echo "$CONFIG_CONTENT" | grep -o '\"[^\"]*\"' | head -1 | tr -d '"' | tr -d ':')
-        
-        # 如果没有找到，尝试其他方法
-        if [ -z "$SHOP_ID" ]; then
-          SHOP_ID=$(echo "$CONFIG_CONTENT" | grep -o "'[^']*'" | head -1 | tr -d "'")
-        fi
-        
-        if [ -z "$SHOP_ID" ]; then
-          # 从Issue标题中提取商家ID
-          ISSUE_TITLE='${{ github.event.issue.title }}'
-          SHOP_ID=$(echo "$ISSUE_TITLE" | grep -o 'l_ml[a-z0-9]*' | head -1)
-        fi
-        
-        if [ -z "$SHOP_ID" ]; then
-          echo "⚠️ 警告: 无法提取商家ID，使用默认格式"
-          SHOP_ID="shop_${{ github.event.issue.number }}_$(date +%s)"
-        fi
-        
-        echo "✅ 商家ID: $SHOP_ID"
+        # 读取商家ID
+        SHOP_ID=$(cat shop_id.txt)
         echo "shop_id=$SHOP_ID" >> $GITHUB_OUTPUT
+        
+        echo "✅ 提取完成，商家ID: $SHOP_ID"
 
     - name: Check config.js file
       run: |
@@ -101,8 +153,6 @@ jobs:
         if [ -f "config.js" ]; then
           echo "✅ config.js文件存在"
           echo "文件大小: $(wc -l < config.js) 行"
-          echo "文件前5行:"
-          head -5 config.js
         else
           echo "❌ 错误: config.js文件不存在"
           exit 1
@@ -110,227 +160,178 @@ jobs:
 
     - name: Update config.js with extracted config
       run: |
-        CONFIG_FILE="config.js"
-        NEW_CONFIG_FILE="new_config.json"
         SHOP_ID="${{ steps.extract-config.outputs.shop_id }}"
         
         echo "🔄 开始更新config.js，商家ID: $SHOP_ID"
         
-        # 创建更新脚本 - 使用不同的方法避免转义问题
-        cat > update_script.js << "JAVASCRIPT"
-        const fs = require('fs');
-        const path = require('path');
-        
-        console.log('开始更新config.js...');
-        
-        try {
-          // 读取新配置
-          const newConfigPath = path.join(__dirname, 'new_config.json');
-          let newConfigData = fs.readFileSync(newConfigPath, 'utf8');
-          
-          console.log('新配置数据长度:', newConfigData.length);
-          
-          // 尝试解析JSON
-          let newConfig;
-          try {
-            newConfig = JSON.parse(newConfigData);
-          } catch (error) {
-            console.log('JSON解析失败，尝试修复格式...');
-            // 尝试修复常见的JSON格式问题
-            newConfigData = newConfigData
-              .replace(/'/g, '"')  // 替换单引号为双引号
-              .replace(/(\w+):/g, '"$1":');  // 为键添加双引号
-            newConfig = JSON.parse(newConfigData);
-          }
-          
-          // 获取商家ID和配置
-          const shopIds = Object.keys(newConfig);
-          const shopId = shopIds[0];
-          const shopConfig = newConfig[shopId];
-          
-          console.log('商家ID:', shopId);
-          console.log('商家名称:', shopConfig.name);
-          console.log('菜品数量:', shopConfig.dishes ? shopConfig.dishes.length : 0);
-          
-          // 读取现有的config.js
-          const configFile = path.join(__dirname, 'config.js');
-          let content = fs.readFileSync(configFile, 'utf8');
-          
-          // 准备新的商家配置字符串
-          const newShopConfigStr = "'" + shopId + "': " + JSON.stringify(shopConfig, null, 4);
-          
-          // 查找window.shopConfigs对象
-          const configMatch = content.match(/window\.shopConfigs\s*=\s*(\{[\s\S]*?\};)/);
-          
-          if (!configMatch) {
-            throw new Error('在config.js中找不到window.shopConfigs对象');
-          }
-          
-          console.log('找到shopConfigs对象');
-          
-          // 检查是否已存在该商家
-          if (content.includes("'" + shopId + "':")) {
-            console.log('更新现有商家配置:', shopId);
-            
-            // 查找并替换现有配置
-            // 创建匹配模式：'商家ID': { ... } (跨多行)
-            const existingPattern = new RegExp("'" + shopId + "'\\s*:\\s*\\{[^}]+\\}", 's');
-            
-            if (content.match(existingPattern)) {
-              content = content.replace(existingPattern, newShopConfigStr);
-              console.log('已更新商家:', shopId);
-            } else {
-              // 如果模式不匹配，尝试更宽松的匹配
-              const loosePattern = new RegExp("'" + shopId + "'[\\s\\S]*?\\n\\s*\\}", 'm');
-              content = content.replace(loosePattern, newShopConfigStr);
-              console.log('使用宽松模式更新商家:', shopId);
-            }
-          } else {
-            console.log('添加新商家配置:', shopId);
-            
-            // 找到最后一个商家配置后添加
-            // 查找模式：'商家ID': { ... },\n    };\n
-            const lastEntryPattern = /('([^']+)':\s*\{[^}]+\},?\s*)(\n\s*)(\};)/s;
-            
-            if (content.match(lastEntryPattern)) {
-              console.log('在最后一个商家后添加新配置');
-              content = content.replace(lastEntryPattern, '$1,\n    ' + newShopConfigStr + '$3$4');
-            } else {
-              // 如果上面的模式不匹配，尝试在window.shopConfigs = {后添加
-              console.log('在shopConfigs对象开头添加新配置');
-              content = content.replace(
-                /(window\.shopConfigs\s*=\s*\{)/,
-                '$1\n    ' + newShopConfigStr + ','
-              );
-            }
-          }
-          
-          // 保存更新
-          fs.writeFileSync(configFile, content);
-          console.log('✅ config.js已成功更新！');
-          
-          // 验证更新
-          console.log('\n验证更新:');
-          const updatedContent = fs.readFileSync(configFile, 'utf8');
-          if (updatedContent.includes("'" + shopId + "':")) {
-            console.log('✅ 商家', shopId, '已成功添加到config.js');
-          } else {
-            console.log('⚠️ 警告: 商家', shopId, '可能未正确添加');
-          }
-          
-        } catch (error) {
-          console.error('❌ 更新config.js失败:', error.message);
-          console.error(error.stack);
-          process.exit(1);
-        }
-        JAVASCRIPT
+        # 创建更新脚本
+        cat > update_script.js << 'JAVASCRIPT'
+const fs = require('fs');
+const path = require('path');
+
+console.log('开始更新config.js...');
+
+try {
+  // 读取新配置
+  const newConfigPath = path.join(__dirname, 'new_config.json');
+  const newConfig = JSON.parse(fs.readFileSync(newConfigPath, 'utf8'));
+  
+  // 获取商家ID和配置
+  const shopIds = Object.keys(newConfig);
+  const shopId = shopIds[0];
+  const shopConfig = newConfig[shopId];
+  
+  console.log('商家ID:', shopId);
+  console.log('商家名称:', shopConfig.name);
+  console.log('菜品数量:', shopConfig.dishes ? shopConfig.dishes.length : 0);
+  
+  // 读取现有的config.js
+  const configFile = path.join(__dirname, 'config.js');
+  let content = fs.readFileSync(configFile, 'utf8');
+  
+  // 检查文件格式
+  if (!content.includes('window.shopConfigs')) {
+    throw new Error('config.js文件格式不正确：找不到window.shopConfigs');
+  }
+  
+  // 准备新的商家配置字符串（格式化为4空格缩进）
+  const configStr = JSON.stringify(shopConfig, null, 4)
+    .split('\n')
+    .map((line, idx) => idx === 0 ? line : '    ' + line)
+    .join('\n');
+  
+  const newShopConfigStr = `'${shopId}': ${configStr}`;
+  
+  // 检查商家是否已存在
+  const shopExists = content.includes(`'${shopId}':`);
+  
+  if (shopExists) {
+    console.log('更新现有商家配置:', shopId);
+    
+    // 使用正则匹配并替换整个商家配置块
+    const pattern = new RegExp(
+      `'${shopId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'\\s*:\\s*\\{[\\s\\S]*?\\n\\s*\\}`,
+      'g'
+    );
+    
+    content = content.replace(pattern, newShopConfigStr);
+    console.log('✅ 已更新商家配置');
+  } else {
+    console.log('添加新商家配置:', shopId);
+    
+    // 在最后一个商家配置后添加（在}; 之前）
+    const closingPattern = /(\n\s*)\};/;
+    
+    if (content.match(closingPattern)) {
+      content = content.replace(
+        closingPattern,
+        `,\n    ${newShopConfigStr}$1};`
+      );
+    } else {
+      // 如果找不到结束符，在shopConfigs = { 后添加
+      content = content.replace(
+        /(window\.shopConfigs\s*=\s*\{\s*)/,
+        `$1\n    ${newShopConfigStr},`
+      );
+    }
+    console.log('✅ 已添加新商家配置');
+  }
+  
+  // 保存更新
+  fs.writeFileSync(configFile, content, 'utf8');
+  console.log('✅ config.js已成功更新！');
+  
+  // 验证
+  const updatedContent = fs.readFileSync(configFile, 'utf8');
+  if (updatedContent.includes(`'${shopId}':`)) {
+    console.log('✅ 验证成功：商家配置已添加');
+  } else {
+    throw new Error('验证失败：未找到商家配置');
+  }
+  
+} catch (error) {
+  console.error('❌ 更新失败:', error.message);
+  console.error(error.stack);
+  process.exit(1);
+}
+JAVASCRIPT
         
         # 运行更新脚本
         node update_script.js
-        echo "✅ config.js更新完成"
 
     - name: Commit and push changes
       run: |
         echo "📝 提交更改..."
         
-        git config --global user.name "GitHub Actions"
+        git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
         
-        # 检查是否有更改
-        if git diff --quiet config.js; then
-          echo "⚠️ 没有检测到config.js的更改"
-          echo "可能的原因:"
-          echo "1. 商家配置已存在且内容相同"
-          echo "2. 更新过程中出现错误"
-          echo "3. config.js文件格式不匹配"
-          
-          # 显示diff以帮助调试
-          echo "显示差异:"
-          git diff config.js || true
+        git add config.js
+        
+        if git diff --staged --quiet; then
+          echo "⚠️ 没有更改需要提交（配置可能已存在）"
         else
-          echo "✅ 检测到config.js的更改"
-          git add config.js
-          git commit -m "更新商家配置: ${{ steps.extract-config.outputs.shop_id }} [自动更新]"
+          git commit -m "🔧 更新商家配置: ${{ steps.extract-config.outputs.shop_id }}"
           git push
           echo "✅ 更改已提交并推送"
         fi
 
     - name: Comment on issue
       if: success()
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
-          const issueNumber = context.issue.number;
           const shopId = '${{ steps.extract-config.outputs.shop_id }}';
           
-          console.log(`在Issue #${issueNumber}上添加评论，商家ID: ${shopId}`);
-          
-          try {
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: `✅ 配置已自动更新！\n\n商家 **${shopId}** 的配置已成功添加到config.js文件中。\n\n您可以立即访问：\n- 顾客端: index.html?shop=${shopId}\n- 管理端: admin.html?shop=${shopId}\n\n此Issue将在10秒后自动关闭。`
-            });
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: `✅ **配置已自动更新成功！**
             
-            console.log('评论已添加');
-            
-            // 关闭Issue
-            setTimeout(async () => {
-              try {
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issueNumber,
-                  state: 'closed'
-                });
-                console.log(`Issue #${issueNumber} 已关闭`);
-              } catch (closeError) {
-                console.error(`关闭Issue失败: ${closeError.message}`);
-              }
-            }, 10000);
-            
-          } catch (error) {
-            console.error(`添加评论失败: ${error.message}`);
-          }
+**商家信息**
+- 商家ID: \`${shopId}\`
+- 配置文件: config.js
 
-    - name: Update issue labels
-      if: success()
-      uses: actions/github-script@v6
+**访问链接**
+- 🛍️ 顾客端: \`index.html?shop=${shopId}\`
+- 🔧 管理端: \`admin.html?shop=${shopId}\`
+
+此Issue将自动关闭。`
+          });
+          
+          // 添加标签
+          await github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: ['auto-updated', 'completed']
+          });
+          
+          // 关闭Issue
+          await github.rest.issues.update({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            state: 'closed'
+          });
+
+    - name: Failure notification
+      if: failure()
+      uses: actions/github-script@v7
       with:
         script: |
-          const issueNumber = context.issue.number;
-          
-          console.log(`更新Issue #${issueNumber}的标签`);
-          
-          try {
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              labels: ['auto-updated', 'config-complete']
-            });
-            console.log('标签已更新');
-          } catch (error) {
-            console.error(`更新标签失败: ${error.message}`);
-          }
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: `❌ **配置更新失败**
+            
+请检查：
+1. ✅ Issue中是否包含有效的JSON配置（可以用代码块包裹）
+2. ✅ JSON格式是否正确
+3. ✅ config.js文件是否存在
+4. ✅ GitHub Token权限是否足够
 
-    - name: Success message
-      if: success()
-      run: |
-        echo "🎉 工作流执行成功！"
-        echo "商家ID: ${{ steps.extract-config.outputs.shop_id }}"
-        echo "配置已成功更新到config.js文件"
-        echo "您可以在仓库中查看更新后的config.js文件"
-
-    - name: Failure message
-      if: failure()
-      run: |
-        echo "❌ 工作流执行失败"
-        echo "请检查以下可能的问题:"
-        echo "1. Issue中是否包含有效的JSON配置"
-        echo "2. config.js文件是否存在"
-        echo "3. JSON格式是否正确"
-        echo "4. Git推送权限是否足够"
-        echo ""
-        echo "详细错误信息请查看上面的步骤日志"
+请查看 [Actions日志](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) 了解详细错误信息。`
+          });
