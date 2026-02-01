@@ -3,8 +3,32 @@ on:
   issues:
     types: [opened, labeled]
 jobs:
+  # 调试任务：总是运行，帮助我们看到触发信息
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 调试信息
+        run: |
+          echo "======================================"
+          echo "🔍 工作流被触发（调试模式）"
+          echo "======================================"
+          echo "事件类型: ${{ github.event.action }}"
+          echo "Issue编号: ${{ github.event.issue.number }}"
+          echo "Issue标题: ${{ github.event.issue.title }}"
+          echo "======================================"
+          echo "标签信息:"
+          echo '${{ toJson(github.event.issue.labels) }}'
+          echo "======================================"
+          echo "检查是否包含config-update标签:"
+          if echo '${{ toJson(github.event.issue.labels) }}' | grep -q '"name":"config-update"'; then
+            echo "✅ 找到config-update标签"
+          else
+            echo "❌ 未找到config-update标签"
+            echo "当前标签列表:"
+            echo '${{ toJson(github.event.issue.labels) }}' | grep -o '"name":"[^"]*"'
+          fi
+          echo "======================================"
   update-config:
-    # 只有当Issue包含config-update标签时才运行
     if: contains(github.event.issue.labels.*.name, 'config-update')
     runs-on: ubuntu-latest
     
@@ -20,25 +44,23 @@ jobs:
         node-version: '18'
     - name: Debug - Show event info
       run: |
-        echo "🎯 工作流被触发"
+        echo "🎯 主工作流开始执行"
         echo "事件名称: ${{ github.event_name }}"
-        echo "仓库: ${{ github.repository }}"
         echo "Issue编号: ${{ github.event.issue.number }}"
-        echo "Issue标题: ${{ github.event.issue.title }}"
     - name: Extract config from issue
       id: extract-config
       run: |
         echo "🔍 开始从Issue中提取JSON配置..."
         
-        # 使用heredoc安全地保存Issue内容（避免shell解析问题）
+        # 使用heredoc安全地保存Issue内容
         cat > issue_content.txt << 'ISSUE_BODY_EOF'
         ${{ github.event.issue.body }}
         ISSUE_BODY_EOF
         
-        echo "📄 Issue内容已保存到 issue_content.txt"
+        echo "📄 Issue内容已保存"
         echo "内容长度: $(wc -c < issue_content.txt) 字节"
         
-        # 使用Python提取JSON（更安全可靠）
+        # 使用Python提取JSON
         python3 << 'PYTHON_SCRIPT_EOF'
 import re
 import json
@@ -61,7 +83,7 @@ try:
             json_str = match.group(1).strip()
             print("✅ 从普通代码块提取")
         else:
-            # 方法3: 智能提取JSON对象（匹配括号）
+            # 方法3: 智能提取JSON对象
             start = content.find('{')
             if start != -1:
                 depth = 0
@@ -80,20 +102,9 @@ try:
                 raise ValueError("未找到JSON内容")
     
     print(f"JSON长度: {len(json_str)} 字符")
-    print(f"JSON前100字符: {json_str[:100]}")
     
     # 解析JSON
-    try:
-        config = json.loads(json_str)
-        print("✅ JSON解析成功")
-    except json.JSONDecodeError as e:
-        print(f"⚠️ JSON解析失败: {e}")
-        print("尝试修复格式...")
-        json_str = json_str.replace('\ufeff', '')  # 移除BOM
-        config = json.loads(json_str)
-        print("✅ 修复后解析成功")
-    
-    # 提取商家ID
+    config = json.loads(json_str)
     shop_id = list(config.keys())[0]
     shop_config = config[shop_id]
     
@@ -136,7 +147,7 @@ except Exception as e:
           echo "❌ 错误: config.js文件不存在"
           exit 1
         fi
-    - name: Update config.js with extracted config
+    - name: Update config.js
       run: |
         SHOP_ID="${{ steps.extract-config.outputs.shop_id }}"
         
@@ -149,7 +160,6 @@ except Exception as e:
         else
           echo "使用内联更新脚本"
           
-          # 创建临时更新脚本
           cat > temp_update.js << 'JAVASCRIPT_EOF'
 const fs = require('fs');
 try {
@@ -243,7 +253,4 @@ JAVASCRIPT_EOF
       if: failure()
       run: |
         echo "❌ 工作流执行失败"
-        echo "请检查以下可能的问题:"
-        echo "1. Issue中是否包含有效的JSON配置"
-        echo "2. config.js文件是否存在"
-        echo "3. JSON格式是否正确"
+        echo "请检查日志了解详细错误信息"
