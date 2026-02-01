@@ -199,6 +199,31 @@ window.shopConfigs = {
         }
     ]
 }
+,
+    'm_ml3o4k6o6r6y': {
+    "name": "苗家烧鸡",
+    "themeColor": "#e63946",
+    "logo": "images/logo.png",
+    "qrcode": "https://slonbvmhsxqgpoodwazj.supabase.co/storage/v1/object/public/shop-qrcodes/m_ml3o4k6o6r6y_wechat_qrcode_1769945961266.png",
+    "dishes": [
+        {
+            "id": 1,
+            "name": "招牌炸酱面",
+            "price": 15,
+            "emoji": "🍜",
+            "category": "主食",
+            "tags": []
+        },
+        {
+            "id": 2,
+            "name": "麻辣烫套餐",
+            "price": 18,
+            "emoji": "🥘",
+            "category": "主食",
+            "tags": []
+        }
+    ]
+}
 };
 
 // 获取当前商家ID
