@@ -49,6 +49,31 @@ window.shopConfigs = {
             { id: 7, name: '可乐', price: 4, emoji: '🥤', category: '饮料', tags: [] },
         ]
     }
+,
+    'l_ml3jkn76b6qp': {
+    "name": "老王油泼面",
+    "themeColor": "#e63946",
+    "logo": "images/logo.png",
+    "qrcode": "https://slonbvmhsxqgpoodwazj.supabase.co/storage/v1/object/public/shop-qrcodes/l_ml3jkn76b6qp_wechat_qrcode_1769938313587.png",
+    "dishes": [
+        {
+            "id": 1,
+            "name": "招牌炸酱面",
+            "price": 15,
+            "emoji": "🍜",
+            "category": "主食",
+            "tags": []
+        },
+        {
+            "id": 2,
+            "name": "麻辣烫套餐",
+            "price": 18,
+            "emoji": "🥘",
+            "category": "主食",
+            "tags": []
+        }
+    ]
+}
 };
 
 // 获取当前商家ID
