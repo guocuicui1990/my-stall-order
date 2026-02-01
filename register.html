@@ -6,7 +6,7 @@
     <title>商家自助注册系统</title>
     <style>
         * {
-            margin: 0;
+            Margin:å 0;
             padding: 0;
             box-sizing: border-box;
         }
@@ -2354,52 +2354,27 @@ console.log('✅ 商家配置加载完成');`;
     createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
     createBtn.disabled = true;
     
-    // 生成配置数据 - 确保是纯 JSON
+    // 生成配置数据
     const configUpdate = generateGitHubConfigUpdate();
+    const configJson = JSON.stringify(configUpdate, null, 2);
     
     // 创建 Issue 标题和内容
     const issueTitle = `[商家注册] ${shopConfig.name} - ${generatedShopId}`;
-    
-    // 重要：JSON 必须是干净、格式正确的 JSON，不要混入 Markdown
-    const configJson = JSON.stringify(configUpdate, null, 2);
-    
     const issueBody = `# 🏪 商家注册配置更新
-
 **商家名称：** ${shopConfig.name}
 **商家ID：** ${generatedShopId}
 **联系人：** ${shopConfig.contact.name}
 **电话：** ${shopConfig.contact.phone}
 **注册时间：** ${new Date().toLocaleString()}
-
 ## 🔧 配置更新内容
-
 请将以下配置添加到 \`config.js\` 文件的 \`window.shopConfigs\` 对象中：
-
 \`\`\`json
 ${configJson}
 \`\`\`
-
 ## 🤖 自动化处理说明
-
 此 Issue 由商家自助注册系统自动创建。
-
 **标签：** config-update, auto-merge
-**状态：** 待处理
-
-## 📋 系统信息
-- 菜品数量: ${shopConfig.dishes.length} 个
-- 主题颜色: ${shopConfig.themeColor}
-- 收款方式: ${shopConfig.qrCodes?.wechat ? '微信' : ''}${shopConfig.qrCodes?.alipay ? '支付宝' : ''}
-- 监控状态: ${shopConfig.enableMonitoring ? '已启用' : '未启用'}
-
 ---
-
-### 访问链接
-- 顾客点餐: index.html?shop=${generatedShopId}
-- 后台管理: admin.html?shop=${generatedShopId}
-
----
-
 *GitHub Actions 会自动检测到此 Issue 并更新 config.js 文件，更新完成后会自动关闭此 Issue。*`;
     
     // 创建 GitHub Issue 链接
@@ -2407,20 +2382,71 @@ ${configJson}
     const issueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels=${labels}`;
     
     console.log('生成的 Issue URL:', issueUrl);
-    console.log('配置 JSON:', configJson);
     
-    // 显示链接并自动打开
+    // 显示提示和链接（不自动打开）
     const issueLink = document.getElementById('issueLink');
     issueLink.href = issueUrl;
-    document.getElementById('issueLinkContainer').style.display = 'block';
     
-    // 延迟打开新窗口
+    // 创建提示信息
+    const linkContainer = document.getElementById('issueLinkContainer');
+    linkContainer.innerHTML = `
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3; margin-bottom: 15px;">
+            <p style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-info-circle" style="color: #2196F3;"></i>
+                <strong>请点击下方按钮创建GitHub Issue</strong>
+            </p>
+            <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+                点击后会打开GitHub页面，您需要：
+            </p>
+            <ol style="margin-left: 20px; margin-bottom: 10px; font-size: 14px; color: #666;">
+                <li>确认Issue内容正确</li>
+                <li>点击"Submit new issue"按钮</li>
+                <li>等待GitHub Actions自动更新配置</li>
+            </ol>
+        </div>
+        
+        <a href="${issueUrl}" target="_blank" id="openIssueLink" 
+           style="display: inline-flex; align-items: center; gap: 10px; padding: 12px 24px; 
+                  background: #2da44e; color: white; text-decoration: none; border-radius: 6px; 
+                  font-weight: 600; transition: all 0.3s;">
+            <i class="fab fa-github"></i> 
+            <span>打开GitHub创建Issue</span>
+            <i class="fas fa-external-link-alt" style="font-size: 12px;"></i>
+        </a>
+        
+        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px; font-size: 13px;">
+            <i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i>
+            <strong>重要：</strong>请只点击一次按钮，避免创建重复的Issue
+        </div>
+    `;
+    
+    linkContainer.style.display = 'block';
+    
+    // 更新按钮状态
+    createBtn.innerHTML = '<i class="fas fa-check-circle"></i> Issue链接已生成';
+    createBtn.style.background = '#4CAF50';
+    
+    // 禁用按钮防止重复点击
+    createBtn.onclick = function() {
+        alert('Issue链接已生成，请点击下方的绿色按钮打开GitHub');
+        return false;
+    };
+    
+    // 监听链接点击
     setTimeout(() => {
-        window.open(issueUrl, '_blank');
-        createBtn.innerHTML = '<i class="fab fa-github"></i> GitHub Issue 已生成';
-        createBtn.disabled = false;
-    }, 1000);
+        const openLink = document.getElementById('openIssueLink');
+        if (openLink) {
+            openLink.onclick = function() {
+                // 标记已点击
+                this.style.background = '#6c757d';
+                this.innerHTML = '<i class="fas fa-check"></i> 已打开GitHub（请在新标签页中提交Issue）';
+                this.onclick = null; // 防止再次点击
+            };
+        }
+    }, 100);
 }
+
+
         
         // ============================================
         // 工具函数
