@@ -3,33 +3,39 @@ on:
   issues:
     types: [opened, labeled]
 jobs:
-  # 调试任务：总是运行，帮助我们看到触发信息
-  debug:
+  # 第一个任务：总是运行，用于调试
+  check-labels:
     runs-on: ubuntu-latest
+    outputs:
+      has-label: ${{ steps.check.outputs.has-label }}
     steps:
-      - name: 调试信息
+      - name: 检查标签
+        id: check
         run: |
           echo "======================================"
-          echo "🔍 工作流被触发（调试模式）"
+          echo "🔍 检查Issue标签"
           echo "======================================"
-          echo "事件类型: ${{ github.event.action }}"
           echo "Issue编号: ${{ github.event.issue.number }}"
           echo "Issue标题: ${{ github.event.issue.title }}"
+          echo "事件类型: ${{ github.event.action }}"
           echo "======================================"
-          echo "标签信息:"
-          echo '${{ toJson(github.event.issue.labels) }}'
-          echo "======================================"
-          echo "检查是否包含config-update标签:"
-          if echo '${{ toJson(github.event.issue.labels) }}' | grep -q '"name":"config-update"'; then
+          
+          # 检查是否有config-update标签
+          LABELS='${{ toJson(github.event.issue.labels) }}'
+          echo "标签JSON: $LABELS"
+          
+          if echo "$LABELS" | grep -q '"name":"config-update"'; then
             echo "✅ 找到config-update标签"
+            echo "has-label=true" >> $GITHUB_OUTPUT
           else
             echo "❌ 未找到config-update标签"
-            echo "当前标签列表:"
-            echo '${{ toJson(github.event.issue.labels) }}' | grep -o '"name":"[^"]*"'
+            echo "has-label=false" >> $GITHUB_OUTPUT
           fi
           echo "======================================"
+  # 第二个任务：只有标签存在时才运行
   update-config:
-    if: contains(github.event.issue.labels.*.name, 'config-update')
+    needs: check-labels
+    if: needs.check-labels.outputs.has-label == 'true'
     runs-on: ubuntu-latest
     
     steps:
@@ -44,8 +50,7 @@ jobs:
         node-version: '18'
     - name: Debug - Show event info
       run: |
-        echo "🎯 主工作流开始执行"
-        echo "事件名称: ${{ github.event_name }}"
+        echo "🎯 开始更新配置"
         echo "Issue编号: ${{ github.event.issue.number }}"
     - name: Extract config from issue
       id: extract-config
@@ -59,6 +64,11 @@ jobs:
         
         echo "📄 Issue内容已保存"
         echo "内容长度: $(wc -c < issue_content.txt) 字节"
+        
+        # 显示前200字符用于调试
+        echo "内容预览:"
+        head -c 200 issue_content.txt
+        echo ""
         
         # 使用Python提取JSON
         python3 << 'PYTHON_SCRIPT_EOF'
@@ -102,6 +112,7 @@ try:
                 raise ValueError("未找到JSON内容")
     
     print(f"JSON长度: {len(json_str)} 字符")
+    print(f"JSON前100字符: {json_str[:100]}")
     
     # 解析JSON
     config = json.loads(json_str)
@@ -230,27 +241,9 @@ JAVASCRIPT_EOF
             body: `✅ 配置已自动更新！\n\n商家 **${shopId}** 的配置已成功添加到config.js文件中。\n\n您可以立即访问：\n- 顾客端: index.html?shop=${shopId}\n- 管理端: admin.html?shop=${shopId}`
           });
           
-          await github.rest.issues.addLabels({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            labels: ['auto-updated', 'config-complete']
-          });
-          
           await github.rest.issues.update({
             owner: context.repo.owner,
             repo: context.repo.repo,
             issue_number: context.issue.number,
             state: 'closed'
           });
-    - name: Success message
-      if: success()
-      run: |
-        echo "🎉 工作流执行成功！"
-        echo "商家ID: ${{ steps.extract-config.outputs.shop_id }}"
-        echo "配置已成功更新到config.js文件"
-    - name: Failure message
-      if: failure()
-      run: |
-        echo "❌ 工作流执行失败"
-        echo "请检查日志了解详细错误信息"
