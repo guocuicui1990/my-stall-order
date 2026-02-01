@@ -1,4 +1,4 @@
-name: Update Config from Issue - DIAGNOSTIC VERSION
+name: Update Config from Issue
 on:
   issues:
     types: [opened, labeled]
@@ -9,101 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: "🔍 DIAGNOSTIC 1 - Workflow Triggered"
-      run: |
-        echo "======================================"
-        echo "🎯 工作流已成功触发！"
-        echo "======================================"
-        echo "触发时间: $(date)"
-        echo "工作流名称: Update Config from Issue - DIAGNOSTIC"
-        echo "======================================"
-    - name: "🔍 DIAGNOSTIC 2 - Event Information"
-      run: |
-        echo "======================================"
-        echo "📋 事件详细信息"
-        echo "======================================"
-        echo "事件名称: ${{ github.event_name }}"
-        echo "事件类型: ${{ github.event.action }}"
-        echo "仓库: ${{ github.repository }}"
-        echo "仓库所有者: ${{ github.repository_owner }}"
-        echo "分支: ${{ github.ref }}"
-        echo "提交SHA: ${{ github.sha }}"
-        echo "======================================"
-    - name: "🔍 DIAGNOSTIC 3 - Issue Information"
-      run: |
-        echo "======================================"
-        echo "📄 Issue详细信息"
-        echo "======================================"
-        echo "Issue编号: ${{ github.event.issue.number }}"
-        echo "Issue标题: ${{ github.event.issue.title }}"
-        echo "Issue状态: ${{ github.event.issue.state }}"
-        echo "Issue创建者: ${{ github.event.issue.user.login }}"
-        echo "Issue创建时间: ${{ github.event.issue.created_at }}"
-        echo "Issue更新时间: ${{ github.event.issue.updated_at }}"
-        echo "======================================"
-    - name: "🔍 DIAGNOSTIC 4 - Labels Information"
-      run: |
-        echo "======================================"
-        echo "🏷️ 标签详细信息"
-        echo "======================================"
-        echo "标签数量: ${{ github.event.issue.labels[0] && '有标签' || '无标签' }}"
-        echo "======================================"
-        echo "标签详细JSON:"
-        echo '${{ toJson(github.event.issue.labels) }}'
-        echo "======================================"
-        echo "检查config-update标签:"
-        if echo '${{ toJson(github.event.issue.labels) }}' | grep -q "config-update"; then
-          echo "✅ 找到 config-update 标签"
-        else
-          echo "❌ 未找到 config-update 标签"
-        fi
-        echo "======================================"
-    - name: "🔍 DIAGNOSTIC 5 - IF Condition Check"
-      run: |
-        echo "======================================"
-        echo "🔎 IF条件检查"
-        echo "======================================"
-        echo "原始条件: contains(github.event.issue.labels.*.name, 'config-update')"
-        echo "======================================"
-        echo "标签列表处理:"
-        labels='${{ toJson(github.event.issue.labels) }}'
-        echo "原始标签JSON: $labels"
-        echo "======================================"
-        echo "提取标签名称:"
-        echo "$labels" | jq -r '.[].name' || echo "无法解析标签"
-        echo "======================================"
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.GH_TOKEN }}
         fetch-depth: 0
-    - name: "🔍 DIAGNOSTIC 6 - Repository Files"
-      run: |
-        echo "======================================"
-        echo "📁 仓库文件结构"
-        echo "======================================"
-        echo "当前目录: $(pwd)"
-        echo "======================================"
-        echo "根目录文件:"
-        ls -la
-        echo "======================================"
-        echo "检查关键文件:"
-        [ -f "config.js" ] && echo "✅ config.js 存在" || echo "❌ config.js 不存在"
-        [ -f "update_config.js" ] && echo "✅ update_config.js 存在" || echo "❌ update_config.js 不存在"
-        echo "======================================"
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
-    - name: "🔍 DIAGNOSTIC 7 - Node Environment"
-      run: |
-        echo "======================================"
-        echo "🟢 Node.js环境信息"
-        echo "======================================"
-        echo "Node版本: $(node --version)"
-        echo "NPM版本: $(npm --version)"
-        echo "Python版本: $(python3 --version)"
-        echo "======================================"
     - name: Debug - Show event info
       run: |
         echo "🎯 工作流被触发"
@@ -111,101 +25,106 @@ jobs:
         echo "仓库: ${{ github.repository }}"
         echo "Issue编号: ${{ github.event.issue.number }}"
         echo "Issue标题: ${{ github.event.issue.title }}"
-        echo "Issue标签: ${{ toJson(github.event.issue.labels) }}"
-        echo "Issue内容预览:"
-        echo "${{ github.event.issue.body }}" | head -20
-    - name: "🔍 DIAGNOSTIC 8 - Issue Body Content"
-      run: |
-        echo "======================================"
-        echo "📝 Issue内容详细信息"
-        echo "======================================"
-        ISSUE_BODY='${{ github.event.issue.body }}'
-        echo "内容长度: ${#ISSUE_BODY} 字符"
-        echo "======================================"
-        echo "内容前500字符:"
-        echo "$ISSUE_BODY" | head -c 500
-        echo ""
-        echo "======================================"
-        echo "内容是否包含JSON标记:"
-        echo "$ISSUE_BODY" | grep -q "{" && echo "✅ 包含 { 符号" || echo "❌ 不包含 { 符号"
-        echo "$ISSUE_BODY" | grep -q "}" && echo "✅ 包含 } 符号" || echo "❌ 不包含 } 符号"
-        echo "$ISSUE_BODY" | grep -q "```" && echo "✅ 包含代码块标记" || echo "❌ 不包含代码块标记"
-        echo "======================================"
     - name: Extract config from issue
       id: extract-config
       run: |
         echo "🔍 开始从Issue中提取JSON配置..."
         
-        # 获取Issue内容
-        ISSUE_BODY='${{ github.event.issue.body }}'
-        echo "Issue内容长度: ${#ISSUE_BODY} 字符"
+        # 使用heredoc安全地保存Issue内容（避免shell解析问题）
+        cat > issue_content.txt << 'ISSUE_BODY_EOF'
+        ${{ github.event.issue.body }}
+        ISSUE_BODY_EOF
         
-        # 保存Issue内容到文件，便于调试
-        echo "$ISSUE_BODY" > issue_content.txt
         echo "📄 Issue内容已保存到 issue_content.txt"
+        echo "内容长度: $(wc -c < issue_content.txt) 字节"
         
-        # 方法1: 尝试提取JSON对象（从第一个{到最后一个}）
-        echo "尝试方法1: 提取JSON对象..."
-        CONFIG_CONTENT=$(echo "$ISSUE_BODY" | grep -o '{.*}' | head -1)
+        # 使用Python提取JSON（更安全可靠）
+        python3 << 'PYTHON_SCRIPT_EOF'
+import re
+import json
+import sys
+try:
+    with open('issue_content.txt', 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    print(f"📊 原始内容: {len(content)} 字符")
+    
+    # 方法1: 提取```json代码块
+    match = re.search(r'```json\s*([\s\S]*?)\s*```', content)
+    if match:
+        json_str = match.group(1).strip()
+        print("✅ 从```json代码块提取")
+    else:
+        # 方法2: 提取普通```代码块
+        match = re.search(r'```\s*([\s\S]*?)\s*```', content)
+        if match:
+            json_str = match.group(1).strip()
+            print("✅ 从普通代码块提取")
+        else:
+            # 方法3: 智能提取JSON对象（匹配括号）
+            start = content.find('{')
+            if start != -1:
+                depth = 0
+                for i in range(start, len(content)):
+                    if content[i] == '{':
+                        depth += 1
+                    elif content[i] == '}':
+                        depth -= 1
+                        if depth == 0:
+                            json_str = content[start:i+1]
+                            print(f"✅ 提取JSON对象 [{start}:{i+1}]")
+                            break
+                else:
+                    raise ValueError("未找到完整的JSON对象")
+            else:
+                raise ValueError("未找到JSON内容")
+    
+    print(f"JSON长度: {len(json_str)} 字符")
+    print(f"JSON前100字符: {json_str[:100]}")
+    
+    # 解析JSON
+    try:
+        config = json.loads(json_str)
+        print("✅ JSON解析成功")
+    except json.JSONDecodeError as e:
+        print(f"⚠️ JSON解析失败: {e}")
+        print("尝试修复格式...")
+        json_str = json_str.replace('\ufeff', '')  # 移除BOM
+        config = json.loads(json_str)
+        print("✅ 修复后解析成功")
+    
+    # 提取商家ID
+    shop_id = list(config.keys())[0]
+    shop_config = config[shop_id]
+    
+    print(f"✅ 商家ID: {shop_id}")
+    print(f"✅ 商家名称: {shop_config.get('name', 'N/A')}")
+    print(f"✅ 菜品数量: {len(shop_config.get('dishes', []))}")
+    
+    # 保存结果
+    with open('new_config.json', 'w', encoding='utf-8') as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+    
+    with open('shop_id.txt', 'w') as f:
+        f.write(shop_id)
+    
+    print("✅ 配置提取完成")
+except Exception as e:
+    print(f"❌ 错误: {e}")
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
+        PYTHON_SCRIPT_EOF
         
-        if [ -n "$CONFIG_CONTENT" ]; then
-          echo "✅ 使用方法1提取到JSON配置"
-        else
-          # 方法2: 使用sed提取{和}之间的内容
-          echo "尝试方法2: 使用sed提取..."
-          CONFIG_CONTENT=$(echo "$ISSUE_BODY" | sed -n '/{/,/}/p' | sed ':a;N;$!ba;s/\n/ /g')
-        fi
-        
-        if [ -z "$CONFIG_CONTENT" ]; then
-          echo "❌ 错误: 未找到JSON配置"
-          echo "Issue内容预览:"
-          cat issue_content.txt | head -50
+        # 读取商家ID
+        if [ ! -f "shop_id.txt" ]; then
+          echo "❌ 提取失败：未生成shop_id.txt"
           exit 1
         fi
         
-        echo "✅ 提取到的JSON配置:"
-        echo "$CONFIG_CONTENT"
-        
-        # 保存配置到文件
-        echo "$CONFIG_CONTENT" > new_config.json
-        echo "配置已保存到 new_config.json"
-        
-        # 解析商家ID - 提取第一个键名
-        SHOP_ID=$(echo "$CONFIG_CONTENT" | grep -o '\"[^\"]*\"' | head -1 | tr -d '"' | tr -d ':')
-        
-        # 如果没有找到，尝试其他方法
-        if [ -z "$SHOP_ID" ]; then
-          SHOP_ID=$(echo "$CONFIG_CONTENT" | grep -o "'[^']*'" | head -1 | tr -d "'")
-        fi
-        
-        if [ -z "$SHOP_ID" ]; then
-          # 从Issue标题中提取商家ID
-          ISSUE_TITLE='${{ github.event.issue.title }}'
-          SHOP_ID=$(echo "$ISSUE_TITLE" | grep -o 'l_ml[a-z0-9]*' | head -1)
-        fi
-        
-        if [ -z "$SHOP_ID" ]; then
-          echo "⚠️ 警告: 无法提取商家ID，使用默认格式"
-          SHOP_ID="shop_${{ github.event.issue.number }}_$(date +%s)"
-        fi
-        
-        echo "✅ 商家ID: $SHOP_ID"
+        SHOP_ID=$(cat shop_id.txt)
         echo "shop_id=$SHOP_ID" >> $GITHUB_OUTPUT
-    - name: "🔍 DIAGNOSTIC 9 - Extraction Results"
-      run: |
-        echo "======================================"
-        echo "📊 提取结果检查"
-        echo "======================================"
-        echo "商家ID: ${{ steps.extract-config.outputs.shop_id }}"
-        echo "======================================"
-        [ -f "issue_content.txt" ] && echo "✅ issue_content.txt 存在" || echo "❌ issue_content.txt 不存在"
-        [ -f "new_config.json" ] && echo "✅ new_config.json 存在" || echo "❌ new_config.json 不存在"
-        echo "======================================"
-        if [ -f "new_config.json" ]; then
-          echo "new_config.json 内容:"
-          cat new_config.json
-        fi
-        echo "======================================"
+        echo "✅ 最终商家ID: $SHOP_ID"
     - name: Check config.js file
       run: |
         echo "📄 检查config.js文件..."
@@ -213,63 +132,118 @@ jobs:
         if [ -f "config.js" ]; then
           echo "✅ config.js文件存在"
           echo "文件大小: $(wc -l < config.js) 行"
-          echo "文件前5行:"
-          head -5 config.js
         else
           echo "❌ 错误: config.js文件不存在"
           exit 1
         fi
-    - name: "🔍 DIAGNOSTIC 10 - Workflow Status Summary"
-      if: always()
+    - name: Update config.js with extracted config
       run: |
-        echo "======================================"
-        echo "📈 工作流执行状态汇总"
-        echo "======================================"
-        echo "执行时间: $(date)"
-        echo "Issue编号: ${{ github.event.issue.number }}"
-        echo "商家ID: ${{ steps.extract-config.outputs.shop_id }}"
-        echo "======================================"
-        echo "✅ 工作流已成功执行到此步骤"
-        echo "======================================"
-        echo ""
-        echo "🎉 诊断完成！请查看上述所有诊断信息。"
-        echo ""
-        echo "======================================"
-    - name: "🔍 DIAGNOSTIC 11 - Trigger Conditions Analysis"
-      if: always()
+        SHOP_ID="${{ steps.extract-config.outputs.shop_id }}"
+        
+        echo "🔄 开始更新config.js，商家ID: $SHOP_ID"
+        
+        # 检查是否有update_config.js
+        if [ -f "update_config.js" ]; then
+          echo "使用 update_config.js 脚本"
+          node update_config.js new_config.json
+        else
+          echo "使用内联更新脚本"
+          
+          # 创建临时更新脚本
+          cat > temp_update.js << 'JAVASCRIPT_EOF'
+const fs = require('fs');
+try {
+  const newConfig = JSON.parse(fs.readFileSync('new_config.json', 'utf8'));
+  const shopId = Object.keys(newConfig)[0];
+  const shopConfig = newConfig[shopId];
+  
+  console.log('商家ID:', shopId);
+  console.log('商家名称:', shopConfig.name);
+  console.log('菜品数量:', shopConfig.dishes ? shopConfig.dishes.length : 0);
+  
+  let content = fs.readFileSync('config.js', 'utf8');
+  
+  const newShopConfigStr = `'${shopId}': ${JSON.stringify(shopConfig, null, 4)}`;
+  
+  // 检查商家是否已存在
+  if (content.includes(`'${shopId}':`)) {
+    console.log('更新现有商家配置:', shopId);
+    const pattern = new RegExp(`'${shopId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'\\s*:\\s*\\{[\\s\\S]*?\\n\\s*\\}`, 'm');
+    content = content.replace(pattern, newShopConfigStr);
+  } else {
+    console.log('添加新商家配置:', shopId);
+    const pos = content.lastIndexOf('};');
+    if (pos !== -1) {
+      content = content.substring(0, pos) + ',\n    ' + newShopConfigStr + '\n' + content.substring(pos);
+    } else {
+      throw new Error('未找到config.js结束位置');
+    }
+  }
+  
+  fs.writeFileSync('config.js', content);
+  console.log('✅ config.js更新成功');
+} catch (error) {
+  console.error('❌ 错误:', error.message);
+  process.exit(1);
+}
+JAVASCRIPT_EOF
+          
+          node temp_update.js
+        fi
+    - name: Commit and push changes
       run: |
-        echo "======================================"
-        echo "🔬 触发条件分析"
-        echo "======================================"
-        echo "工作流文件位置: .github/workflows/update-config.yml"
-        echo "触发事件: issues"
-        echo "触发类型: [opened, labeled]"
-        echo "IF条件: contains(github.event.issue.labels.*.name, 'config-update')"
-        echo "======================================"
-        echo "当前满足的条件:"
-        echo "✅ 1. 工作流文件存在并正确"
-        echo "✅ 2. 事件类型匹配 (${{ github.event_name }})"
-        echo "✅ 3. IF条件通过（因为此步骤正在执行）"
-        echo "======================================"
-        echo ""
-        echo "💡 提示：如果看到此消息，说明工作流文件1的触发逻辑工作正常！"
-        echo ""
-        echo "======================================"
+        echo "📝 提交更改..."
+        
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        
+        git add config.js
+        
+        if git diff --staged --quiet; then
+          echo "⚠️ 没有检测到config.js的更改"
+        else
+          git commit -m "更新商家配置: ${{ steps.extract-config.outputs.shop_id }} [自动更新]"
+          git push
+          echo "✅ 更改已提交并推送"
+        fi
+    - name: Comment on issue
+      if: success()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const shopId = '${{ steps.extract-config.outputs.shop_id }}';
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: `✅ 配置已自动更新！\n\n商家 **${shopId}** 的配置已成功添加到config.js文件中。\n\n您可以立即访问：\n- 顾客端: index.html?shop=${shopId}\n- 管理端: admin.html?shop=${shopId}`
+          });
+          
+          await github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: ['auto-updated', 'config-complete']
+          });
+          
+          await github.rest.issues.update({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            state: 'closed'
+          });
     - name: Success message
       if: success()
       run: |
-        echo "🎉 诊断工作流执行成功！"
-        echo "======================================"
-        echo "关键发现："
-        echo "1. 工作流可以被正常触发"
-        echo "2. 事件信息: ${{ github.event_name }}"
-        echo "3. Issue编号: ${{ github.event.issue.number }}"
-        echo "4. 标签检查: 通过"
-        echo "======================================"
+        echo "🎉 工作流执行成功！"
+        echo "商家ID: ${{ steps.extract-config.outputs.shop_id }}"
+        echo "配置已成功更新到config.js文件"
     - name: Failure message
       if: failure()
       run: |
-        echo "❌ 诊断工作流执行失败"
-        echo "======================================"
-        echo "请查看上面的诊断步骤找出失败原因"
-        echo "======================================"
+        echo "❌ 工作流执行失败"
+        echo "请检查以下可能的问题:"
+        echo "1. Issue中是否包含有效的JSON配置"
+        echo "2. config.js文件是否存在"
+        echo "3. JSON格式是否正确"
