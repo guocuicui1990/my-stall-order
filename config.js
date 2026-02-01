@@ -99,6 +99,31 @@ window.shopConfigs = {
         }
     ]
 }
+,
+    'z_ml3kuxhsgwk8': {
+    "name": "张家凉茶",
+    "themeColor": "#e63946",
+    "logo": "images/logo.png",
+    "qrcode": "https://slonbvmhsxqgpoodwazj.supabase.co/storage/v1/object/public/shop-qrcodes/z_ml3kuxhsgwk8_wechat_qrcode_1769940473105.png",
+    "dishes": [
+        {
+            "id": 1,
+            "name": "大碗茶",
+            "price": 8,
+            "emoji": "🍜",
+            "category": "主食",
+            "tags": []
+        },
+        {
+            "id": 2,
+            "name": "小碗茶",
+            "price": 5,
+            "emoji": "🥘",
+            "category": "主食",
+            "tags": []
+        }
+    ]
+}
 };
 
 // 获取当前商家ID
