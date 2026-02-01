@@ -11,7 +11,7 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.issue.labels.*.name, 'config-update')
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'config-update'))
     
     steps:
     - uses: actions/checkout@v3
