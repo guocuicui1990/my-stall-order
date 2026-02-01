@@ -249,6 +249,31 @@ window.shopConfigs = {
         }
     ]
 }
+,
+    'm_ml3rxrpqczqh': {
+    "name": "苗家烧鸡",
+    "themeColor": "#32c759",
+    "logo": "images/logo.png",
+    "qrcode": "https://slonbvmhsxqgpoodwazj.supabase.co/storage/v1/object/public/shop-qrcodes/m_ml3rxrpqczqh_wechat_qrcode_1769952362899.png",
+    "dishes": [
+        {
+            "id": 1,
+            "name": "特色烧鸡",
+            "price": 28,
+            "emoji": "🐓",
+            "category": "主食",
+            "tags": []
+        },
+        {
+            "id": 2,
+            "name": "特色烤鸭",
+            "price": 24,
+            "emoji": "🦆",
+            "category": "主食",
+            "tags": []
+        }
+    ]
+}
 };
 
 // 获取当前商家ID
