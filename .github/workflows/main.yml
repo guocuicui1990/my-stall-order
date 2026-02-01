@@ -1,0 +1,133 @@
+name: Update Config from Issue
+on:
+  issues:
+    types: [opened, labeled]
+jobs:
+  update-config:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检查触发
+      run: |
+        echo "======================================"
+        echo "🎯 工作流已触发！"
+        echo "======================================"
+        echo "Issue编号: ${{ github.event.issue.number }}"
+        echo "Issue标题: ${{ github.event.issue.title }}"
+        echo "事件类型: ${{ github.event.action }}"
+        echo "======================================"
+        
+        # 显示标签
+        echo "标签信息:"
+        echo '${{ toJson(github.event.issue.labels) }}'
+        echo "======================================"
+    
+    - name: 检查标签
+      id: check-label
+      run: |
+        LABELS='${{ toJson(github.event.issue.labels) }}'
+        if echo "$LABELS" | grep -q '"name":"config-update"'; then
+          echo "✅ 找到config-update标签，继续执行"
+          echo "has_label=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ 未找到config-update标签，跳过更新"
+          echo "has_label=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+    
+    - name: Checkout代码
+      if: steps.check-label.outputs.has_label == 'true'
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GH_TOKEN }}
+        fetch-depth: 0
+    - name: 安装Node.js
+      if: steps.check-label.outputs.has_label == 'true'
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    - name: 提取配置
+      if: steps.check-label.outputs.has_label == 'true'
+      id: extract-config
+      run: |
+        echo "🔍 提取JSON配置..."
+        
+        cat > issue_content.txt << 'EOF'
+        ${{ github.event.issue.body }}
+        EOF
+        
+        python3 << 'PYEOF'
+import re, json, sys
+try:
+    content = open('issue_content.txt', 'r', encoding='utf-8').read()
+    match = re.search(r'```json\s*([\s\S]*?)\s*```', content) or re.search(r'```\s*([\s\S]*?)\s*```', content)
+    if match:
+        json_str = match.group(1).strip()
+    else:
+        start = content.find('{')
+        depth = 0
+        for i in range(start, len(content)):
+            if content[i] == '{': depth += 1
+            elif content[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    json_str = content[start:i+1]
+                    break
+    config = json.loads(json_str)
+    shop_id = list(config.keys())[0]
+    print(f"✅ 商家ID: {shop_id}")
+    with open('new_config.json', 'w', encoding='utf-8') as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+    with open('shop_id.txt', 'w') as f:
+        f.write(shop_id)
+except Exception as e:
+    print(f"❌ 错误: {e}")
+    sys.exit(1)
+        PYEOF
+        
+        SHOP_ID=$(cat shop_id.txt)
+        echo "shop_id=$SHOP_ID" >> $GITHUB_OUTPUT
+    - name: 更新config.js
+      if: steps.check-label.outputs.has_label == 'true'
+      run: |
+        node << 'JSEOF'
+const fs = require('fs');
+const newConfig = JSON.parse(fs.readFileSync('new_config.json', 'utf8'));
+const shopId = Object.keys(newConfig)[0];
+const shopConfig = newConfig[shopId];
+let content = fs.readFileSync('config.js', 'utf8');
+const newShopConfigStr = `'${shopId}': ${JSON.stringify(shopConfig, null, 4)}`;
+if (content.includes(`'${shopId}':`)) {
+  const pattern = new RegExp(`'${shopId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'\\s*:\\s*\\{[\\s\\S]*?\\n\\s*\\}`, 'm');
+  content = content.replace(pattern, newShopConfigStr);
+} else {
+  const pos = content.lastIndexOf('};');
+  content = content.substring(0, pos) + ',\n    ' + newShopConfigStr + '\n' + content.substring(pos);
+}
+fs.writeFileSync('config.js', content);
+console.log('✅ config.js更新成功');
+        JSEOF
+    - name: 提交更改
+      if: steps.check-label.outputs.has_label == 'true'
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add config.js
+        git diff --staged --quiet || (git commit -m "更新商家配置 [自动]" && git push)
+    - name: 评论Issue
+      if: success() && steps.check-label.outputs.has_label == 'true'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: `✅ 配置已更新！商家ID: \`${{ steps.extract-config.outputs.shop_id }}\``
+          });
+          await github.rest.issues.update({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            state: 'closed'
+          });
