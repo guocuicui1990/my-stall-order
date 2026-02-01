@@ -46,14 +46,9 @@ jobs:
         echo "$ISSUE_BODY" > issue_content.txt
         echo "📄 Issue内容已保存到 issue_content.txt"
         
-        # 显示Issue内容前200字符用于调试
-        echo "Issue内容前200字符:"
-        echo "$ISSUE_BODY" | head -c 200
-        echo ""
-        
-        # 方法1: 提取 ```json 代码块
-        echo "尝试方法1: 提取代码块中的JSON..."
-        CONFIG_CONTENT=$(echo "$ISSUE_BODY" | sed -n '/```json/,/```/p' | sed '/```/d')
+        # 方法1: 尝试提取JSON对象（从第一个{到最后一个}）
+        echo "尝试方法1: 提取JSON对象..."
+        CONFIG_CONTENT=$(echo "$ISSUE_BODY" | grep -o '{.*}' | head -1)
         
         if [ -n "$CONFIG_CONTENT" ]; then
           echo "✅ 使用方法1提取到JSON配置"
@@ -77,60 +72,23 @@ jobs:
         echo "$CONFIG_CONTENT" > new_config.json
         echo "配置已保存到 new_config.json"
         
-        # 验证JSON格式
-        if ! python3 -c "import json; json.load(open('new_config.json'))" 2>/dev/null; then
-          echo "⚠️ JSON格式需要修复..."
-          
-          # 尝试修复常见的JSON问题
-          # 1. 替换单引号为双引号
-          sed -i "s/'/\"/g" new_config.json
-          
-          # 2. 修复未加引号的属性名
-          python3 -c "
-import re
-with open('new_config.json', 'r') as f:
-    content = f.read()
-# 匹配属性名: 值 的模式，给属性名加双引号
-pattern = r'([a-zA-Z_][a-zA-Z0-9_]*)\s*:'
-def replace(match):
-    return '\"' + match.group(1) + '\":'
-content = re.sub(pattern, replace, content)
-with open('new_config.json', 'w') as f:
-    f.write(content)
-"
-          
-          # 再次验证
-          if ! python3 -c "import json; json.load(open('new_config.json'))" 2>/dev/null; then
-            echo "❌ 无法修复JSON格式"
-            exit 1
-          fi
-        fi
+        # 解析商家ID - 提取第一个键名
+        SHOP_ID=$(echo "$CONFIG_CONTENT" | grep -o '\"[^\"]*\"' | head -1 | tr -d '"' | tr -d ':')
         
-        echo "✅ JSON格式验证通过"
-        
-        # 使用Python提取商家ID
-        SHOP_ID=$(python3 << EOF
-import json, sys
-try:
-    with open('new_config.json', 'r') as f:
-        data = json.load(f)
-    # 获取第一个键
-    shop_id = list(data.keys())[0]
-    print(shop_id)
-except Exception as e:
-    print(f"Error: {e}")
-    sys.exit(1)
-EOF
-        )
-        
-        if [ -z "$SHOP_ID" ] || [ "$SHOP_ID" = "Error:"* ]; then
-          # 从Issue标题中提取商家ID
-          ISSUE_TITLE='${{ github.event.issue.title }}'
-          SHOP_ID=$(echo "$ISSUE_TITLE" | grep -o 'l_ml[a-z0-9_]*' | head -1)
+        # 如果没有找到，尝试其他方法
+        if [ -z "$SHOP_ID" ]; then
+          SHOP_ID=$(echo "$CONFIG_CONTENT" | grep -o "'[^']*'" | head -1 | tr -d "'")
         fi
         
         if [ -z "$SHOP_ID" ]; then
-          SHOP_ID="shop_${{ github.event.issue.number }}"
+          # 从Issue标题中提取商家ID
+          ISSUE_TITLE='${{ github.event.issue.title }}'
+          SHOP_ID=$(echo "$ISSUE_TITLE" | grep -o 'l_ml[a-z0-9]*' | head -1)
+        fi
+        
+        if [ -z "$SHOP_ID" ]; then
+          echo "⚠️ 警告: 无法提取商家ID，使用默认格式"
+          SHOP_ID="shop_${{ github.event.issue.number }}_$(date +%s)"
         fi
         
         echo "✅ 商家ID: $SHOP_ID"
@@ -158,166 +116,114 @@ EOF
         
         echo "🔄 开始更新config.js，商家ID: $SHOP_ID"
         
-        # 创建更新脚本 - 修复JSON解析问题
+        # 创建更新脚本 - 使用不同的方法避免转义问题
         cat > update_script.js << "JAVASCRIPT"
-const fs = require('fs');
-const path = require('path');
-
-console.log('开始更新config.js...');
-
-try {
-  // 读取新配置
-  const newConfigPath = path.join(__dirname, 'new_config.json');
-  let newConfigData = fs.readFileSync(newConfigPath, 'utf8');
-  
-  console.log('新配置数据长度:', newConfigData.length);
-  
-  // 尝试解析JSON
-  let newConfig;
-  try {
-    // 首先尝试直接解析
-    newConfig = JSON.parse(newConfigData);
-    console.log('✅ JSON解析成功');
-  } catch (error) {
-    console.log('JSON解析失败，尝试修复格式...');
-    
-    // 尝试修复常见的JSON格式问题
-    // 1. 清理可能的Markdown格式
-    let cleanedData = newConfigData
-      .replace(/```json/gi, '')
-      .replace(/```/g, '')
-      .trim();
-    
-    // 2. 单引号转双引号
-    cleanedData = cleanedData.replace(/'/g, '"');
-    
-    // 3. 修复未加引号的属性名
-    cleanedData = cleanedData.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)/g, '$1"$2"$3');
-    
-    console.log('清理后数据前200字符:', cleanedData.substring(0, 200));
-    
-    try {
-      newConfig = JSON.parse(cleanedData);
-      console.log('✅ 清理后解析成功');
-    } catch (secondError) {
-      console.error('❌ 二次解析失败:', secondError.message);
-      
-      // 尝试提取第一个完整的JSON对象
-      const startIdx = cleanedData.indexOf('{');
-      const endIdx = cleanedData.lastIndexOf('}');
-      
-      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-        const jsonStr = cleanedData.substring(startIdx, endIdx + 1);
+        const fs = require('fs');
+        const path = require('path');
+        
+        console.log('开始更新config.js...');
+        
         try {
-          newConfig = JSON.parse(jsonStr);
-          console.log('✅ 提取部分JSON成功');
-        } catch (e) {
-          throw new Error('无法从数据中提取有效的JSON: ' + e.message);
+          // 读取新配置
+          const newConfigPath = path.join(__dirname, 'new_config.json');
+          let newConfigData = fs.readFileSync(newConfigPath, 'utf8');
+          
+          console.log('新配置数据长度:', newConfigData.length);
+          
+          // 尝试解析JSON
+          let newConfig;
+          try {
+            newConfig = JSON.parse(newConfigData);
+          } catch (error) {
+            console.log('JSON解析失败，尝试修复格式...');
+            // 尝试修复常见的JSON格式问题
+            newConfigData = newConfigData
+              .replace(/'/g, '"')  // 替换单引号为双引号
+              .replace(/(\w+):/g, '"$1":');  // 为键添加双引号
+            newConfig = JSON.parse(newConfigData);
+          }
+          
+          // 获取商家ID和配置
+          const shopIds = Object.keys(newConfig);
+          const shopId = shopIds[0];
+          const shopConfig = newConfig[shopId];
+          
+          console.log('商家ID:', shopId);
+          console.log('商家名称:', shopConfig.name);
+          console.log('菜品数量:', shopConfig.dishes ? shopConfig.dishes.length : 0);
+          
+          // 读取现有的config.js
+          const configFile = path.join(__dirname, 'config.js');
+          let content = fs.readFileSync(configFile, 'utf8');
+          
+          // 准备新的商家配置字符串
+          const newShopConfigStr = "'" + shopId + "': " + JSON.stringify(shopConfig, null, 4);
+          
+          // 查找window.shopConfigs对象
+          const configMatch = content.match(/window\.shopConfigs\s*=\s*(\{[\s\S]*?\};)/);
+          
+          if (!configMatch) {
+            throw new Error('在config.js中找不到window.shopConfigs对象');
+          }
+          
+          console.log('找到shopConfigs对象');
+          
+          // 检查是否已存在该商家
+          if (content.includes("'" + shopId + "':")) {
+            console.log('更新现有商家配置:', shopId);
+            
+            // 查找并替换现有配置
+            // 创建匹配模式：'商家ID': { ... } (跨多行)
+            const existingPattern = new RegExp("'" + shopId + "'\\s*:\\s*\\{[^}]+\\}", 's');
+            
+            if (content.match(existingPattern)) {
+              content = content.replace(existingPattern, newShopConfigStr);
+              console.log('已更新商家:', shopId);
+            } else {
+              // 如果模式不匹配，尝试更宽松的匹配
+              const loosePattern = new RegExp("'" + shopId + "'[\\s\\S]*?\\n\\s*\\}", 'm');
+              content = content.replace(loosePattern, newShopConfigStr);
+              console.log('使用宽松模式更新商家:', shopId);
+            }
+          } else {
+            console.log('添加新商家配置:', shopId);
+            
+            // 找到最后一个商家配置后添加
+            // 查找模式：'商家ID': { ... },\n    };\n
+            const lastEntryPattern = /('([^']+)':\s*\{[^}]+\},?\s*)(\n\s*)(\};)/s;
+            
+            if (content.match(lastEntryPattern)) {
+              console.log('在最后一个商家后添加新配置');
+              content = content.replace(lastEntryPattern, '$1,\n    ' + newShopConfigStr + '$3$4');
+            } else {
+              // 如果上面的模式不匹配，尝试在window.shopConfigs = {后添加
+              console.log('在shopConfigs对象开头添加新配置');
+              content = content.replace(
+                /(window\.shopConfigs\s*=\s*\{)/,
+                '$1\n    ' + newShopConfigStr + ','
+              );
+            }
+          }
+          
+          // 保存更新
+          fs.writeFileSync(configFile, content);
+          console.log('✅ config.js已成功更新！');
+          
+          // 验证更新
+          console.log('\n验证更新:');
+          const updatedContent = fs.readFileSync(configFile, 'utf8');
+          if (updatedContent.includes("'" + shopId + "':")) {
+            console.log('✅ 商家', shopId, '已成功添加到config.js');
+          } else {
+            console.log('⚠️ 警告: 商家', shopId, '可能未正确添加');
+          }
+          
+        } catch (error) {
+          console.error('❌ 更新config.js失败:', error.message);
+          console.error(error.stack);
+          process.exit(1);
         }
-      } else {
-        throw new Error('无法从数据中提取有效的JSON');
-      }
-    }
-  }
-  
-  // 获取商家ID和配置
-  const shopIds = Object.keys(newConfig);
-  const shopId = shopIds[0];
-  const shopConfig = newConfig[shopId];
-  
-  console.log('商家ID:', shopId);
-  console.log('商家名称:', shopConfig.name);
-  console.log('菜品数量:', shopConfig.dishes ? shopConfig.dishes.length : 0);
-  
-  // 读取现有的config.js
-  const configFile = path.join(__dirname, 'config.js');
-  let content = fs.readFileSync(configFile, 'utf8');
-  
-  // 检查是否为有效的JavaScript文件
-  if (!content.includes('window.shopConfigs')) {
-    throw new Error('config.js文件格式不正确：找不到window.shopConfigs');
-  }
-  
-  // 准备新的商家配置字符串 - 使用与现有配置相同的格式
-  const dishesStr = JSON.stringify(shopConfig.dishes || [], null, 4)
-    .replace(/\n/g, '\n        ');
-  
-  // 注意：我们使用双引号格式，与现有config.js保持一致
-  const newShopConfigStr = "'" + shopId + "': " + JSON.stringify({
-    name: shopConfig.name,
-    themeColor: shopConfig.themeColor || '#E63946',
-    logo: shopConfig.logo || 'images/logo.png',
-    qrcode: shopConfig.qrcode || 'images/qrcode.jpg',
-    dishes: shopConfig.dishes || []
-  }, null, 4);
-  
-  console.log('新商家配置预览:', newShopConfigStr.substring(0, 200));
-  
-  // 查找window.shopConfigs对象
-  const configMatch = content.match(/window\.shopConfigs\s*=\s*(\{[\s\S]*?\};)/);
-  
-  if (!configMatch) {
-    throw new Error('在config.js中找不到window.shopConfigs对象');
-  }
-  
-  console.log('找到shopConfigs对象');
-  
-  // 检查是否已存在该商家
-  if (content.includes("'" + shopId + "':")) {
-    console.log('更新现有商家配置:', shopId);
-    
-    // 查找并替换现有配置
-    // 创建匹配模式：'商家ID': { ... } (跨多行)
-    const existingPattern = new RegExp("'" + shopId + "'\\s*:\\s*\\{[^}]+\\}", 's');
-    
-    if (content.match(existingPattern)) {
-      content = content.replace(existingPattern, newShopConfigStr);
-      console.log('已更新商家:', shopId);
-    } else {
-      // 如果模式不匹配，尝试更宽松的匹配
-      const loosePattern = new RegExp("'" + shopId + "'[\\s\\S]*?\\n\\s*\\}", 'm');
-      content = content.replace(loosePattern, newShopConfigStr);
-      console.log('使用宽松模式更新商家:', shopId);
-    }
-  } else {
-    console.log('添加新商家配置:', shopId);
-    
-    // 找到最后一个商家配置后添加
-    // 查找模式：'商家ID': { ... },\n    };\n
-    const lastEntryPattern = /('([^']+)':\s*\{[^}]+\},?\s*)(\n\s*)(\};)/s;
-    
-    if (content.match(lastEntryPattern)) {
-      console.log('在最后一个商家后添加新配置');
-      content = content.replace(lastEntryPattern, '$1,\n    ' + newShopConfigStr + '$3$4');
-    } else {
-      // 如果上面的模式不匹配，尝试在window.shopConfigs = {后添加
-      console.log('在shopConfigs对象开头添加新配置');
-      content = content.replace(
-        /(window\.shopConfigs\s*=\s*\{)/,
-        '$1\n    ' + newShopConfigStr + ','
-      );
-    }
-  }
-  
-  // 保存更新
-  fs.writeFileSync(configFile, content);
-  console.log('✅ config.js已成功更新！');
-  
-  // 验证更新
-  console.log('\n验证更新:');
-  const updatedContent = fs.readFileSync(configFile, 'utf8');
-  if (updatedContent.includes("'" + shopId + "':")) {
-    console.log('✅ 商家', shopId, '已成功添加到config.js');
-  } else {
-    console.log('⚠️ 警告: 商家', shopId, '可能未正确添加');
-  }
-  
-} catch (error) {
-  console.error('❌ 更新config.js失败:', error.message);
-  console.error(error.stack);
-  process.exit(1);
-}
-JAVASCRIPT
+        JAVASCRIPT
         
         # 运行更新脚本
         node update_script.js
