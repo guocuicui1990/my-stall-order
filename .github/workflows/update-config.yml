@@ -1,29 +1,165 @@
 name: Update Config from Issue
 on:
   issues:
-    types: [opened, labeled]
-  workflow_dispatch:  # 添加这一行，支持手动触发
+    types: [opened, labeled, edited]  # 增加触发类型
+  workflow_dispatch:
     inputs:
       issue_number:
         description: 'Issue编号'
         required: true
         type: number
+permissions:
+  contents: write
+  issues: write
 jobs:
   update-config:
     runs-on: ubuntu-latest
     
     steps:
-    - name: 检查触发
+    - name: 获取Issue信息
+      id: get-issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          let issue;
+          if (context.eventName === 'workflow_dispatch') {
+            // 手动触发：获取指定Issue
+            const issueNumber = ${{ github.event.inputs.issue_number || 0 }};
+            const result = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+            issue = result.data;
+          } else {
+            // 自动触发：使用事件中的Issue
+            issue = context.payload.issue;
+          }
+          
+          console.log('Issue编号:', issue.number);
+          console.log('Issue标题:', issue.title);
+          console.log('Issue标签:', issue.labels.map(l => l.name).join(', '));
+          
+          // 检查是否有config-update标签
+          const hasLabel = issue.labels.some(label => label.name === 'config-update');
+          core.setOutput('has_label', hasLabel);
+          core.setOutput('issue_number', issue.number);
+          core.setOutput('issue_body', issue.body);
+          
+          if (!hasLabel) {
+            console.log('❌ 没有config-update标签，跳过处理');
+          } else {
+            console.log('✅ 找到config-update标签，开始处理');
+          }
+    
+    - name: Checkout代码
+      if: steps.get-issue.outputs.has_label == 'true'
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    - name: 安装Node.js
+      if: steps.get-issue.outputs.has_label == 'true'
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    - name: 提取配置
+      if: steps.get-issue.outputs.has_label == 'true'
+      id: extract-config
       run: |
-        echo "======================================"
-        echo "🎯 工作流已触发！"
-        echo "======================================"
-        # 如果是手动触发
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          echo "手动触发模式"
-          echo "Issue编号: ${{ github.event.inputs.issue_number }}"
-        else
-          echo "Issue编号: ${{ github.event.issue.number }}"
-          echo "Issue标题: ${{ github.event.issue.title }}"
-        fi
-        echo "======================================"
+        echo "🔍 提取JSON配置..."
+        
+        cat > issue_content.txt << 'EOF'
+        ${{ steps.get-issue.outputs.issue_body }}
+        EOF
+        
+        python3 << 'PYEOF'
+import re, json, sys
+try:
+    content = open('issue_content.txt', 'r', encoding='utf-8').read()
+    print(f"内容长度: {len(content)} 字符")
+    
+    match = re.search(r'```json\s*([\s\S]*?)\s*```', content) or re.search(r'```\s*([\s\S]*?)\s*```', content)
+    if match:
+        json_str = match.group(1).strip()
+        print("从代码块提取")
+    else:
+        start = content.find('{')
+        depth = 0
+        for i in range(start, len(content)):
+            if content[i] == '{': depth += 1
+            elif content[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    json_str = content[start:i+1]
+                    print(f"提取JSON对象")
+                    break
+    
+    config = json.loads(json_str)
+    shop_id = list(config.keys())[0]
+    print(f"✅ 商家ID: {shop_id}")
+    
+    with open('new_config.json', 'w', encoding='utf-8') as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+    with open('shop_id.txt', 'w') as f:
+        f.write(shop_id)
+        
+except Exception as e:
+    print(f"❌ 错误: {e}")
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
+        PYEOF
+        
+        SHOP_ID=$(cat shop_id.txt)
+        echo "shop_id=$SHOP_ID" >> $GITHUB_OUTPUT
+    - name: 更新config.js
+      if: steps.get-issue.outputs.has_label == 'true'
+      run: |
+        node << 'JSEOF'
+const fs = require('fs');
+const newConfig = JSON.parse(fs.readFileSync('new_config.json', 'utf8'));
+const shopId = Object.keys(newConfig)[0];
+const shopConfig = newConfig[shopId];
+let content = fs.readFileSync('config.js', 'utf8');
+const newShopConfigStr = `'${shopId}': ${JSON.stringify(shopConfig, null, 4)}`;
+if (content.includes(`'${shopId}':`)) {
+  const pattern = new RegExp(`'${shopId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'\\s*:\\s*\\{[\\s\\S]*?\\n\\s*\\}`, 'm');
+  content = content.replace(pattern, newShopConfigStr);
+  console.log('更新现有商家');
+} else {
+  const pos = content.lastIndexOf('};');
+  content = content.substring(0, pos) + ',\n    ' + newShopConfigStr + '\n' + content.substring(pos);
+  console.log('添加新商家');
+}
+fs.writeFileSync('config.js', content);
+console.log('✅ config.js更新成功');
+        JSEOF
+    - name: 提交更改
+      if: steps.get-issue.outputs.has_label == 'true'
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add config.js
+        git diff --staged --quiet || (git commit -m "更新商家配置: ${{ steps.extract-config.outputs.shop_id }}" && git push)
+    - name: 评论并关闭Issue
+      if: success() && steps.get-issue.outputs.has_label == 'true'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const issueNumber = ${{ steps.get-issue.outputs.issue_number }};
+          const shopId = '${{ steps.extract-config.outputs.shop_id }}';
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issueNumber,
+            body: `✅ 配置已更新！\n\n商家ID: \`${shopId}\`\n\n访问链接：\n- 顾客端: index.html?shop=${shopId}\n- 管理端: admin.html?shop=${shopId}`
+          });
+          
+          await github.rest.issues.update({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issueNumber,
+            state: 'closed'
+          });
