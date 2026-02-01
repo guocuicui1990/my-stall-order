@@ -10,10 +10,10 @@ on:
         required: true
         type: number
 
-# 添加并发控制，确保同一时间只有一个工作流实例运行
+# 并发控制：同一时间只运行一个实例，新实例会取消旧实例
 concurrency:
   group: config-update
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   update:
@@ -24,7 +24,6 @@ jobs:
     - uses: actions/checkout@v3
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        # 确保获取完整的历史记录
         fetch-depth: 0
         
     - uses: actions/setup-node@v3
