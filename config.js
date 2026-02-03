@@ -324,6 +324,31 @@ window.shopConfigs = {
         }
     ]
 }
+,
+    'l_ml6tdqi8fy8p': {
+    "name": "老李辣条",
+    "themeColor": "#e63946",
+    "logo": "images/logo.png",
+    "qrcode": "https://slonbvmhsxqgpoodwazj.supabase.co/storage/v1/object/public/shop-qrcodes/l_ml6tdqi8fy8p_alipay_qrcode_1770136185977.png",
+    "dishes": [
+        {
+            "id": 1,
+            "name": "招牌炸酱面",
+            "price": 15,
+            "emoji": "🍜",
+            "category": "主食",
+            "tags": []
+        },
+        {
+            "id": 2,
+            "name": "麻辣烫套餐",
+            "price": 18,
+            "emoji": "🥘",
+            "category": "主食",
+            "tags": []
+        }
+    ]
+}
 };
 
 // 获取当前商家ID
