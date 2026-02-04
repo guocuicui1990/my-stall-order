@@ -499,6 +499,31 @@ window.shopConfigs = {
         }
     ]
 }
+,
+    'l_ml86daang674': {
+    "name": "老李砂锅",
+    "themeColor": "#32c759",
+    "logo": "images/logo.png",
+    "qrcode": "https://slonbvmhsxqgpoodwazj.supabase.co/storage/v1/object/public/shop-qrcodes/l_ml86daang674_wechat_qrcode_1770218466148.png",
+    "dishes": [
+        {
+            "id": 1,
+            "name": "牛肉砂锅",
+            "price": 15,
+            "emoji": "🍜",
+            "category": "主食",
+            "tags": []
+        },
+        {
+            "id": 2,
+            "name": "麻辣砂锅",
+            "price": 18,
+            "emoji": "🥘",
+            "category": "主食",
+            "tags": []
+        }
+    ]
+}
 };
 
 // 获取当前商家ID
