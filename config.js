@@ -474,6 +474,31 @@ window.shopConfigs = {
         }
     ]
 }
+,
+    'sha_ml7lf5wdhn9u': {
+    "name": "1老姜家烧烤",
+    "themeColor": "#e63946",
+    "logo": "images/logo.png",
+    "qrcode": "https://slonbvmhsxqgpoodwazj.supabase.co/storage/v1/object/public/shop-qrcodes/sha_ml7lf5wdhn9u_wechat_qrcode_1770183281824.png",
+    "dishes": [
+        {
+            "id": 1,
+            "name": "招牌炸酱面",
+            "price": 15,
+            "emoji": "🍜",
+            "category": "主食",
+            "tags": []
+        },
+        {
+            "id": 2,
+            "name": "麻辣烫套餐",
+            "price": 18,
+            "emoji": "🥘",
+            "category": "主食",
+            "tags": []
+        }
+    ]
+}
 };
 
 // 获取当前商家ID
