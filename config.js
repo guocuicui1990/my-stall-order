@@ -524,6 +524,31 @@ window.shopConfigs = {
         }
     ]
 }
+,
+    'z_mlb2aitupajr': {
+    "name": "赵家烤鸡",
+    "themeColor": "#e63946",
+    "logo": "images/logo.png",
+    "qrcode": "https://slonbvmhsxqgpoodwazj.supabase.co/storage/v1/object/public/shop-qrcodes/z_mlb2aitupajr_wechat_qrcode_1770393017302.png",
+    "dishes": [
+        {
+            "id": 1,
+            "name": "烤鸡腿",
+            "price": 15,
+            "emoji": "🍜",
+            "category": "主食",
+            "tags": []
+        },
+        {
+            "id": 2,
+            "name": "烤鸡翅",
+            "price": 8,
+            "emoji": "🥘",
+            "category": "主食",
+            "tags": []
+        }
+    ]
+}
 };
 
 // 获取当前商家ID
