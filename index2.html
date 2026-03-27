@@ -1045,7 +1045,7 @@ const charDefs = [
       // 身体微微跟随鼠标倾斜
       const rect = ch.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
-      const skew = Math.max(-5, Math.min(5, (mouseX - cx) / 80));
+      const skew = Math.max(-20, Math.min(20, (mouseX - cx) / 40));
       ch.style.transform = `skewX(${-skew}deg)`;
       // 眼睛位置偏移（跟随输入/鼠标）
       let eyeOffX = 0, eyeOffY = 0;
