@@ -1,0 +1,1515 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+  <title>轻盈日记 - 减肥周期助手</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f7f9fc; color: #1e2a3e; line-height: 1.5; padding-bottom: 80px;
+    }
+    .app-header {
+      background: #2c5e2e; color: white; padding: 16px 20px;
+      position: sticky; top: 0; z-index: 10;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .app-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+    .back-link {
+      color: white; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px; font-size: 1rem;
+      background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 30px;
+    }
+    .logout-btn {
+      background: rgba(255,255,255,0.2); color: white;
+      border: 1px solid rgba(255,255,255,0.5);
+      padding: 6px 14px; border-radius: 30px; cursor: pointer;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.3); border-color: white; }
+    .container { max-width: 700px; margin: 0 auto; padding: 20px 16px; }
+    .card {
+      background: #ffffff; border-radius: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04); padding: 18px; margin-bottom: 18px;
+    }
+    .plan-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .plan-name { font-size: 1.25rem; font-weight: 700; color: #0f2b1d; }
+    .plan-badge { background: #e9f7e1; color: #2c5e2e; padding: 4px 12px; border-radius: 40px; font-size: 0.75rem; font-weight: 600; }
+    .progress-track { background: #e9ecef; border-radius: 20px; height: 8px; overflow: hidden; }
+    .progress-fill { background: #2c5e2e; height: 100%; border-radius: 20px; }
+    .stat-row { display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.85rem; color: #4a5b4a; }
+    .button-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+    .btn { border: none; padding: 8px 18px; border-radius: 40px; font-size: 0.85rem; font-weight: 500; cursor: pointer; background: #f0f2f5; color: #1e2a3e; }
+    .btn-primary { background: #2c5e2e; color: white; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-outline { background: transparent; border: 1px solid #cbd5e1; }
+    .fab {
+      position: fixed; right: 20px; bottom: 30px; width: 56px; height: 56px;
+      background: #2c5e2e; color: white; border: none; border-radius: 50%;
+      font-size: 28px; cursor: pointer; z-index: 20;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .empty-state { text-align: center; padding: 48px 20px; color: #8ba888; }
+    .daily-item {
+      border-bottom: 1px solid #edf2ed; padding: 12px 0;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+    }
+    .daily-date { font-weight: 600; min-width: 100px; color: #2c5e2e; }
+    .daily-food { flex: 2; font-size: 0.85rem; color: #3b4e3b; padding: 0 8px; word-break: break-word; }
+    .daily-weight { font-weight: 600; min-width: 80px; text-align: right; display: flex; align-items: center; gap: 5px; }
+    .warning-icon { color: #e67e22; font-size: 1rem; cursor: help; }
+    .edit-daily-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 6px; color: #6b8c6b; }
+    .chart-container { background: white; border-radius: 20px; padding: 12px; margin: 20px 0; }
+    .mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px); display: none;
+      align-items: center; justify-content: center; z-index: 100;
+    }
+    .mask.show { display: flex; }
+    .panel {
+      background: white; width: 90%; max-width: 560px;
+      border-radius: 28px; padding: 24px 20px 30px;
+      max-height: 85vh; overflow-y: auto;
+      animation: slideUp 0.3s ease; text-align: center;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-weight: 500; margin-bottom: 6px; font-size: 0.85rem; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 1rem;
+    }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .mt-2 { margin-top: 8px; }
+    .mb-2 { margin-bottom: 8px; }
+    .text-center { text-align: center; }
+    .close-modal { background: none; border: none; font-size: 24px; position: absolute; top: 10px; right: 20px; cursor: pointer; color: #888; }
+    .modal-caption { font-size: 1.2rem; margin-top: 16px; color: #e67e22; font-weight: bold; }
+    canvas { display: block; margin: 0 auto; background: #fff8e7; border-radius: 40px; }
+    .summary-item { text-align: left; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .summary-label { font-weight: 600; color: #2c5e2e; }
+    .summary-value { margin-left: 8px; }
+    .good { color: #2c5e2e; }
+    .bad { color: #dc2626; }
+    .neutral { color: #e67e22; }
+    /* 登录页面样式 */
+    .login-container { display: flex; min-height: 100vh; width: 100%; }
+.login-left {
+  flex: 1;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding-left: 18vw;   /* 向右移动：左侧加左内边距 */
+}
+    .login-left::before {
+      content: ''; position: absolute; width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(0,0,0,0.02) 1%, transparent 1%);
+      background-size: 40px 40px;
+      animation: moveDots 40s linear infinite; opacity: 0.3;
+    }
+    @keyframes moveDots {
+      from { transform: translate(0, 0); }
+      to { transform: translate(40px, 40px); }
+    }
+.characters-wrapper {
+  position: relative;
+  width: 650px;   /* 原500px × 1.3 */
+  height: 585px;  /* 原450px × 1.3 */
+  z-index: 2;
+  transform: scale(1.3);
+  transform-origin: bottom center;
+}
+.login-right {
+  flex: 1;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  padding-right: 12vw;  /* 向左移动：右侧加右内边距 */
+}
+.login-card {
+  width: 100%;
+  max-width: 676px;        /* 原520px × 1.3 */
+  padding: 2.6rem;         /* 原2rem × 1.3 */
+  background: white;
+  border-radius: 41px;     /* 原32px × 1.3 */
+  box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+  text-align: center;
+}
+.login-card h2 {
+  font-size: 3.04rem;      /* 原2.34rem × 1.3 */
+  font-weight: 700;
+  margin-bottom: 0.85rem;  /* 原0.65rem × 1.3 */
+  color: #1e2a3e;
+  text-align: center;
+}
+.login-card p {
+  font-size: 1.35rem;      /* 原1.04rem × 1.3 */
+  color: #6b7280;
+  margin-bottom: 3.38rem;  /* 原2.6rem × 1.3 */
+  text-align: center;
+}
+.field label {
+  font-size: 1.35rem;      /* 原1.04rem × 1.3 */
+}
+    .login-input-wrapper { position: relative; margin-bottom: 0.65rem; }
+.login-input-icon {
+  position: absolute;
+  left: 19px;              /* 原15px × 1.3 */
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.69rem;      /* 原1.3rem × 1.3 */
+  color: #9ca3af;
+}
+.login-input {
+  width: 100%;
+  padding: 19px 19px 19px 68px;  /* 原15px/52px × 1.3 */
+  border: 1px solid #e5e7eb;
+  border-radius: 68px;            /* 原52px × 1.3 */
+  font-size: 1.52rem;             /* 原1.17rem × 1.3 */
+  transition: all 0.2s;
+  text-align: left;
+}
+    .login-input:focus { outline: none; border-color: #2c5e2e; box-shadow: 0 0 0 3px rgba(44,94,46,0.1); }
+.password-toggle {
+  position: absolute;
+  right: 19px;             /* 原15px × 1.3 */
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 1.69rem;      /* 原1.3rem × 1.3 */
+}
+.error-text {
+  color: #dc2626;
+  font-size: 1.18rem;      /* 原0.91rem × 1.3 */
+  margin-top: 0.85rem;
+  text-align: center;
+}
+    .btn-block { width: 100%; margin-top: 1.3rem; }
+.btn-login, .btn-register {
+  width: 100%;
+  padding: 15px;           /* 原12px × 1.3 */
+  font-size: 1.43rem;      /* 原1.1rem × 1.3 */
+  border-radius: 68px;     /* 原52px × 1.3 */
+}
+    .btn-login { background: #2c5e2e; color: white; border: none; }
+    .btn-register { background: transparent; border: 1px solid #cbd5e1; color: #1e2a3e; }
+    .btn-login:hover, .btn-register:hover { opacity: 0.9; }
+    #authForm .field { text-align: left; }
+@media (max-width: 768px) {
+  .login-container { flex-direction: column; }
+  .login-left {
+    min-height: 390px;
+    padding-left: 0;        /* 移动端取消偏移 */
+  }
+  .login-right {
+    padding-right: 2rem;    /* 移动端恢复原始padding */
+  }
+  .characters-wrapper { transform: scale(0.7); transform-origin: bottom center; }
+  .login-card { max-width: 90%; }
+}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="container" style="text-align: center; padding-top: 100px;">
+    <div class="card"><h2>加载中...</h2><p>请稍候，正在初始化应用</p></div>
+  </div>
+</div>
+<script>
+// ==================== 全局变量和工具函数 ====================
+let supabaseClient = null;
+let currentUserId = null;
+let weightChartInstance = null;
+function formatYMD(date) {
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10);
+}
+function parseDateInput(str) {
+  if (!str) return null;
+  const cleaned = str.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) return cleaned;
+  const digits = cleaned.replace(/\D/g, '');
+  if (digits.length === 8) return `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}`;
+  return null;
+}
+function getDateRange(start, end) {
+  const dates = [];
+  let cur = new Date(start);
+  const endDate = new Date(end);
+  while (cur <= endDate) {
+    dates.push(formatYMD(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+// 绘制三个全身卡通小孩（体重异常弹窗用）
+function drawFullBodyKids(ctx, canvasWidth, canvasHeight) {
+  const baseY = 180;
+  const heights = [60, 50, 40];
+  const xPos = [canvasWidth/2 - 110, canvasWidth/2, canvasWidth/2 + 110];
+  for (let i = 0; i < 3; i++) {
+    const x = xPos[i];
+    const yBodyTop = baseY - heights[i];
+    const bodyHeight = heights[i];
+    const gender = i === 0 ? 'girl' : (i === 1 ? 'boy' : 'girl');
+    const headRadius = bodyHeight * 0.35;
+    const headY = yBodyTop - headRadius;
+    ctx.fillStyle = '#FDD7A4';
+    ctx.beginPath(); ctx.rect(x - bodyHeight*0.25, yBodyTop, bodyHeight*0.5, bodyHeight); ctx.fill();
+    ctx.strokeStyle = '#D6A57E'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, headY, headRadius, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#5C3E1F';
+    ctx.beginPath(); ctx.ellipse(x - headRadius*0.35, headY - headRadius*0.2, headRadius*0.2, headRadius*0.1, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x + headRadius*0.35, headY - headRadius*0.2, headRadius*0.2, headRadius*0.1, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, headY + headRadius*0.2, headRadius*0.3, 0.05, Math.PI - 0.05);
+    ctx.strokeStyle = '#B95C2E'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#FFB7B2';
+    ctx.beginPath(); ctx.arc(x - headRadius*0.5, headY + headRadius*0.1, headRadius*0.12, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + headRadius*0.5, headY + headRadius*0.1, headRadius*0.12, 0, Math.PI*2); ctx.fill();
+    if (gender === 'girl') {
+      ctx.fillStyle = '#FF69B4';
+      ctx.beginPath();
+      ctx.moveTo(x - headRadius*0.4, headY - headRadius*0.8);
+      ctx.quadraticCurveTo(x, headY - headRadius*1.1, x + headRadius*0.4, headY - headRadius*0.8);
+      ctx.fill();
+      ctx.fillStyle = '#FFB6C1';
+      ctx.beginPath();
+      ctx.moveTo(x - bodyHeight*0.3, yBodyTop + bodyHeight*0.8);
+      ctx.lineTo(x, yBodyTop + bodyHeight);
+      ctx.lineTo(x + bodyHeight*0.3, yBodyTop + bodyHeight*0.8);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = '#5D4037';
+      ctx.beginPath(); ctx.rect(x - headRadius*0.45, headY - headRadius*0.9, headRadius*0.9, headRadius*0.25); ctx.fill();
+      ctx.fillStyle = '#8B4513';
+      ctx.beginPath(); ctx.rect(x - bodyHeight*0.3, yBodyTop + bodyHeight*0.6, bodyHeight*0.6, bodyHeight*0.2); ctx.fill();
+    }
+    ctx.beginPath(); ctx.moveTo(x - bodyHeight*0.3, yBodyTop + bodyHeight*0.2); ctx.lineTo(x - bodyHeight*0.5, yBodyTop + bodyHeight*0.5); ctx.lineTo(x - bodyHeight*0.3, yBodyTop + bodyHeight*0.4); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x + bodyHeight*0.3, yBodyTop + bodyHeight*0.2); ctx.lineTo(x + bodyHeight*0.5, yBodyTop + bodyHeight*0.5); ctx.lineTo(x + bodyHeight*0.3, yBodyTop + bodyHeight*0.4); ctx.fill();
+    ctx.fillStyle = '#FDD7A4';
+    ctx.beginPath(); ctx.moveTo(x - bodyHeight*0.2, yBodyTop + bodyHeight); ctx.lineTo(x - bodyHeight*0.3, yBodyTop + bodyHeight + 15); ctx.lineTo(x, yBodyTop + bodyHeight); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x + bodyHeight*0.2, yBodyTop + bodyHeight); ctx.lineTo(x + bodyHeight*0.3, yBodyTop + bodyHeight + 15); ctx.lineTo(x, yBodyTop + bodyHeight); ctx.fill();
+  }
+}
+function showWeightAnomalyModal() {
+  const modalDiv = document.createElement('div');
+  modalDiv.className = 'mask show';
+  modalDiv.innerHTML = `
+    <div class="panel" style="position: relative;">
+      <button class="close-modal">&times;</button>
+      <canvas id="animeCanvas" width="500" height="280" style="width:100%; height:auto; max-width:500px; aspect-ratio:500/280;"></canvas>
+      <div class="modal-caption">🎈 你没瘦，又胖了，哈哈… 🎈</div>
+      <button class="btn btn-primary" style="margin-top:20px;" id="closeAnimeModal">知道啦 😅</button>
+    </div>
+  `;
+  document.body.appendChild(modalDiv);
+  const canvas = modalDiv.querySelector('#animeCanvas');
+  const ctx = canvas.getContext('2d');
+  drawFullBodyKids(ctx, canvas.width, canvas.height);
+  const closeBtn = modalDiv.querySelector('.close-modal');
+  const closeBtn2 = modalDiv.querySelector('#closeAnimeModal');
+  const closeModal = () => modalDiv.remove();
+  closeBtn.onclick = closeModal;
+  closeBtn2.onclick = closeModal;
+  modalDiv.onclick = (e) => { if (e.target === modalDiv) closeModal(); };
+}
+
+// ==================== 增强版周期总结 ====================
+function generateEnhancedSummary(plan, timeline) {
+  const records = timeline.filter(t => t.weight !== null);
+  if (records.length === 0) return null;
+  
+  const weights = records.map(r => r.weight);
+  const dates = records.map(r => r.date);
+  const firstWeight = weights[0];
+  const lastWeight = weights[weights.length - 1];
+  const totalChange = lastWeight - firstWeight;
+  const avgWeight = weights.reduce((a,b) => a+b, 0) / weights.length;
+  const minWeight = Math.min(...weights);
+  const maxWeight = Math.max(...weights);
+  
+  // 反弹次数（较前一天增重）
+  let reboundCount = 0;
+  for (let i = 1; i < weights.length; i++) {
+    if (weights[i] > weights[i-1]) reboundCount++;
+  }
+  
+  // 连续下降最长天数
+  let longestStreak = 0;
+  let currentStreak = 0;
+  for (let i = 1; i < weights.length; i++) {
+    if (weights[i] < weights[i-1]) {
+      currentStreak++;
+      if (currentStreak > longestStreak) longestStreak = currentStreak;
+    } else {
+      currentStreak = 0;
+    }
+  }
+  
+  // 最大单日降幅
+  let maxDrop = 0;
+  for (let i = 1; i < weights.length; i++) {
+    const drop = weights[i-1] - weights[i];
+    if (drop > maxDrop) maxDrop = drop;
+  }
+  
+  // 反弹最严重的区间（连续两次以上反弹）
+  let reboundSegments = [];
+  let segmentStart = -1;
+  for (let i = 1; i < weights.length; i++) {
+    if (weights[i] > weights[i-1]) {
+      if (segmentStart === -1) segmentStart = i-1;
+    } else {
+      if (segmentStart !== -1 && i - segmentStart > 1) {
+        reboundSegments.push({ start: segmentStart, end: i-1, dates: dates.slice(segmentStart, i) });
+      }
+      segmentStart = -1;
+    }
+  }
+  if (segmentStart !== -1 && weights.length - segmentStart > 1) {
+    reboundSegments.push({ start: segmentStart, end: weights.length-1, dates: dates.slice(segmentStart) });
+  }
+  const worstRebound = reboundSegments.length ? reboundSegments.reduce((a,b) => (a.end - a.start) > (b.end - b.start) ? a : b) : null;
+  
+  // 周平均减重速度（每周按7天，计算每周变化率）
+  let weeklyRate = 0;
+  if (records.length >= 2) {
+    const daysDiff = (new Date(dates[dates.length-1]) - new Date(dates[0])) / (1000*3600*24);
+    if (daysDiff > 0) weeklyRate = (totalChange / daysDiff) * 7;
+  }
+  
+  // 标准差（波动）
+  let variance = 0;
+  weights.forEach(w => variance += Math.pow(w - avgWeight, 2));
+  variance /= weights.length;
+  const stdDev = Math.sqrt(variance);
+  
+  // 目标达成状态
+  let goalStatus = '';
+  let goalProgress = 0;
+  if (plan.target_weight) {
+    const initialDiff = firstWeight - plan.target_weight;
+    if (initialDiff > 0) {
+      const achieved = Math.max(0, firstWeight - lastWeight);
+      goalProgress = (achieved / initialDiff) * 100;
+      goalProgress = Math.min(100, Math.max(0, goalProgress));
+    } else {
+      goalProgress = lastWeight <= plan.target_weight ? 100 : 0;
+    }
+    if (lastWeight <= plan.target_weight) {
+      goalStatus = '🎉 已达到目标体重！';
+    } else {
+      goalStatus = `⚠️ 距离目标还差 ${(lastWeight - plan.target_weight).toFixed(1)} kg (${Math.round(goalProgress)}%)`;
+    }
+  }
+  
+  // 个性化建议
+  let suggestion = '';
+  if (totalChange < 0) {
+    suggestion = `恭喜！成功减重 ${Math.abs(totalChange).toFixed(1)} kg，平均每周减重 ${Math.abs(weeklyRate).toFixed(2)} kg。`;
+    if (weeklyRate > 0.5) suggestion += ' 速度较快，请确保营养充足。';
+    else if (weeklyRate < 0.2 && weeklyRate > 0) suggestion += ' 速度较慢，可适当增加运动量。';
+  } else if (totalChange > 0) {
+    suggestion = `体重上升了 ${totalChange.toFixed(1)} kg，建议增加运动，调整饮食。`;
+    if (reboundCount > weights.length * 0.3) suggestion += ' 反弹频繁，建议保持稳定饮食节奏。';
+  } else {
+    suggestion = '体重无变化，可以尝试调整饮食结构或增加运动量。';
+  }
+  
+  if (longestStreak > 3) {
+    suggestion += ` 你曾连续下降 ${longestStreak} 天，说明有潜力，保持动力！`;
+  }
+  if (worstRebound && worstRebound.dates.length > 2) {
+    suggestion += ` 注意：${worstRebound.dates[0]} 至 ${worstRebound.dates[worstRebound.dates.length-1]} 期间反弹明显，回顾饮食记录。`;
+  }
+  
+  return {
+    startWeight: firstWeight,
+    endWeight: lastWeight,
+    change: totalChange,
+    changeAbs: Math.abs(totalChange).toFixed(1),
+    avg: avgWeight.toFixed(1),
+    min: minWeight,
+    max: maxWeight,
+    reboundCount,
+    totalDays: records.length,
+    goalStatus,
+    goalProgress,
+    suggestion,
+    achievedGoal: plan.target_weight ? lastWeight <= plan.target_weight : false,
+    longestStreak,
+    maxDrop,
+    weeklyRate: weeklyRate.toFixed(2),
+    stdDev: stdDev.toFixed(2),
+    worstReboundDates: worstRebound ? worstRebound.dates : null
+  };
+}
+
+function drawMiniChart(ctx, timeline, width, height) {
+  const valid = timeline.filter(t => t.weight !== null);
+  if (valid.length < 2) return;
+  const weights = valid.map(t => t.weight);
+  const minW = Math.min(...weights);
+  const maxW = Math.max(...weights);
+  const range = maxW - minW || 1;
+  const stepX = width / (valid.length - 1);
+  
+  ctx.clearRect(0, 0, width, height);
+  ctx.beginPath();
+  ctx.strokeStyle = '#2c5e2e';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < valid.length; i++) {
+    const x = i * stepX;
+    const y = height - ((weights[i] - minW) / range) * height;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  
+  // 添加点
+  ctx.fillStyle = '#4c9e4e';
+  for (let i = 0; i < valid.length; i++) {
+    const x = i * stepX;
+    const y = height - ((weights[i] - minW) / range) * height;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawRingChart(ctx, cx, cy, radius, progress, startAngle = -Math.PI/2) {
+  const endAngle = startAngle + (Math.PI * 2 * progress / 100);
+  ctx.clearRect(0, 0, radius*2+20, radius*2+20);
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI*2);
+  ctx.strokeStyle = '#e9ecef';
+  ctx.lineWidth = 12;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, startAngle, endAngle);
+  ctx.strokeStyle = '#2c5e2e';
+  ctx.stroke();
+  ctx.fillStyle = '#2c5e2e';
+  ctx.font = `bold ${radius * 0.5}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${Math.round(progress)}%`, cx, cy);
+}
+
+function showEnhancedSummaryModal(plan, timeline) {
+  const summary = generateEnhancedSummary(plan, timeline);
+  if (!summary) { alert('暂无体重数据，无法生成总结。'); return; }
+  
+  const modalDiv = document.createElement('div');
+  modalDiv.className = 'mask show';
+  modalDiv.innerHTML = `
+    <div class="panel" style="max-width: 600px;">
+      <button class="close-modal">&times;</button>
+      <h2>📊 周期总结报告</h2>
+      <div style="display: flex; justify-content: space-around; align-items: center; margin: 20px 0;">
+        <div style="text-align: center;">
+          <canvas id="ringChartCanvas" width="100" height="100" style="width:100px;height:100px;"></canvas>
+          <div style="font-size:0.8rem;">目标达成</div>
+        </div>
+        <div style="text-align: center;">
+          <canvas id="miniChartCanvas" width="180" height="80" style="width:180px;height:80px;"></canvas>
+          <div style="font-size:0.8rem;">体重变化趋势</div>
+        </div>
+      </div>
+      <div style="text-align: left; margin-top: 10px;">
+        <div class="summary-item"><span class="summary-label">周期天数：</span><span class="summary-value">${plan.duration_days} 天</span></div>
+        <div class="summary-item"><span class="summary-label">有记录天数：</span><span class="summary-value">${summary.totalDays} 天</span></div>
+        <div class="summary-item"><span class="summary-label">起始体重：</span><span class="summary-value">${summary.startWeight} kg</span></div>
+        <div class="summary-item"><span class="summary-label">最终体重：</span><span class="summary-value">${summary.endWeight} kg</span></div>
+        <div class="summary-item"><span class="summary-label">体重变化：</span><span class="summary-value ${summary.change < 0 ? 'good' : (summary.change > 0 ? 'bad' : 'neutral')}">${summary.change > 0 ? '+' : ''}${summary.change.toFixed(1)} kg</span></div>
+        <div class="summary-item"><span class="summary-label">平均体重：</span><span class="summary-value">${summary.avg} kg</span></div>
+        <div class="summary-item"><span class="summary-label">最低体重：</span><span class="summary-value">${summary.min} kg</span></div>
+        <div class="summary-item"><span class="summary-label">最高体重：</span><span class="summary-value">${summary.max} kg</span></div>
+        <div class="summary-item"><span class="summary-label">体重波动标准差：</span><span class="summary-value">${summary.stdDev} kg</span></div>
+        <div class="summary-item"><span class="summary-label">体重反弹次数：</span><span class="summary-value">${summary.reboundCount} 次</span></div>
+        <div class="summary-item"><span class="summary-label">连续下降最长：</span><span class="summary-value">${summary.longestStreak} 天</span></div>
+        <div class="summary-item"><span class="summary-label">最大单日降幅：</span><span class="summary-value">${summary.maxDrop.toFixed(1)} kg</span></div>
+        <div class="summary-item"><span class="summary-label">周平均减重速度：</span><span class="summary-value">${summary.weeklyRate > 0 ? '+' : ''}${summary.weeklyRate} kg/周</span></div>
+        ${plan.target_weight ? `<div class="summary-item"><span class="summary-label">目标体重：</span><span class="summary-value">${plan.target_weight} kg ${summary.goalStatus}</span></div>` : ''}
+        <div class="summary-item" style="margin-top: 12px;"><span class="summary-label">💡 AI 建议：</span><span class="summary-value">${summary.suggestion}</span></div>
+      </div>
+      <div class="button-group" style="justify-content: center; margin-top: 20px;">
+        <button id="exportCsvBtn" class="btn btn-outline">📥 导出CSV</button>
+        <button id="closeSummaryModal" class="btn btn-primary">关闭</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modalDiv);
+  
+  // 绘制环形图
+  const ringCanvas = modalDiv.querySelector('#ringChartCanvas');
+  if (ringCanvas && plan.target_weight) {
+    const ctx = ringCanvas.getContext('2d');
+    ringCanvas.width = 100;
+    ringCanvas.height = 100;
+    drawRingChart(ctx, 50, 50, 40, summary.goalProgress);
+  } else if (ringCanvas) {
+    ringCanvas.style.display = 'none';
+  }
+  
+  // 绘制迷你趋势图
+  const miniCanvas = modalDiv.querySelector('#miniChartCanvas');
+  if (miniCanvas) {
+    const ctx = miniCanvas.getContext('2d');
+    miniCanvas.width = 180;
+    miniCanvas.height = 80;
+    drawMiniChart(ctx, timeline, 180, 80);
+  }
+  
+  // 导出CSV
+  const exportBtn = modalDiv.querySelector('#exportCsvBtn');
+  exportBtn.onclick = () => {
+    const records = timeline.filter(t => t.weight !== null);
+    const csvRows = [['日期', '体重(kg)', '食物记录']];
+    records.forEach(rec => {
+      csvRows.push([rec.date, rec.weight, rec.food || '']);
+    });
+    const csvContent = csvRows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `周期总结_${plan.name || '未命名'}.csv`);
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+  
+  const closeBtn = modalDiv.querySelector('.close-modal');
+  const closeBtn2 = modalDiv.querySelector('#closeSummaryModal');
+  const closeModal = () => modalDiv.remove();
+  closeBtn.onclick = closeModal;
+  closeBtn2.onclick = closeModal;
+  modalDiv.onclick = (e) => { if (e.target === modalDiv) closeModal(); };
+}
+// ==================== 登录界面：SVG手臂捂眼系统 ====================
+// 核心设计：每个角色有左右两条手臂，每条手臂由上臂+前臂+手掌三段组成
+// 自然状态：手臂自然下垂在身体两侧
+// 捂眼状态：手掌精确移动到对应眼睛位置，通过IK计算上臂/前臂弯曲角度
+/**
+ * 用SVG绘制一个角色的手臂系统
+ * @param {SVGElement} svg - 角色专属SVG覆盖层
+ * @param {object} cfg - 角色配置
+ * @param {boolean} covering - 是否捂眼
+ */
+function buildArmSVG(svgEl, cfg, covering) {
+  svgEl.innerHTML = '';
+  const W            = cfg.bodyW;
+  const skinColor    = cfg.skinColor;
+  const upperArmLen  = cfg.upperArmLen;
+  const foreArmLen   = cfg.foreArmLen;
+  const armThick     = cfg.armThick;
+  const palmW        = cfg.palmW;
+  const palmH        = cfg.palmH;
+  const leftShoulderX  = cfg.leftShoulderX;
+  const rightShoulderX = cfg.rightShoulderX;
+  const shoulderY      = cfg.shoulderY;
+  const leftEyeCX      = cfg.leftEyeCX;
+  const rightEyeCX     = cfg.rightEyeCX;
+  const eyeCY          = cfg.eyeCY;
+  // 颜色加深工具
+  function shadeColor(hex, amount) {
+    let r = parseInt(hex.slice(1,3),16);
+    let g = parseInt(hex.slice(3,5),16);
+    let b = parseInt(hex.slice(5,7),16);
+    r = Math.max(0, Math.min(255, r + amount));
+    g = Math.max(0, Math.min(255, g + amount));
+    b = Math.max(0, Math.min(255, b + amount));
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  }
+  /**
+   * IK 求解肘关节位置
+   */
+  function solveIK(sx, sy, tx, ty, L1, L2, side) {
+    const dx = tx - sx, dy = ty - sy;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    dist = Math.min(dist, L1 + L2 - 0.1);
+    dist = Math.max(dist, Math.abs(L1 - L2) + 0.1);
+    const a  = (L1*L1 - L2*L2 + dist*dist) / (2 * dist);
+    const h  = Math.sqrt(Math.max(0, L1*L1 - a*a));
+    const midX = sx + a * dx / dist;
+    const midY = sy + a * dy / dist;
+    const ex = midX + side * h * dy / dist;
+    const ey = midY - side * h * dx / dist;
+    return { ex, ey };
+  }
+  /**
+   * 绘制梯形截面肢体：起点端宽度 = r*1.3，终点端宽度 = r
+   * 上端（靠近肩膀/肘）更宽，下端（靠近肘/手腕）更窄
+   */
+  function drawLimb(svg, x1, y1, x2, y2, r, color, isUpper) {
+    const dx  = x2 - x1, dy = y2 - y1;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    if (len < 0.1) return;
+    const nx = -dy / len, ny = dx / len; // 法线方向
+    // 上端宽，下端窄
+    const r1 = isUpper ? r * 1.3 : r * 1.1; // 起点半径
+    const r2 = isUpper ? r       : r * 0.85; // 终点半径
+    // 四个顶点
+    const p1x = x1 + nx * r1, p1y = y1 + ny * r1; // 起点左
+    const p2x = x1 - nx * r1, p2y = y1 - ny * r1; // 起点右
+    const p3x = x2 - nx * r2, p3y = y2 - ny * r2; // 终点右
+    const p4x = x2 + nx * r2, p4y = y2 + ny * r2; // 终点左
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const d = `M${p1x},${p1y} L${p2x},${p2y} L${p3x},${p3y} L${p4x},${p4y} Z`;
+    path.setAttribute('d', d);
+    path.setAttribute('fill', color);
+    path.setAttribute('stroke', shadeColor(color, -25));
+    path.setAttribute('stroke-width', '0.8');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(path);
+  }
+  /**
+   * 绘制手掌 + 5根明显参差不齐的手指
+   * 左右手使用完全相同的尺寸参数，仅手指展开方向镜像
+   */
+  function drawPalm(svg, cx, cy, angle, pw, ph, r, color, isLeft) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    // 手掌椭圆中心（沿手臂方向向前 ph*0.5）
+    const palmCX = cx + cos * ph * 0.5;
+    const palmCY = cy + sin * ph * 0.5;
+    // 手掌指端（用于手指根部起点参考）
+    const tipCX  = cx + cos * ph;
+    const tipCY  = cy + sin * ph;
+    // 手掌椭圆
+    const palmEl = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    palmEl.setAttribute('cx', palmCX);
+    palmEl.setAttribute('cy', palmCY);
+    palmEl.setAttribute('rx', ph * 0.52);
+    palmEl.setAttribute('ry', pw * 0.48);
+    palmEl.setAttribute('fill', color);
+    palmEl.setAttribute('stroke', shadeColor(color, -25));
+    palmEl.setAttribute('stroke-width', '0.8');
+    const deg = angle * 180 / Math.PI;
+    palmEl.setAttribute('transform', `rotate(${deg},${palmCX},${palmCY})`);
+    svg.appendChild(palmEl);
+    // ---- 5根手指：长度比例差异显著，符合真实手型 ----
+    // 顺序：拇指、食指、中指、无名指、小指
+    // 长度比例（中指最长，拇指最短且偏离）
+    const fingerLenRatios  = [0.45, 0.82, 1.0, 0.88, 0.58];
+    // 粗细比例（拇指最粗，小指最细）
+    const fingerThickRatios = [0.52, 0.40, 0.38, 0.36, 0.28];
+    const baseFingerLen    = ph * 0.75;
+    const fingerBaseThick  = r * 0.42;
+    // 扇形展开：5根手指均匀分布在一定角度范围内
+    // isLeft:  手指从右往左展开（拇指在右侧）
+    // !isLeft: 手指从左往右展开（拇指在左侧）
+    const spreadTotal = 0.72; // 总扇形角度（弧度），约41度
+    // 拇指偏角额外偏移（拇指与其他四指间距更大）
+    const thumbExtra  = 0.18;
+    // 各手指角度偏移（相对于手臂方向）
+    // 正值 = 顺时针，负值 = 逆时针
+    const fingerAngleOffsets = isLeft
+      ? [ spreadTotal/2 + thumbExtra,   // 拇指：最右
+          spreadTotal/4,                 // 食指
+          0,                             // 中指：正中
+         -spreadTotal/4,                 // 无名指
+         -spreadTotal/2 ]                // 小指：最左
+      : [ -spreadTotal/2 - thumbExtra,  // 拇指：最左
+         -spreadTotal/4,                 // 食指
+          0,                             // 中指：正中
+          spreadTotal/4,                 // 无名指
+          spreadTotal/2 ];               // 小指：最右
+    // 手指根部在手掌指端附近，按手掌宽度方向分布
+    const perpAngle = angle + Math.PI / 2; // 垂直于手臂方向
+    const spreadStep = (pw * 0.72) / 4;    // 手指根部间距
+    for (let i = 0; i < 5; i++) {
+      const fLen   = baseFingerLen  * fingerLenRatios[i];
+      const fThick = fingerBaseThick * fingerThickRatios[i];
+      const fAngle = angle + fingerAngleOffsets[i];
+      // 手指根部位置：沿手掌宽度方向均匀分布
+      const offsetIdx = i - 2; // -2,-1,0,1,2
+      const fRootX = tipCX + Math.cos(perpAngle) * spreadStep * (isLeft ? -offsetIdx : offsetIdx);
+      const fRootY = tipCY + Math.sin(perpAngle) * spreadStep * (isLeft ? -offsetIdx : offsetIdx);
+      // 手指末端
+      const fTipX = fRootX + Math.cos(fAngle) * fLen;
+      const fTipY = fRootY + Math.sin(fAngle) * fLen;
+      // 手指用 drawLimb（上粗下细）
+      drawLimb(svg, fRootX, fRootY, fTipX, fTipY, fThick, color, false);
+      // 指甲（小椭圆，颜色略浅）
+      const nailR = fThick * 0.55;
+      const nail  = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      nail.setAttribute('cx', fTipX);
+      nail.setAttribute('cy', fTipY);
+      nail.setAttribute('r',  nailR);
+      nail.setAttribute('fill', shadeColor(color, 15));
+      nail.setAttribute('stroke', shadeColor(color, -8));
+      nail.setAttribute('stroke-width', '0.5');
+      svg.appendChild(nail);
+    }
+  }
+  /**
+   * 绘制完整手臂：肩→肘→手腕→手掌+手指
+   */
+  function drawArm(sx, sy, targetX, targetY, side, isLeft) {
+    const { ex, ey } = solveIK(sx, sy, targetX, targetY, upperArmLen, foreArmLen, side);
+    const wristAngle = Math.atan2(targetY - ey, targetX - ex);
+    // 上臂（isUpper=true：起点更宽）
+    drawLimb(svgEl, sx, sy, ex, ey, armThick, skinColor, true);
+    // 前臂（isUpper=false）
+    drawLimb(svgEl, ex, ey, targetX, targetY, armThick * 0.82, skinColor, true);
+    // 手掌+手指
+    drawPalm(svgEl, targetX, targetY, wristAngle, palmW, palmH, armThick * 0.72, skinColor, isLeft);
+  }
+  if (covering) {
+    // 捂眼：左手→左眼中心，右手→右眼中心
+    drawArm(leftShoulderX,  shoulderY, leftEyeCX,  eyeCY,  1,  true);
+    drawArm(rightShoulderX, shoulderY, rightEyeCX, eyeCY, -1, false);
+  } else {
+    // 自然下垂
+    const leftHangX  = leftShoulderX  - W * 0.18;
+    const rightHangX = rightShoulderX + W * 0.18;
+    const hangY      = shoulderY + upperArmLen + foreArmLen;
+    drawArm(leftShoulderX,  shoulderY, leftHangX,  hangY,  1,  true);
+    drawArm(rightShoulderX, shoulderY, rightHangX, hangY, -1, false);
+  }
+} // end buildArmSVG
+// ==================== 创建角色DOM元素（含SVG手臂层） ====================
+function createCharacter(cfg) {
+  // 外层容器
+  const wrap = document.createElement('div');
+  wrap.style.cssText = `
+    position: absolute;
+    bottom: 0;
+    left: ${cfg.left};
+    width: ${cfg.bodyW}px;
+    height: ${cfg.bodyH}px;
+    z-index: ${cfg.zIndex};
+    transition: transform 0.7s cubic-bezier(0.34,1.2,0.64,1);
+    transform-origin: bottom center;
+  `;
+  wrap.dataset.type = cfg.type;
+  // 身体
+  const body = document.createElement('div');
+  body.style.cssText = `
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: ${cfg.bodyW}px;
+    height: ${cfg.bodyH}px;
+    background: ${cfg.bodyColor};
+    border-radius: ${cfg.borderRadius};
+  `;
+  wrap.appendChild(body);
+  // 眼睛容器
+  const eyesDiv = document.createElement('div');
+  eyesDiv.style.cssText = `
+    position: absolute;
+    display: flex;
+    gap: ${cfg.eyeGap}px;
+    left: ${cfg.eyesLeft}px;
+    top: ${cfg.eyesTop}px;
+    transition: left 0.4s ease, top 0.4s ease;
+  `;
+  function makeEye() {
+    const white = document.createElement('div');
+    white.className = 'eye-white';
+    white.style.cssText = `
+      width: ${cfg.eyeSize}px;
+      height: ${cfg.eyeSize}px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: height 0.1s ease;
+    `;
+    const pupil = document.createElement('div');
+    pupil.className = 'pupil';
+    pupil.style.cssText = `
+      width: ${cfg.pupilSize}px;
+      height: ${cfg.pupilSize}px;
+      background: #2D2D2D;
+      border-radius: 50%;
+      transition: transform 0.1s ease-out;
+    `;
+    white.appendChild(pupil);
+    return { white, pupil };
+  }
+  const leftEye  = makeEye();
+  const rightEye = makeEye();
+  eyesDiv.appendChild(leftEye.white);
+  eyesDiv.appendChild(rightEye.white);
+  wrap.appendChild(eyesDiv);
+  // SVG 手臂层（覆盖在身体上方，尺寸比角色宽，以容纳侧伸手臂）
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svgEl = document.createElementNS(svgNS, 'svg');
+  // SVG 比角色宽，向两侧各扩展 armOverflow，向上扩展，以便手臂有足够空间
+  const armOverflow = cfg.bodyW * 0.7;
+  const svgW = cfg.bodyW + armOverflow * 2;
+  const svgH = cfg.bodyH + 20;
+  svgEl.setAttribute('width',  svgW);
+  svgEl.setAttribute('height', svgH);
+  svgEl.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+  svgEl.style.cssText = `
+    position: absolute;
+    left: ${-armOverflow}px;
+    top: -10px;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 10;
+  `;
+  wrap.appendChild(svgEl);
+  // 将配置中相对于角色div的坐标，转换到SVG坐标系（SVG原点在角色左上角左移armOverflow）
+  // svgX = charX + armOverflow
+  const ao = armOverflow;
+  const svgCfg = Object.assign({}, cfg, {
+    leftShoulderX:  cfg.leftShoulderX  + ao,
+    rightShoulderX: cfg.rightShoulderX + ao,
+    shoulderY:      cfg.shoulderY      + 10, // +10 是svgEl top:-10px 的偏移
+    leftEyeCX:      cfg.leftEyeCX      + ao,
+    rightEyeCX:     cfg.rightEyeCX     + ao,
+    eyeCY:          cfg.eyeCY          + 10,
+  });
+  // 存引用
+  wrap._svgEl    = svgEl;
+  wrap._svgCfg   = svgCfg;
+  wrap._eyesDiv  = eyesDiv;
+  wrap._leftPupil  = leftEye.pupil;
+  wrap._rightPupil = rightEye.pupil;
+  wrap._leftEyeEl  = leftEye.white;
+  wrap._rightEyeEl = rightEye.white;
+  wrap._cfg = cfg;
+  // 初始绘制（自然下垂）
+  buildArmSVG(svgEl, svgCfg, false);
+  return wrap;
+}
+// ==================== 更新瞳孔方向 ====================
+function updatePupils(wrap, mouseX, mouseY, forceDX, forceDY) {
+  const maxD = 4;
+  function setP(pupil, eyeEl, fdx, fdy) {
+    if (fdx !== undefined) {
+      pupil.style.transform = `translate(${fdx}px,${fdy}px)`;
+    } else {
+      const r = eyeEl.getBoundingClientRect();
+      const cx = r.left + r.width  / 2;
+      const cy = r.top  + r.height / 2;
+      const dx = mouseX - cx, dy = mouseY - cy;
+      const dist = Math.min(Math.sqrt(dx*dx+dy*dy), maxD);
+      const ang  = Math.atan2(dy, dx);
+      pupil.style.transform = `translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist}px)`;
+    }
+  }
+  setP(wrap._leftPupil,  wrap._leftEyeEl,  forceDX, forceDY);
+  setP(wrap._rightPupil, wrap._rightEyeEl, forceDX, forceDY);
+}
+// ==================== 渲染登录界面 ====================
+async function renderLogin() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="login-container">
+      <div class="login-left">
+        <div class="characters-wrapper" id="charactersWrapper"></div>
+      </div>
+      <div class="login-right">
+        <div class="login-card">
+          <h2>欢迎回来</h2>
+          <p>翠翠的减肥日记</p>
+          <div id="authForm">
+            <div class="field" style="text-align:left;">
+              <label>邮箱</label>
+              <div class="login-input-wrapper">
+                <span class="login-input-icon"></span>
+                <input type="email" id="loginEmail" class="login-input" placeholder="your@email.com" autocomplete="email">
+              </div>
+            </div>
+            <div class="field" style="text-align:left;">
+              <label>密码</label>
+              <div class="login-input-wrapper">
+                <span class="login-input-icon"></span>
+                <input type="password" id="loginPassword" class="login-input" placeholder="至少6位" autocomplete="current-password">
+                <button type="button" id="togglePasswordBtn" class="password-toggle">👁️</button>
+              </div>
+            </div>
+            <div id="authError" class="error-text"></div>
+            <div class="button-group" style="justify-content:center; margin-top:20px;">
+              <button id="loginBtn" class="btn-login btn-block">登录</button>
+              <button id="registerBtn" class="btn-register btn-block">注册</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  const container = document.getElementById('charactersWrapper');
+  // ---- 角色配置 ----
+  // 所有坐标均相对于角色div左上角（bottom=0对齐）
+  // eyesLeft/eyesTop: 眼睛容器左上角
+  // leftEyeCX/rightEyeCX/eyeCY: 左右眼中心（用于IK目标）
+  // leftShoulderX/rightShoulderX/shoulderY: 肩膀位置
+const charDefs = [
+  {
+    type: 'purple', left: '70px',
+    bodyW: 180, bodyH: 400,
+    bodyColor: '#6C3FF5', borderRadius: '10px 10px 0 0', zIndex: 1,
+    eyesLeft: 52, eyesTop: 48, eyeGap: 28, eyeSize: 20, pupilSize: 8,
+    leftEyeCX: 62, rightEyeCX: 110, eyeCY: 58,
+    leftShoulderX: 22, rightShoulderX: 158, shoulderY: 160,
+    upperArmLen: 52, foreArmLen: 44, armThick: 9,
+    palmW: 22, palmH: 18,
+    skinColor: '#6C3FF5',  // 与bodyColor完全一致
+  },
+  {
+    type: 'black', left: '240px',
+    bodyW: 120, bodyH: 310,
+    bodyColor: '#2D2D2D', borderRadius: '8px 8px 0 0', zIndex: 2,
+    eyesLeft: 30, eyesTop: 38, eyeGap: 22, eyeSize: 18, pupilSize: 8,
+    leftEyeCX: 40, rightEyeCX: 80, eyeCY: 47,
+    leftShoulderX: 12, rightShoulderX: 108, shoulderY: 120,
+    upperArmLen: 40, foreArmLen: 34, armThick: 7,
+    palmW: 17, palmH: 14,
+    skinColor: '#2D2D2D',  // 与bodyColor完全一致
+  },
+  {
+    type: 'orange', left: '0px',
+    bodyW: 240, bodyH: 200,
+    bodyColor: '#FF9B6B', borderRadius: '120px 120px 0 0', zIndex: 3,
+    eyesLeft: 90, eyesTop: 98, eyeGap: 28, eyeSize: 20, pupilSize: 8,
+    leftEyeCX: 100, rightEyeCX: 148, eyeCY: 108,
+    leftShoulderX: 28, rightShoulderX: 212, shoulderY: 118,
+    upperArmLen: 34, foreArmLen: 28, armThick: 8,
+    palmW: 18, palmH: 15,
+    skinColor: '#FF9B6B',  // 与bodyColor完全一致
+  },
+  {
+    type: 'yellow', left: '310px',
+    bodyW: 140, bodyH: 230,
+    bodyColor: '#E8D754', borderRadius: '70px 70px 0 0', zIndex: 4,
+    eyesLeft: 56, eyesTop: 46, eyeGap: 22, eyeSize: 16, pupilSize: 7,
+    leftEyeCX: 64, rightEyeCX: 102, eyeCY: 54,
+    leftShoulderX: 14, rightShoulderX: 126, shoulderY: 88,
+    upperArmLen: 30, foreArmLen: 26, armThick: 7,
+    palmW: 16, palmH: 13,
+    skinColor: '#E8D754',  // 与bodyColor完全一致
+  },
+];
+  const chars = charDefs.map(cfg => {
+    const el = createCharacter(cfg);
+    container.appendChild(el);
+    return el;
+  });
+  // ---- 状态 ----
+  let showPassword     = false;
+  let mouseX = 0, mouseY = 0;
+  let isTyping         = false;
+  let typingTimer      = null;
+  // 眨眼
+  const blinkStates = chars.map(() => false);
+  chars.forEach((ch, idx) => {
+    function scheduleBlink() {
+      const delay = Math.random() * 4000 + 2500;
+      setTimeout(() => {
+        blinkStates[idx] = true;
+        applyBlink(ch, true);
+        setTimeout(() => {
+          blinkStates[idx] = false;
+          applyBlink(ch, false);
+          scheduleBlink();
+        }, 140);
+      }, delay);
+    }
+    scheduleBlink();
+  });
+  function applyBlink(ch, isBlinking) {
+    [ch._leftEyeEl, ch._rightEyeEl].forEach(e => {
+      e.style.height = isBlinking ? '2px' : `${ch._cfg.eyeSize}px`;
+    });
+  }
+  // ---- 主更新 ----
+  function updateAll() {
+    chars.forEach((ch, idx) => {
+      const cfg = ch._cfg;
+      // 身体微微跟随鼠标倾斜
+      const rect = ch.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const skew = Math.max(-5, Math.min(5, (mouseX - cx) / 80));
+      ch.style.transform = `skewX(${-skew}deg)`;
+      // 眼睛位置偏移（跟随输入/鼠标）
+      let eyeOffX = 0, eyeOffY = 0;
+      if (!showPassword && !isTyping) {
+        const charCX = rect.left + rect.width  / 2;
+        const charCY = rect.top  + rect.height / 3;
+        eyeOffX = Math.max(-8, Math.min(8,  (mouseX - charCX) / 25));
+        eyeOffY = Math.max(-5, Math.min(5,  (mouseY - charCY) / 40));
+      }
+      if (isTyping) { eyeOffX = 0; eyeOffY = 4; }
+      ch._eyesDiv.style.left = `${cfg.eyesLeft + eyeOffX}px`;
+      ch._eyesDiv.style.top  = `${cfg.eyesTop  + eyeOffY}px`;
+      // 瞳孔
+      if (showPassword) {
+        // 捂眼时瞳孔往上偏（躲避）
+        updatePupils(ch, mouseX, mouseY, -2, -3);
+      } else if (isTyping) {
+        updatePupils(ch, mouseX, mouseY, 0, 3);
+      } else {
+        updatePupils(ch, mouseX, mouseY, undefined, undefined);
+      }
+      // 手臂：捂眼时传入当前眼睛中心位置（含偏移）
+      const svgCfg = Object.assign({}, ch._svgCfg);
+      if (showPassword) {
+        // 眼睛中心随eyeOff同步移动
+        svgCfg.leftEyeCX  = ch._svgCfg.leftEyeCX  + eyeOffX;
+        svgCfg.rightEyeCX = ch._svgCfg.rightEyeCX + eyeOffX;
+        svgCfg.eyeCY      = ch._svgCfg.eyeCY       + eyeOffY;
+      }
+      buildArmSVG(ch._svgEl, svgCfg, showPassword);
+    });
+  }
+  window.addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    updateAll();
+  });
+  const emailInput = document.getElementById('loginEmail');
+  const pwdInput   = document.getElementById('loginPassword');
+  [emailInput, pwdInput].forEach(inp => {
+    inp.addEventListener('input', () => {
+      isTyping = true;
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => { isTyping = false; updateAll(); }, 900);
+      updateAll();
+    });
+  });
+  document.getElementById('togglePasswordBtn').addEventListener('click', () => {
+    showPassword = !showPassword;
+    pwdInput.type = showPassword ? 'text' : 'password';
+    document.getElementById('togglePasswordBtn').textContent = showPassword ? '🙈' : '👁️';
+    updateAll();
+  });
+  document.getElementById('loginBtn').onclick = async () => {
+    const email = emailInput.value.trim();
+    const pwd   = pwdInput.value.trim();
+    const errDiv = document.getElementById('authError');
+    errDiv.innerText = '';
+    if (!email || !pwd) { errDiv.innerText = '请输入邮箱和密码'; return; }
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pwd });
+    if (error) errDiv.innerText = error.message;
+    else window.location.hash = '#plans';
+  };
+  document.getElementById('registerBtn').onclick = async () => {
+    const email = emailInput.value.trim();
+    const pwd   = pwdInput.value.trim();
+    const errDiv = document.getElementById('authError');
+    if (!email || !pwd) { errDiv.innerText = '请输入邮箱和密码'; return; }
+    if (pwd.length < 6) { errDiv.innerText = '密码至少6位'; return; }
+    const { error } = await supabaseClient.auth.signUp({ email, password: pwd });
+    if (error) errDiv.innerText = error.message;
+    else alert('注册成功，请登录');
+  };
+  updateAll();
+  setInterval(updateAll, 120);
+} // end renderLogin
+// ==================== 退出登录 ====================
+async function logout() {
+  await supabaseClient.auth.signOut();
+  currentUserId = null;
+  window.location.hash = '#login';
+}
+// ==================== 计划列表页 ====================
+async function renderPlans() {
+  if (!(await checkAuth())) return;
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="app-header">
+      <h1>📅 减肥周期</h1>
+      <button id="logoutBtn" class="logout-btn">退出登录</button>
+    </div>
+    <div class="container" id="planListContainer"><div id="planList"></div></div>
+    <button id="addPlanBtn" class="fab">+</button>
+    <div id="planModal" class="mask">
+      <div class="panel">
+        <h2>📌 新建周期计划</h2>
+        <form id="planForm">
+          <div class="field"><label>计划名称 (可选)</label><input name="name" placeholder="例如：夏季冲刺" maxlength="40"></div>
+          <div class="field"><label>开始日期</label><input type="date" name="start_date" id="start_date" required></div>
+          <div class="field"><label>周期时长</label>
+            <select name="duration" required>
+              <option value="30">1个月 (30天)</option>
+              <option value="90">3个月 (90天)</option>
+              <option value="60">2个月 (60天)</option>
+            </select>
+          </div>
+          <div class="field"><label>目标体重 (kg) 可选</label><input name="target_weight" type="number" step="0.1" placeholder="例如 60.0"></div>
+          <div class="button-group" style="justify-content:space-between;">
+            <button type="button" id="closePlanModal" class="btn btn-outline">取消</button>
+            <button type="submit" class="btn btn-primary">创建计划</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  async function loadPlans() {
+    const { data: plans, error } = await supabaseClient
+      .from('weight_loss_plans').select('*')
+      .eq('user_id', currentUserId)
+      .order('created_at', { ascending: false });
+    if (error) {
+      document.getElementById('planList').innerHTML = '<div class="empty-state">加载失败</div>';
+      return;
+    }
+    if (!plans || plans.length === 0) {
+      document.getElementById('planList').innerHTML =
+        '<div class="empty-state"><div class="empty-icon">🍎</div>暂无减肥计划，点击右下角＋创建周期</div>';
+      return;
+    }
+    let html = '';
+    for (let plan of plans) {
+      const { data: records } = await supabaseClient
+        .from('weight_loss_daily').select('id').eq('plan_id', plan.id);
+      const recorded = records ? records.length : 0;
+      const percent  = plan.duration_days > 0 ? (recorded / plan.duration_days) * 100 : 0;
+      html += `
+        <div class="card" data-id="${plan.id}" style="cursor:pointer;">
+          <div class="plan-header">
+            <div class="plan-name">${plan.name || '未命名计划'}</div>
+            <span class="plan-badge">${plan.duration_days}天</span>
+          </div>
+          <div class="plan-date">📆 ${plan.start_date} ~ ${plan.end_date}</div>
+          ${plan.target_weight ? `<div class="stat-row">🎯 目标体重: ${plan.target_weight} kg</div>` : ''}
+          <div class="progress-section">
+            <div class="progress-track"><div class="progress-fill" style="width:${percent}%;"></div></div>
+            <div class="stat-row"><span>📝 已记录 ${recorded} / ${plan.duration_days} 天</span><span>${Math.round(percent)}%</span></div>
+          </div>
+          <div class="button-group">
+            <button class="btn btn-outline delete-plan" data-id="${plan.id}" data-name="${plan.name || '此计划'}">删除</button>
+            <button class="btn btn-primary view-plan" data-id="${plan.id}">详细记录</button>
+          </div>
+        </div>
+      `;
+    }
+    document.getElementById('planList').innerHTML = html;
+    document.querySelectorAll('.delete-plan').forEach(btn =>
+      btn.onclick = (e) => { e.stopPropagation(); deletePlan(btn.dataset.id, btn.dataset.name); });
+    document.querySelectorAll('.view-plan').forEach(btn =>
+      btn.onclick = (e) => { e.stopPropagation(); window.location.hash = `#plan/${btn.dataset.id}`; });
+    document.querySelectorAll('.card').forEach(card =>
+      card.onclick = (e) => { if (e.target.tagName !== 'BUTTON') window.location.hash = `#plan/${card.dataset.id}`; });
+  }
+  async function deletePlan(id, name) {
+    if (!confirm(`确认删除周期"${name}"及其所有每日记录吗？`)) return;
+    await supabaseClient.from('weight_loss_plans').delete().eq('id', id).eq('user_id', currentUserId);
+    loadPlans();
+  }
+  document.getElementById('addPlanBtn').onclick = () => {
+    document.getElementById('start_date').value = formatYMD(new Date());
+    document.getElementById('planModal').classList.add('show');
+  };
+  document.getElementById('closePlanModal').onclick = () =>
+    document.getElementById('planModal').classList.remove('show');
+  document.getElementById('planForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.name.value.trim() || null;
+    let start_date = parseDateInput(form.start_date.value);
+    if (!start_date) { alert('请选择有效开始日期'); return; }
+    const duration = parseInt(form.duration.value);
+    const target_weight = form.target_weight.value ? parseFloat(form.target_weight.value) : null;
+    if (target_weight !== null && (isNaN(target_weight) || target_weight <= 0)) {
+      alert('目标体重需为正数'); return;
+    }
+    const endDateObj = new Date(start_date);
+    endDateObj.setDate(endDateObj.getDate() + duration - 1);
+    const end_date = formatYMD(endDateObj);
+    const { error } = await supabaseClient.from('weight_loss_plans').insert({
+      user_id: currentUserId, name, start_date, duration_days: duration, end_date, target_weight
+    });
+    if (error) alert('创建失败: ' + error.message);
+    else { document.getElementById('planModal').classList.remove('show'); loadPlans(); }
+  };
+  loadPlans();
+  document.getElementById('logoutBtn').onclick = () => logout();
+}
+// ==================== 计划详情页 ====================
+async function renderPlanDetail(planId) {
+  if (!(await checkAuth())) return;
+  const { data: plan, error: planErr } = await supabaseClient
+    .from('weight_loss_plans').select('*')
+    .eq('id', planId).eq('user_id', currentUserId).single();
+  if (planErr || !plan) { alert('计划不存在'); window.location.hash = '#plans'; return; }
+  let dailyRecords = [];
+  const { data: records } = await supabaseClient
+    .from('weight_loss_daily').select('*')
+    .eq('plan_id', planId).order('record_date', { ascending: true });
+  if (records) dailyRecords = records;
+  const allDates  = getDateRange(plan.start_date, plan.end_date);
+  const recordMap = new Map();
+  dailyRecords.forEach(rec => recordMap.set(rec.record_date, rec));
+  const timeline = allDates.map(date => {
+    const rec = recordMap.get(date);
+    return { date, record: rec, food: rec?.food_text || '', weight: rec?.weight_kg ?? null };
+  });
+  function computeWarningStatus() {
+    let currentMinWeight = Infinity;
+    const warningMap = new Map();
+    for (let item of timeline) {
+      if (item.weight !== null) {
+        const isWarning = (currentMinWeight !== Infinity && item.weight >= currentMinWeight);
+        warningMap.set(item.date, isWarning);
+        if (item.weight < currentMinWeight) currentMinWeight = item.weight;
+      } else {
+        warningMap.set(item.date, false);
+      }
+    }
+    return warningMap;
+  }
+  let warningMap = computeWarningStatus();
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="app-header">
+      <div>
+        <a href="#" onclick="window.location.hash='#plans'; return false;" class="back-link">← 返回计划列表</a>
+        <h1 style="margin-top:8px;">${plan.name || '减肥周期'}</h1>
+        <div style="font-size:0.8rem;">${plan.start_date} → ${plan.end_date}</div>
+        ${plan.target_weight ? `<div style="font-size:0.85rem;margin-top:4px;">🎯 目标体重: ${plan.target_weight} kg</div>` : ''}
+      </div>
+      <button id="logoutBtn" class="logout-btn">退出登录</button>
+    </div>
+    <div class="container">
+      <div class="card">
+        <div class="flex-between">
+          <span>📊 进度概览</span>
+          <span>${timeline.filter(t => t.record).length} / ${timeline.length} 天已记录</span>
+        </div>
+        <div class="progress-section">
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${(timeline.filter(t=>t.record).length/timeline.length)*100}%;"></div>
+          </div>
+        </div>
+        ${timeline.filter(t=>t.weight!==null).length
+          ? `<div class="stat-row">⚖️ 最新体重: ${timeline.filter(t=>t.weight!==null).slice(-1)[0]?.weight} kg</div>`
+          : ''}
+      </div>
+      <div class="chart-container"><canvas id="weightChart" style="width:100%;max-height:300px;"></canvas></div>
+      <h2 style="margin:12px 0 8px;">📋 每日记录</h2>
+      <div id="dailyList"></div>
+      <button id="summaryBtn" class="btn btn-primary" style="margin:10px auto;display:block;">📊 周期总结</button>
+    </div>
+    <button id="quickAddTodayBtn" class="fab" style="bottom:90px;">📝</button>
+    <div id="dailyModal" class="mask">
+      <div class="panel">
+        <h2 id="dailyModalTitle">记录饮食与体重</h2>
+        <form id="dailyForm">
+          <div class="field"><label>日期</label><input type="date" name="record_date" id="modalDate" readonly style="background:#f3f4f6;"></div>
+          <div class="field"><label>🍽️ 吃的食物</label><textarea name="food_text" rows="3" placeholder="例如：早餐燕麦+牛奶，午餐鸡胸肉沙拉..."></textarea></div>
+          <div class="field"><label>⚖️ 体重 (kg)</label><input type="number" name="weight_kg" step="0.1" placeholder="例如 65.5"></div>
+          <div class="button-group" style="justify-content:space-between;">
+            <button type="button" id="closeDailyModal" class="btn btn-outline">取消</button>
+            <button type="submit" class="btn btn-primary">保存记录</button>
+            <button type="button" id="deleteDailyBtn" class="btn btn-danger" style="display:none;">删除记录</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  let currentEditDate = null;
+  let currentRecordId = null;
+  function renderDailyList() {
+    const container = document.getElementById('dailyList');
+    if (timeline.length === 0) { container.innerHTML = '<div class="empty-state">暂无日期</div>'; return; }
+    let html = '<div class="card" style="padding:0 8px;">';
+    for (let item of timeline) {
+      const weightDisplay = item.weight ? `${item.weight} kg` : '未记录';
+      const foodPreview   = item.food
+        ? (item.food.length > 28 ? item.food.substring(0,28)+'…' : item.food)
+        : '🍴 未填写';
+      const isWarning = warningMap.get(item.date) && item.weight !== null;
+      html += `
+        <div class="daily-item">
+          <div class="daily-date">${item.date.slice(5)}</div>
+          <div class="daily-food">${foodPreview}</div>
+          <div class="daily-weight">
+            ${weightDisplay}
+            ${isWarning ? `<span class="warning-icon" title="体重未比之前任何一天轻，请留意饮食运动！">⚠️</span>` : ''}
+          </div>
+          <button class="edit-daily-btn" data-date="${item.date}">✏️</button>
+        </div>
+      `;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+    document.querySelectorAll('.edit-daily-btn').forEach(btn =>
+      btn.onclick = () => openDailyModal(btn.dataset.date, recordMap.get(btn.dataset.date)));
+  }
+  function openDailyModal(date, existingRecord) {
+    currentEditDate = date;
+    currentRecordId = existingRecord?.id || null;
+    document.getElementById('dailyModalTitle').innerText = `📝 ${date} 记录`;
+    document.getElementById('modalDate').value = date;
+    document.querySelector('#dailyForm textarea[name="food_text"]').value = existingRecord?.food_text || '';
+    document.querySelector('#dailyForm input[name="weight_kg"]').value   = existingRecord?.weight_kg ?? '';
+    document.getElementById('deleteDailyBtn').style.display = existingRecord ? 'inline-block' : 'none';
+    document.getElementById('dailyModal').classList.add('show');
+  }
+  function checkWeightAnomaly(weight, currentDate) {
+    const prevWeights = dailyRecords
+      .filter(r => r.record_date < currentDate && r.weight_kg !== null)
+      .map(r => r.weight_kg);
+    if (prevWeights.length === 0) return false;
+    return weight >= Math.min(...prevWeights);
+  }
+  async function saveDailyRecord(food, weightNum) {
+    if (!currentEditDate) return false;
+    const weight = weightNum === '' ? null : parseFloat(weightNum);
+    if (weightNum !== '' && isNaN(weight)) { alert('体重请输入有效数字'); return false; }
+    if (weight !== null && checkWeightAnomaly(weight, currentEditDate)) showWeightAnomalyModal();
+    const data = {
+      plan_id: planId, record_date: currentEditDate,
+      food_text: food.trim() || null, weight_kg: weight
+    };
+    let error = null;
+    if (currentRecordId) {
+      const { error: e } = await supabaseClient.from('weight_loss_daily')
+        .update(data).eq('id', currentRecordId).eq('plan_id', planId);
+      error = e;
+    } else {
+      const { error: e } = await supabaseClient.from('weight_loss_daily')
+        .insert({ ...data, user_id: currentUserId });
+      error = e;
+    }
+    if (error) { alert('保存失败: ' + error.message); return false; }
+    return true;
+  }
+  async function deleteDailyRecord() {
+    if (!currentRecordId) return false;
+    if (!confirm('删除这条记录？')) return false;
+    const { error } = await supabaseClient.from('weight_loss_daily')
+      .delete().eq('id', currentRecordId).eq('plan_id', planId);
+    if (error) { alert('删除失败: ' + error.message); return false; }
+    return true;
+  }
+  async function refreshDetail() {
+    const { data: newRecords } = await supabaseClient.from('weight_loss_daily')
+      .select('*').eq('plan_id', planId).order('record_date');
+    dailyRecords = newRecords || [];
+    recordMap.clear();
+    dailyRecords.forEach(r => recordMap.set(r.record_date, r));
+    timeline.length = 0;
+    allDates.forEach(date => {
+      const rec = recordMap.get(date);
+      timeline.push({ date, record: rec, food: rec?.food_text || '', weight: rec?.weight_kg ?? null });
+    });
+    warningMap = computeWarningStatus();
+    renderDailyList();
+    initChart();
+  }
+  function initChart() {
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    const valid   = timeline.filter(t => t.weight !== null);
+    const labels  = valid.map(t => t.date.slice(5));
+    const weights = valid.map(t => t.weight);
+    if (window.weightChartInstance) window.weightChartInstance.destroy();
+    const datasets = [{
+      label: '体重 (kg)', data: weights,
+      borderColor: '#2c5e2e', backgroundColor: 'rgba(44,94,46,0.05)',
+      tension: 0.2, fill: true,
+      pointBackgroundColor: '#4c9e4e', pointRadius: 4
+    }];
+    if (plan.target_weight) {
+      datasets.push({
+        label: '目标体重',
+        data: Array(labels.length).fill(plan.target_weight),
+        borderColor: '#e67e22', borderDash: [5,5], borderWidth: 2,
+        fill: false, pointRadius: 0, type: 'line'
+      });
+    }
+    window.weightChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        scales: { y: { title: { display: true, text: '公斤 (kg)' } } }
+      }
+    });
+  }
+  document.getElementById('closeDailyModal').onclick = () =>
+    document.getElementById('dailyModal').classList.remove('show');
+  document.getElementById('dailyForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const food   = document.querySelector('#dailyForm textarea[name="food_text"]').value;
+    const weight = document.querySelector('#dailyForm input[name="weight_kg"]').value;
+    const success = await saveDailyRecord(food, weight);
+    if (success) {
+      document.getElementById('dailyModal').classList.remove('show');
+      await refreshDetail();
+    }
+  };
+  document.getElementById('deleteDailyBtn').onclick = async () => {
+    const ok = await deleteDailyRecord();
+    if (ok) {
+      document.getElementById('dailyModal').classList.remove('show');
+      await refreshDetail();
+    }
+  };
+  document.getElementById('quickAddTodayBtn').onclick = () => {
+    const today = formatYMD(new Date());
+    if (today >= plan.start_date && today <= plan.end_date) {
+      openDailyModal(today, recordMap.get(today));
+    } else {
+      alert('今日不在当前减肥周期内，请选择周期内日期记录');
+    }
+  };
+  // 使用增强版总结
+  document.getElementById('summaryBtn').onclick = () => showEnhancedSummaryModal(plan, timeline);
+  document.getElementById('logoutBtn').onclick   = () => logout();
+  renderDailyList();
+  initChart();
+} // end renderPlanDetail
+// ==================== 鉴权检查 ====================
+async function checkAuth() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) { currentUserId = session.user.id; return true; }
+  currentUserId = null;
+  window.location.hash = '#login';
+  return false;
+}
+// ==================== 路由 ====================
+async function router() {
+  const hash = window.location.hash.slice(1);
+  if (hash === 'login')               await renderLogin();
+  else if (hash === 'plans')          await renderPlans();
+  else if (hash.startsWith('plan/'))  await renderPlanDetail(hash.split('/')[1]);
+  else {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    window.location.hash = session ? '#plans' : '#login';
+  }
+}
+// ==================== 入口 ====================
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof supabase === 'undefined') {
+    alert('网络连接异常，请刷新页面重试。'); return;
+  }
+  if (typeof Chart === 'undefined') {
+    alert('图表库加载失败，请刷新页面重试。'); return;
+  }
+  const SUPABASE_URL      = 'https://slonbvmhsxqgpoodwazj.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsb25idm1oc3hxZ3Bvb2R3YXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzMyNjQsImV4cCI6MjA4NDYwOTI2NH0.YLZqdnZl1vDTOrT6bzi2ulN1BGRxKGyW30AuccuWJq4';
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  window.addEventListener('hashchange', router);
+  router();
+});
+</script>
+</body>
+</html>
