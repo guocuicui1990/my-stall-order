@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes, viewport-fit=cover">
+    <title>🏎️ 碰碰车单词 · 超大图片版</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a3a5c 0%, #2d5a7e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Quicksand', 'Segoe UI', sans-serif;
+            padding: 12px;
+            margin: 0;
+            user-select: none;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            max-width: 550px;
+            width: 100%;
+            background: #0f2a44;
+            border-radius: 48px 48px 32px 32px;
+            box-shadow: 0 20px 0 #0a1a2b, 0 20px 30px rgba(0,0,0,0.5);
+            border: 3px solid #ffd966;
+            overflow: hidden;
+            padding: 16px 12px 20px;
+            position: relative;
+        }
+
+        .game-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(145deg, #ffc857, #ffb347);
+            padding: 10px 16px;
+            border-radius: 60px;
+            margin-bottom: 12px;
+            box-shadow: inset 0 2px 6px #fff3cf, 0 6px 0 #b47d2c;
+            border: 2px solid #ffe39a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            50%, 100% { left: 100%; }
+        }
+
+        .score-box {
+            background: linear-gradient(145deg, #1e3a5f, #152a45);
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #f9e75c;
+            font-weight: 800;
+            font-size: 24px;
+            text-shadow: 2px 2px 0 #0f1e2c;
+            box-shadow: inset 0 2px 5px #6d9ecc, 0 4px 0 #0a1925;
+            border: 1px solid #ffd966;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-box.bounce {
+            animation: scoreBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes scoreBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); color: #fff; }
+        }
+
+        .combo-display {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a5a);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 8px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .combo-display.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .combo-display.pulse {
+            animation: comboPulse 0.5s ease-in-out;
+        }
+
+        @keyframes comboPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .timer-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c);
+            width: 100%;
+            transition: width 0.1s linear;
+            border-radius: 0 0 0 60px;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .finish-btn, .pause-btn {
+            background: linear-gradient(145deg, #f1592b, #d94820);
+            border: none;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 8px 16px;
+            border-radius: 40px;
+            box-shadow: 0 5px 0 #9f3015, 0 2px 8px rgba(0,0,0,0.2);
+            border: 2px solid #ffb08e;
+            cursor: pointer;
+            transition: 0.05s linear;
+            touch-action: manipulation;
+            letter-spacing: 1px;
+        }
+
+        .pause-btn {
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            box-shadow: 0 5px 0 #1a5276, 0 2px 8px rgba(0,0,0,0.2);
+            border: 2px solid #85c1e9;
+            font-size: 20px;
+            padding: 8px 12px;
+        }
+
+        .finish-btn:active, .pause-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #9f3015, 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .pause-btn:active {
+            box-shadow: 0 2px 0 #1a5276, 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 3px #fec165, 0 12px 0 #0a1a2b, 0 12px 20px rgba(0,0,0,0.4);
+            border: 3px solid #ffdb8a;
+            margin-bottom: 12px;
+            background: #2a5a3a;
+            transform-origin: center;
+        }
+
+        .canvas-wrapper.shake {
+            animation: screenShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        @keyframes screenShake {
+            10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-0.5deg); }
+            20%, 80% { transform: translate3d(4px, 0, 0) rotate(0.5deg); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0) rotate(-1deg); }
+            40%, 60% { transform: translate3d(6px, 0, 0) rotate(1deg); }
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #3a6e4a;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .car-selector {
+            background: linear-gradient(145deg, #fbe4b0, #f5d69a);
+            border-radius: 40px 40px 20px 20px;
+            padding: 20px 16px;
+            margin: 8px 0 4px;
+            box-shadow: inset 0 2px 10px #fff2d7, 0 8px 0 #b4723a;
+            border: 2px solid #ffbe5c;
+            transition: all 0.2s;
+        }
+
+        .selector-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #412d1a;
+            text-align: center;
+            margin-bottom: 16px;
+            text-shadow: 2px 2px 0 #ffd58c;
+            position: relative;
+        }
+
+        .selector-title::after {
+            content: '✨';
+            position: absolute;
+            right: 20%;
+            top: -5px;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .car-list {
+            display: flex;
+            justify-content: space-around;
+            gap: 12px;
+        }
+
+        .car-option {
+            background: linear-gradient(145deg, #feeac2, #fce8b8);
+            border-radius: 30px;
+            padding: 16px 8px;
+            flex: 1;
+            text-align: center;
+            box-shadow: 0 6px 0 #b4723a, 0 4px 8px rgba(0,0,0,0.1);
+            border: 3px solid #ffbc6c;
+            cursor: pointer;
+            transition: all 0.1s;
+            touch-action: manipulation;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .car-option:hover {
+            transform: translateY(-2px);
+        }
+
+        .car-option.selected {
+            background: linear-gradient(145deg, #c7e9b0, #a8d990);
+            border-color: #6da546;
+            box-shadow: 0 6px 0 #5a8737, 0 4px 8px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.5);
+            transform: scale(0.98);
+        }
+
+        .car-option.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: #6da546;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 14px;
+            line-height: 20px;
+            font-weight: bold;
+        }
+
+        .car-emoji {
+            font-size: 52px;
+            line-height: 1.2;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.2));
+            display: block;
+            margin-bottom: 5px;
+            transition: transform 0.3s;
+        }
+
+        .car-option:hover .car-emoji {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .car-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4b2e1a;
+        }
+
+        .start-btn {
+            background: linear-gradient(145deg, #2ecc71, #27ae60);
+            border: none;
+            font-weight: 800;
+            font-size: 32px;
+            padding: 16px 20px;
+            border-radius: 60px;
+            box-shadow: 0 8px 0 #1f8f4b, 0 4px 8px rgba(0,0,0,0.1);
+            border: 3px solid #a3e4b0;
+            color: #1a3e1f;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            text-shadow: 1px 1px 0 #d4ffcf;
+            transition: all 0.1s;
+            touch-action: manipulation;
+            letter-spacing: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .start-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+
+        .start-btn:hover::after {
+            left: 100%;
+        }
+
+        .start-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 3px 0 #1f8f4b, 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .result-panel {
+            background: linear-gradient(145deg, #fbe4b0, #f5d69a);
+            border-radius: 40px;
+            padding: 20px;
+            margin-top: 10px;
+            text-align: center;
+            box-shadow: inset 0 2px 8px #fff8e7, 0 8px 0 #b4723a;
+            border: 2px solid #ffbe5c;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-panel::before {
+            content: '🎉';
+            position: absolute;
+            font-size: 100px;
+            opacity: 0.1;
+            top: -20px;
+            left: -20px;
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .result-score {
+            font-size: 64px;
+            font-weight: 900;
+            color: #2c5e2e;
+            text-shadow: 3px 3px 0 #b0d37c, 6px 6px 0 rgba(0,0,0,0.1);
+            margin: 10px 0;
+            display: inline-block;
+            animation: scorePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes scorePop {
+            0% { transform: scale(0) rotate(-10deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .play-again-btn {
+            background: linear-gradient(145deg, #ffaa33, #ff9500);
+            border: none;
+            font-size: 28px;
+            padding: 14px 24px;
+            border-radius: 50px;
+            box-shadow: 0 6px 0 #b4731e, 0 4px 8px rgba(0,0,0,0.2);
+            font-weight: bold;
+            margin-top: 16px;
+            cursor: pointer;
+            border: 2px solid #ffdd99;
+            color: #4b2e1a;
+            transition: all 0.1s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .play-again-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #b4731e, 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        .play-again-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 0 #b4731e, 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .message-area {
+            min-height: 40px;
+            color: #f9e75c;
+            font-weight: 700;
+            font-size: 20px;
+            text-align: center;
+            margin: 6px 0;
+            text-shadow: 2px 2px 0 #0f1e2c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .message-area.correct {
+            color: #2ecc71;
+            animation: messagePulse 0.5s;
+        }
+
+        .message-area.wrong {
+            color: #e74c3c;
+            animation: shake 0.5s;
+        }
+
+        @keyframes messagePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            border-radius: 24px;
+            backdrop-filter: blur(5px);
+        }
+
+        .pause-text {
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        .resume-btn {
+            background: linear-gradient(145deg, #2ecc71, #27ae60);
+            border: none;
+            color: white;
+            font-size: 24px;
+            padding: 12px 32px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 6px 0 #1f8f4b;
+            transition: all 0.1s;
+        }
+
+        .resume-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #1f8f4b;
+        }
+
+        .difficulty-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            color: #f9e75c;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #ffd966;
+        }
+
+        @media (max-width: 450px) {
+            .car-emoji { font-size: 42px; }
+            .car-name { font-size: 16px; }
+            .finish-btn, .pause-btn { font-size: 16px; padding: 6px 12px; }
+            .score-box { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container" id="gameContainer">
+    <div class="game-header">
+        <div class="score-box" id="scoreBox">
+            🏆 <span id="scoreValue">0</span>
+            <span class="combo-display" id="comboDisplay">连击 x1</span>
+        </div>
+        <div class="header-buttons">
+            <button class="pause-btn hidden" id="pauseBtn">⏸</button>
+            <button class="finish-btn" id="finishGameBtn">🏁 完成</button>
+        </div>
+        <div class="timer-bar" id="timerBar"></div>
+    </div>
+
+    <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="gameCanvas" width="500" height="600"></canvas>
+        <div class="difficulty-indicator hidden" id="difficultyIndicator">速度: 1x</div>
+        <div class="pause-overlay hidden" id="pauseOverlay">
+            <div class="pause-text">⏸ 游戏暂停</div>
+            <button class="resume-btn" id="resumeBtn">▶ 继续游戏</button>
+        </div>
+    </div>
+
+    <div class="message-area" id="gameMessage">✨ 选一辆赛车，开始冒险吧！</div>
+
+    <div id="carSelectPanel" class="car-selector">
+        <div class="selector-title">🚗 选你的战车 🚗</div>
+        <div class="car-list">
+            <div class="car-option" data-car="red">
+                <div class="car-emoji">🏎️🔴</div>
+                <div class="car-name">闪电红</div>
+            </div>
+            <div class="car-option" data-car="blue">
+                <div class="car-emoji">🚙🔵</div>
+                <div class="car-name">旋风蓝</div>
+            </div>
+            <div class="car-option" data-car="green">
+                <div class="car-emoji">🚗🟢</div>
+                <div class="car-name">丛林绿</div>
+            </div>
+        </div>
+        <button class="start-btn" id="startGameBtn">🚦 出发！</button>
+    </div>
+
+    <div id="resultPanel" class="result-panel hidden">
+        <div style="font-size:28px; font-weight:800;">🎉 游戏结束 🎉</div>
+        <div class="result-score" id="finalScore">0</div>
+        <div id="resultComment" style="font-size:20px; margin: 8px 0; color: #5d4037; font-weight: 600;">⭐ 你真棒 ⭐</div>
+        <div style="font-size:16px; color: #7f8c8d; margin-top: 8px;">
+            最高连击: <span id="maxCombo" style="color: #e74c3c; font-weight: bold;">0</span> | 
+            正确率: <span id="accuracy" style="color: #3498db; font-weight: bold;">0%</span>
+        </div>
+        <button class="play-again-btn" id="playAgainBtn">🔄 再玩一次</button>
+    </div>
+</div>
+
+<script>
+    (function(){
+        "use strict";
+
+        // ---------- 词库 ----------
+        const WORDS = [
+            { word: 'cat', emoji: '🐱' }, { word: 'dog', emoji: '🐶' }, { word: 'pig', emoji: '🐷' },
+            { word: 'cow', emoji: '🐮' }, { word: 'bee', emoji: '🐝' }, { word: 'fish', emoji: '🐟' },
+            { word: 'bird', emoji: '🐦' }, { word: 'rabbit', emoji: '🐰' }, { word: 'monkey', emoji: '🐵' },
+            { word: 'duck', emoji: '🦆' }, { word: 'bear', emoji: '🐻' }, { word: 'tiger', emoji: '🐯' },
+            { word: 'lion', emoji: '🦁' }, { word: 'elephant', emoji: '🐘' }, { word: 'panda', emoji: '🐼' },
+            { word: 'frog', emoji: '🐸' }, { word: 'mouse', emoji: '🐭' }, { word: 'horse', emoji: '🐴' },
+            { word: 'sheep', emoji: '🐑' }, { word: 'chicken', emoji: '🐔' }, { word: 'apple', emoji: '🍎' },
+            { word: 'banana', emoji: '🍌' }, { word: 'pear', emoji: '🍐' }, { word: 'orange', emoji: '🍊' },
+            { word: 'grape', emoji: '🍇' }, { word: 'watermelon', emoji: '🍉' }, { word: 'strawberry', emoji: '🍓' },
+            { word: 'peach', emoji: '🍑' }, { word: 'lemon', emoji: '🍋' }, { word: 'mango', emoji: '🥭' },
+            { word: 'cherry', emoji: '🍒' }, { word: 'pen', emoji: '✒️' }, { word: 'pencil', emoji: '✏️' },
+            { word: 'ruler', emoji: '📏' }, { word: 'book', emoji: '📚' }, { word: 'eraser', emoji: '🧽' },
+            { word: 'crayon', emoji: '🖍️' }, { word: 'bag', emoji: '🎒' }, { word: 'eye', emoji: '👁️' },
+            { word: 'ear', emoji: '👂' }, { word: 'nose', emoji: '👃' }, { word: 'mouth', emoji: '👄' },
+            { word: 'hand', emoji: '✋' }, { word: 'leg', emoji: '🦵' }, { word: 'foot', emoji: '🦶' },
+            { word: 'head', emoji: '🗣️' }, { word: 'arm', emoji: '💪' }, { word: 'face', emoji: '😊' },
+            { word: 'hair', emoji: '💇' }, { word: 'red', emoji: '🔴' }, { word: 'blue', emoji: '🔵' },
+            { word: 'yellow', emoji: '🟡' }, { word: 'green', emoji: '🟢' }, { word: 'black', emoji: '⚫' },
+            { word: 'white', emoji: '⚪' }, { word: 'brown', emoji: '🟤' }, { word: 'pink', emoji: '🌸' },
+            { word: 'purple', emoji: '🟣' }, { word: 'one', emoji: '1️⃣' }, { word: 'two', emoji: '2️⃣' },
+            { word: 'three', emoji: '3️⃣' }, { word: 'four', emoji: '4️⃣' }, { word: 'five', emoji: '5️⃣' },
+            { word: 'six', emoji: '6️⃣' }, { word: 'seven', emoji: '7️⃣' }, { word: 'eight', emoji: '8️⃣' },
+            { word: 'nine', emoji: '9️⃣' }, { word: 'ten', emoji: '🔟' }, { word: 'car', emoji: '🚗' },
+            { word: 'bus', emoji: '🚌' }, { word: 'train', emoji: '🚆' }, { word: 'ship', emoji: '🚢' },
+            { word: 'plane', emoji: '✈️' }, { word: 'bike', emoji: '🚲' }, { word: 'taxi', emoji: '🚕' },
+            { word: 'milk', emoji: '🥛' }, { word: 'bread', emoji: '🍞' }, { word: 'egg', emoji: '🥚' },
+            { word: 'cake', emoji: '🍰' }, { word: 'candy', emoji: '🍬' }, { word: 'water', emoji: '💧' },
+            { word: 'juice', emoji: '🧃' }, { word: 'rice', emoji: '🍚' }, { word: 'ice-cream', emoji: '🍦' },
+            { word: 'toy', emoji: '🧸' }, { word: 'ball', emoji: '⚽' }, { word: 'kite', emoji: '🪁' },
+            { word: 'doll', emoji: '🪆' }, { word: 'sun', emoji: '☀️' }, { word: 'moon', emoji: '🌙' },
+            { word: 'star', emoji: '⭐' }, { word: 'hat', emoji: '🧢' }, { word: 'shoe', emoji: '👟' },
+            { word: 'door', emoji: '🚪' }, { word: 'window', emoji: '🪟' }, { word: 'chair', emoji: '🪑' },
+            { word: 'table', emoji: '🪵' }, { word: 'bed', emoji: '🛏️' }, { word: 'boy', emoji: '👦' },
+            { word: 'girl', emoji: '👧' }, { word: 'baby', emoji: '👶' }, { word: 'mom', emoji: '👩' },
+            { word: 'dad', emoji: '👨' }
+        ];
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreSpan = document.getElementById('scoreValue');
+        const scoreBox = document.getElementById('scoreBox');
+        const gameMessage = document.getElementById('gameMessage');
+        const carSelectPanel = document.getElementById('carSelectPanel');
+        const resultPanel = document.getElementById('resultPanel');
+        const finalScoreSpan = document.getElementById('finalScore');
+        const resultComment = document.getElementById('resultComment');
+        const maxComboSpan = document.getElementById('maxCombo');
+        const accuracySpan = document.getElementById('accuracy');
+        const startBtn = document.getElementById('startGameBtn');
+        const finishBtn = document.getElementById('finishGameBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const comboDisplay = document.getElementById('comboDisplay');
+        const timerBar = document.getElementById('timerBar');
+        const difficultyIndicator = document.getElementById('difficultyIndicator');
+        const carOptions = document.querySelectorAll('.car-option');
+
+        let selectedCar = 'red';
+        let gameActive = false;
+        let gamePaused = false;
+        let score = 0;
+        let animationFrame = null;
+        let items = [];
+        let particles = [];
+        let floatingTexts = [];
+        let tireMarks = [];
+        let roadOffset = 0;
+        let lastSpawnTime = 0;
+        // 修改：间隔增大3秒，从4秒改为7秒
+        const SPAWN_INTERVAL = 7000;
+        let currentTargetWord = null;
+        let combo = 0;
+        let maxCombo = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let gameSpeed = 1;
+        let difficultyLevel = 1;
+
+        const CW = 500, CH = 600;
+        canvas.width = CW; canvas.height = CH;
+        
+        let carX = CW/2;
+        const carY = CH - 70;
+        const defaultCarX = CW/2;
+        
+        let isMovingForCollision = false;
+        let targetItem = null;
+        let moveSpeedX = 0;
+        let collisionHappened = false;
+        let crashAnim = 0;
+        let gameStartTime = 0;
+
+        // 音频
+        let audioCtx = null;
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) {}
+        }
+        
+        function resumeAudio() {
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(e => console.warn('音频激活失败'));
+            }
+        }
+        
+        function playExplosionSound() {
+            if (!audioCtx) { initAudio(); if (!audioCtx) return; }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            
+            // 三次短促爆炸，模拟"嘭嘭嘭"
+            for (let i=0; i<3; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150 - i * 30, now + i * 0.08);
+                osc.frequency.exponentialRampToValueAtTime(40, now + i * 0.08 + 0.1);
+                
+                gain.gain.setValueAtTime(0.3, now + i * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.15);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now + i * 0.08);
+                osc.stop(now + i * 0.08 + 0.2);
+            }
+            
+            // 白噪声爆破效果
+            try {
+                const bufferSize = audioCtx.sampleRate * 0.3;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+                }
+                
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.4, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 800;
+                
+                noise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noise.start(now);
+            } catch(e) {
+                console.warn('噪声生成失败', e);
+            }
+        }
+        
+        function playWrongSound() {
+            if (!audioCtx) { initAudio(); if (!audioCtx) return; }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.connect(gain); 
+            gain.connect(audioCtx.destination);
+            osc.start(now); 
+            osc.stop(now + 0.3);
+        }
+
+        function playComboSound(comboCount) {
+            if (!audioCtx) { initAudio(); if (!audioCtx) return; }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const baseFreq = 440 + Math.min(comboCount * 50, 500);
+            
+            for (let i = 0; i < 3; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = baseFreq + i * 100;
+                gain.gain.setValueAtTime(0.1, now + i * 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.05 + 0.1);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now + i * 0.05);
+                osc.stop(now + i * 0.05 + 0.1);
+            }
+        }
+
+        // 语音控制
+        let praiseTimer = null;
+        function speakText(text, lang='en-US', rate=0.9) {
+            if (!window.speechSynthesis) return;
+            try { window.speechSynthesis.cancel(); } catch(e) {}
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            utterance.rate = rate;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.speak(utterance);
+        }
+        function speakWord(word) { speakText(word, 'en-US', 0.9); }
+        function speakChinesePraise() {
+            if (praiseTimer) clearTimeout(praiseTimer);
+            praiseTimer = setTimeout(() => {
+                const praises = ['你真棒', '好厉害', '继续保持', '太棒了', '加油'];
+                const randomPraise = praises[Math.floor(Math.random() * praises.length)];
+                speakText(randomPraise, 'zh-CN', 0.95);
+                praiseTimer = null;
+            }, 300);
+        }
+        function speakWrong() { speakText('错了', 'zh-CN', 0.9); }
+
+        function updateScoreUI() { 
+            scoreSpan.textContent = score;
+            scoreBox.classList.remove('bounce');
+            void scoreBox.offsetWidth; // 触发重排
+            scoreBox.classList.add('bounce');
+        }
+
+        function updateComboUI() {
+            comboDisplay.textContent = `连击 x${combo}`;
+            if (combo > 1) {
+                comboDisplay.classList.add('show');
+                comboDisplay.classList.remove('pulse');
+                void comboDisplay.offsetWidth;
+                comboDisplay.classList.add('pulse');
+            } else {
+                comboDisplay.classList.remove('show');
+            }
+        }
+        
+        function getRandomWords(count) {
+            const shuffled = [...WORDS].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, count);
+        }
+
+        function spawnItems() {
+            if (!gameActive || gamePaused) return;
+            const wordItems = getRandomWords(3);
+            const targetIndex = Math.floor(Math.random() * 3);
+            currentTargetWord = wordItems[targetIndex];
+            speakWord(currentTargetWord.word);
+            const lanePositions = [120, 250, 380];
+            for (let i=0; i<3; i++) {
+                items.push({
+                    x: lanePositions[i],
+                    y: -80,
+                    wordObj: wordItems[i],
+                    isTarget: (i === targetIndex),
+                    radius: 45,
+                    speed: (2.2 + difficultyLevel * 0.3) * gameSpeed,
+                    wobble: Math.random() * Math.PI * 2,
+                    scale: 1,
+                    // 为每个圆圈添加独立的旋转角度
+                    circleRotation: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        // 粒子系统
+        class Particle {
+            constructor(x, y, color, speed, size) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * speed;
+                this.vy = (Math.random() - 0.5) * speed - 2;
+                this.life = 1;
+                this.decay = 0.02 + Math.random() * 0.02;
+                this.color = color;
+                this.size = size || (3 + Math.random() * 5);
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.15; // 重力
+                this.life -= this.decay;
+                this.rotation += this.rotationSpeed;
+                this.size *= 0.98;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        // 浮动文字
+        class FloatingText {
+            constructor(x, y, text, color, size = 24) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.color = color;
+                this.size = size;
+                this.life = 1;
+                this.vy = -2;
+                this.scale = 0;
+                this.targetScale = 1;
+            }
+
+            update() {
+                this.y += this.vy;
+                this.vy *= 0.95;
+                if (this.scale < this.targetScale) {
+                    this.scale += 0.1;
+                }
+                this.life -= 0.015;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.scale(this.scale, this.scale);
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.font = `bold ${this.size}px "Quicksand", sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.strokeText(this.text, 0, 0);
+                ctx.fillText(this.text, 0, 0);
+                
+                // 阴影
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillText(this.text, 3, 3);
+                ctx.restore();
+            }
+        }
+
+        function createExplosion(x, y, color = '#FFD700') {
+            const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
+            for (let i = 0; i < 20; i++) {
+                const particleColor = colors[Math.floor(Math.random() * colors.length)];
+                particles.push(new Particle(x, y, particleColor, 8 + Math.random() * 6));
+            }
+        }
+
+        function createTireMark(x, y) {
+            tireMarks.push({
+                x: x,
+                y: y,
+                alpha: 0.6,
+                size: 8 + Math.random() * 4
+            });
+        }
+
+        function resetGame() {
+            gameActive = true;
+            gamePaused = false;
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            correctCount = 0;
+            wrongCount = 0;
+            gameSpeed = 1;
+            difficultyLevel = 1;
+            items = [];
+            particles = [];
+            floatingTexts = [];
+            tireMarks = [];
+            roadOffset = 0;
+            carX = defaultCarX;
+            isMovingForCollision = false;
+            targetItem = null;
+            collisionHappened = false;
+            crashAnim = 0;
+            lastSpawnTime = performance.now();
+            gameStartTime = performance.now();
+            updateScoreUI();
+            updateComboUI();
+            timerBar.style.width = '100%';
+            difficultyIndicator.textContent = '速度: 1x';
+            difficultyIndicator.classList.remove('hidden');
+            gameMessage.textContent = '🔊 听单词，点击正确的图片！';
+            gameMessage.className = 'message-area';
+            spawnItems();
+        }
+
+        function finishGame() {
+            if (!gameActive) return;
+            gameActive = false;
+            gamePaused = false;
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+            
+            // 计算统计
+            const totalAttempts = correctCount + wrongCount;
+            const accuracy = totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 0;
+            
+            finalScoreSpan.textContent = score;
+            maxComboSpan.textContent = maxCombo;
+            accuracySpan.textContent = accuracy + '%';
+            
+            // 评价
+            let comment = '⭐ 继续加油 ⭐';
+            if (accuracy >= 90) comment = '🏆 完美表现！🏆';
+            else if (accuracy >= 80) comment = '🌟 非常优秀！🌟';
+            else if (accuracy >= 60) comment = '👍 做得不错！👍';
+            resultComment.textContent = comment;
+            
+            resultPanel.classList.remove('hidden');
+            carSelectPanel.classList.add('hidden');
+            pauseBtn.classList.add('hidden');
+            difficultyIndicator.classList.add('hidden');
+            gameMessage.textContent = '🎯 完成啦！看看你的得分！';
+            gameMessage.className = 'message-area';
+            
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            if (praiseTimer) clearTimeout(praiseTimer);
+        }
+
+        function togglePause() {
+            if (!gameActive) return;
+            gamePaused = !gamePaused;
+            if (gamePaused) {
+                pauseOverlay.classList.remove('hidden');
+                gameMessage.textContent = '⏸ 游戏已暂停';
+            } else {
+                pauseOverlay.classList.add('hidden');
+                gameMessage.textContent = '🔊 听单词，点击正确的图片！';
+                lastSpawnTime = performance.now(); // 重置生成时间，防止暂停后立即生成
+                gameLoop(performance.now());
+            }
+        }
+
+        function drawRoad() {
+            // 草地背景
+            ctx.fillStyle = '#2d5016';
+            ctx.fillRect(0, 0, CW, CH);
+            
+            // 道路基础
+            ctx.fillStyle = '#3a3f5c';
+            ctx.fillRect(30, 0, CW-60, CH);
+            
+            // 道路纹理
+            ctx.fillStyle = '#4a5068';
+            ctx.fillRect(50, 0, CW-100, CH);
+            
+            // 路边石
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillRect(30, 0, 10, CH);
+            ctx.fillRect(CW-40, 0, 10, CH);
+            
+            // 虚线车道线
+            ctx.strokeStyle = 'rgba(249, 224, 118, 0.6)';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([30, 30]);
+            ctx.lineDashOffset = -roadOffset;
+            
+            // 三条车道线
+            [120, 250, 380].forEach(x => {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, CH);
+                ctx.stroke();
+            });
+            
+            ctx.setLineDash([]);
+            
+            // 路边装饰
+            ctx.fillStyle = '#1a3a1a';
+            for (let y = -50 + (roadOffset % 100); y < CH; y += 100) {
+                ctx.beginPath();
+                ctx.arc(15, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(CW-15, y + 50, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            if (gameActive && !gamePaused) {
+                roadOffset = (roadOffset + 6 * gameSpeed) % 100;
+            }
+        }
+
+        function drawTireMarks() {
+            tireMarks.forEach((mark, index) => {
+                ctx.save();
+                ctx.globalAlpha = mark.alpha;
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath();
+                ctx.arc(mark.x - 15, mark.y, mark.size, 0, Math.PI * 2);
+                ctx.arc(mark.x + 15, mark.y, mark.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                
+                if (gameActive && !gamePaused) {
+                    mark.alpha -= 0.005;
+                    mark.y += 6 * gameSpeed;
+                }
+            });
+            
+            tireMarks = tireMarks.filter(mark => mark.alpha > 0 && mark.y < CH + 50);
+        }
+
+        function drawCar() {
+            let mainColor;
+            let shadowColor;
+            if (selectedCar === 'red') {
+                mainColor = '#e03a3a';
+                shadowColor = '#c0392b';
+            }
+            else if (selectedCar === 'blue') {
+                mainColor = '#3a7bd5';
+                shadowColor = '#2980b9';
+            }
+            else {
+                mainColor = '#3a9e5a';
+                shadowColor = '#27ae60';
+            }
+            
+            let offsetY = 0;
+            if (crashAnim > 0) {
+                offsetY = -8 * crashAnim;
+                crashAnim *= 0.85;
+                if (crashAnim < 0.05) crashAnim = 0;
+            }
+            
+            const x = carX, y = carY + offsetY;
+            const carW = 48, carH = 76;
+            
+            // 阴影
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(x, y + carH/2 + 5, carW/2 + 5, 10, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 车体渐变
+            const gradient = ctx.createLinearGradient(x - carW/2, y - carH/2, x + carW/2, y + carH/2);
+            gradient.addColorStop(0, mainColor);
+            gradient.addColorStop(1, shadowColor);
+            ctx.fillStyle = gradient;
+            
+            // 车体
+            ctx.beginPath();
+            roundRect(ctx, x - carW/2, y - carH/2, carW, carH, 12);
+            ctx.fill();
+            
+            // 挡风玻璃
+            ctx.fillStyle = '#1e2f4b';
+            ctx.beginPath();
+            roundRect(ctx, x - carW/3, y - carH/3 - 2, carW*2/3, carH/3, 6);
+            ctx.fill();
+            
+            // 车顶
+            ctx.fillStyle = '#2e4a6b';
+            ctx.beginPath();
+            roundRect(ctx, x - carW/3, y + 4, carW*2/3, carH/4, 6);
+            ctx.fill();
+            
+            // 前灯
+            ctx.fillStyle = '#f9e076';
+            ctx.shadowColor = '#f9e076';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(x - carW/4, y - carH/2 + 4, 6, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + carW/4, y - carH/2 + 4, 6, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // 尾灯
+            ctx.fillStyle = '#ff4444';
+            ctx.shadowColor = '#ff4444';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(x - carW/4, y + carH/2 - 6, 5, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + carW/4, y + carH/2 - 6, 5, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // 轮胎
+            ctx.fillStyle = '#1a1a1a';
+            drawTire(x - carW/2 - 3, y - carH/4);
+            drawTire(x + carW/2 + 3, y - carH/4);
+            drawTire(x - carW/2 - 3, y + carH/4);
+            drawTire(x + carW/2 + 3, y + carH/4);
+            
+            // 轮毂
+            ctx.fillStyle = '#bdc3c7';
+            ctx.beginPath();
+            ctx.arc(x - carW/2 - 3, y - carH/4, 4, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + carW/2 + 3, y - carH/4, 4, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x - carW/2 - 3, y + carH/4, 4, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + carW/2 + 3, y + carH/4, 4, 0, 2*Math.PI);
+            ctx.fill();
+            
+            // 移动时添加轮胎印
+            if (gameActive && !gamePaused && isMovingForCollision && Math.random() > 0.7) {
+                createTireMark(x, y + carH/2);
+            }
+        }
+
+        function drawTire(x, y) {
+            ctx.beginPath();
+            ctx.ellipse(x, y, 10, 14, 0, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        function drawItems() {
+            items.forEach((item, index) => {
+                const x = item.x, y = item.y;
+                
+                // 浮动动画
+                const floatY = Math.sin(item.wobble + performance.now() * 0.002) * 5;
+                
+                // 阴影
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(x, y + 50, 40, 10, 0, 0, Math.PI*2);
+                ctx.fill();
+                
+                // 修改：所有图片都有金色转动圆圈效果（不只是目标图片）
+                ctx.save();
+                ctx.translate(x, y + floatY);
+                
+                // 绘制金色转动圆圈
+                ctx.rotate(item.circleRotation);
+                ctx.strokeStyle = '#FFD700'; // 金色
+                ctx.lineWidth = 3;
+                ctx.setLineDash([15, 10]);
+                ctx.lineDashOffset = -performance.now() / 10;
+                ctx.beginPath();
+                ctx.arc(0, 0, 68, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // 内圈装饰（虚线）
+                ctx.setLineDash([8, 8]);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#FFA500'; // 橙色点缀
+                ctx.beginPath();
+                ctx.arc(0, 0, 60, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.restore();
+                
+                // 如果是目标，额外添加脉冲高亮效果（但不再显示五角星）
+                if (item.isTarget) {
+                    ctx.save();
+                    ctx.translate(x, y + floatY);
+                    const pulseScale = 1 + Math.sin(performance.now() * 0.005) * 0.05;
+                    ctx.scale(pulseScale, pulseScale);
+                    ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 75, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                
+                // Emoji 图片
+                ctx.save();
+                ctx.translate(x, y + floatY);
+                ctx.scale(item.scale, item.scale);
+                ctx.font = '110px "Segoe UI Emoji", "Apple Color Emoji", "Quicksand", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetY = 10;
+                ctx.fillText(item.wordObj.emoji, 0, 0);
+                ctx.restore();
+                
+                // 单词文字背景
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.beginPath();
+                roundRect(ctx, x - 50, y + floatY + 55, 100, 32, 16);
+                ctx.fill();
+                
+                // 单词文字
+                ctx.font = 'bold 26px "Quicksand", sans-serif';
+                ctx.fillStyle = '#FFD966';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(item.wordObj.word, x, y + floatY + 71);
+                ctx.shadowBlur = 0;
+                
+                if (gameActive && !gamePaused) {
+                    item.wobble += 0.02;
+                    // 更新圆圈旋转角度
+                    item.circleRotation += 0.02;
+                }
+            });
+        }
+
+        function roundRect(ctx, x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+        }
+
+        function updateItems() {
+            for (let i=items.length-1; i>=0; i--) {
+                if (!gamePaused) {
+                    items[i].y += items[i].speed;
+                }
+                if (items[i].y > CH + 100) {
+                    // 错过目标单词
+                    if (items[i].isTarget && gameActive) {
+                        combo = 0;
+                        updateComboUI();
+                        gameMessage.textContent = '💨 漏掉了！下次加油！';
+                        gameMessage.className = 'message-area wrong';
+                        setTimeout(() => {
+                            if (gameActive) {
+                                gameMessage.textContent = '🔊 听单词，点击正确的图片！';
+                                gameMessage.className = 'message-area';
+                            }
+                        }, 1500);
+                    }
+                    items.splice(i, 1);
+                }
+            }
+        }
+
+        function updateParticles() {
+            particles.forEach((p, i) => {
+                p.update();
+                p.draw(ctx);
+                if (p.life <= 0) particles.splice(i, 1);
+            });
+        }
+
+        function updateFloatingTexts() {
+            floatingTexts.forEach((ft, i) => {
+                ft.update();
+                ft.draw(ctx);
+                if (ft.life <= 0) floatingTexts.splice(i, 1);
+            });
+        }
+
+        function updateCollisionMovement() {
+            if (!isMovingForCollision || !targetItem || gamePaused) return;
+            const idx = items.indexOf(targetItem);
+            if (idx === -1) {
+                isMovingForCollision = false;
+                targetItem = null;
+                carX = defaultCarX;
+                return;
+            }
+            const distanceY = carY - targetItem.y - 10;
+            if (distanceY <= 0) {
+                isMovingForCollision = false;
+                targetItem = null;
+                carX = defaultCarX;
+                return;
+            }
+            const framesToCollision = distanceY / targetItem.speed;
+            const dx = targetItem.x - carX;
+            moveSpeedX = Math.abs(dx) > 1 ? dx / framesToCollision : 0;
+            carX += moveSpeedX;
+            
+            const dist = Math.hypot(carX - targetItem.x, carY - targetItem.y);
+            if (dist < 70 && !collisionHappened) {
+                collisionHappened = true;
+                crashAnim = 1.0;
+                
+                // 屏幕震动
+                canvasWrapper.classList.add('shake');
+                setTimeout(() => canvasWrapper.classList.remove('shake'), 400);
+                
+                // 爆炸粒子
+                createExplosion(targetItem.x, targetItem.y);
+                
+                // 连击系统
+                combo++;
+                if (combo > maxCombo) maxCombo = combo;
+                correctCount++;
+                
+                // 难度递增
+                if (combo % 5 === 0) {
+                    difficultyLevel = Math.min(5, 1 + Math.floor(combo / 5));
+                    gameSpeed = 1 + (difficultyLevel - 1) * 0.2;
+                    difficultyIndicator.textContent = `速度: ${gameSpeed.toFixed(1)}x`;
+                    floatingTexts.push(new FloatingText(CW/2, CH/2, `速度提升!`, '#e74c3c', 36));
+                }
+                
+                // 计算得分（连击加成）
+                const points = 10 + (combo > 1 ? combo * 2 : 0);
+                score += points;
+                updateScoreUI();
+                updateComboUI();
+                
+                // 播放音效
+                playExplosionSound();
+                if (combo > 1) playComboSound(combo);
+                
+                // 浮动文字
+                const comboText = combo > 1 ? `+${points} 连击x${combo}!` : `+${points}`;
+                const textColor = combo > 2 ? '#e74c3c' : '#2ecc71';
+                floatingTexts.push(new FloatingText(targetItem.x, targetItem.y - 50, comboText, textColor, 28));
+                
+                gameMessage.textContent = `✅ 正确！${targetItem.wordObj.word}`;
+                gameMessage.className = 'message-area correct';
+                
+                // 延迟语音
+                speakChinesePraise();
+                
+                const removeIdx = items.indexOf(targetItem);
+                if (removeIdx > -1) items.splice(removeIdx, 1);
+                
+                isMovingForCollision = false;
+                targetItem = null;
+                
+                // 平滑返回中心
+                const returnInterval = setInterval(() => {
+                    if (!gameActive || isMovingForCollision || gamePaused) {
+                        clearInterval(returnInterval);
+                        return;
+                    }
+                    const diff = defaultCarX - carX;
+                    if (Math.abs(diff) < 3) {
+                        carX = defaultCarX;
+                        clearInterval(returnInterval);
+                    } else {
+                        carX += diff * 0.08;
+                    }
+                }, 20);
+            }
+        }
+
+        function checkSpawn(now) {
+            if (!gameActive || gamePaused) return;
+            // 修改：使用新的SPAWN_INTERVAL（7000毫秒）
+            if (now - lastSpawnTime >= SPAWN_INTERVAL / gameSpeed) {
+                spawnItems();
+                lastSpawnTime = now;
+            }
+        }
+
+        function updateTimer(now) {
+            if (!gameActive || gamePaused) return;
+            const elapsed = now - gameStartTime;
+            const maxTime = 120000; // 2分钟
+            const remaining = Math.max(0, maxTime - elapsed);
+            const percentage = (remaining / maxTime) * 100;
+            timerBar.style.width = percentage + '%';
+            
+            if (remaining <= 0) {
+                finishGame();
+            }
+        }
+
+        function gameLoop(now) {
+            if (!gameActive) return;
+            
+            checkSpawn(now);
+            updateItems();
+            updateCollisionMovement();
+            updateParticles();
+            updateFloatingTexts();
+            updateTimer(now);
+            
+            // 绘制
+            drawRoad();
+            drawTireMarks();
+            drawItems();
+            drawCar();
+            updateParticles();
+            updateFloatingTexts();
+            
+            if (!gamePaused) {
+                animationFrame = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function startGame() {
+            initAudio();
+            resumeAudio();
+            carSelectPanel.classList.add('hidden');
+            resultPanel.classList.add('hidden');
+            pauseBtn.classList.remove('hidden');
+            resetGame();
+            animationFrame = requestAnimationFrame(gameLoop);
+        }
+
+        function handleCanvasClick(e) {
+            if (!gameActive || gamePaused) return;
+            if (isMovingForCollision) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+            
+            for (let i=0; i<items.length; i++) {
+                const item = items[i];
+                const dx = clickX - item.x;
+                const dy = clickY - item.y;
+                
+                if (Math.sqrt(dx*dx + dy*dy) < 80) {
+                    if (item.isTarget) {
+                        targetItem = item;
+                        isMovingForCollision = true;
+                        collisionHappened = false;
+                        gameMessage.textContent = `🚗 撞击准备！`;
+                        gameMessage.className = 'message-area';
+                        speakWord(item.wordObj.word);
+                        
+                        // 点击效果
+                        createExplosion(clickX, clickY, '#3498db');
+                    } else {
+                        // 错误选择
+                        wrongCount++;
+                        combo = 0;
+                        updateComboUI();
+                        gameMessage.textContent = `❌ 错了！是 ${item.wordObj.word}`;
+                        gameMessage.className = 'message-area wrong';
+                        playWrongSound();
+                        speakWrong();
+                        
+                        // 扣分提示
+                        floatingTexts.push(new FloatingText(item.x, item.y - 30, '-5', '#e74c3c', 24));
+                        score = Math.max(0, score - 5);
+                        updateScoreUI();
+                        
+                        // 震动效果
+                        const originalX = item.x;
+                        let shakeCount = 6;
+                        const shakeInterval = setInterval(() => {
+                            item.x = originalX + (Math.random() - 0.5) * 20;
+                            shakeCount--;
+                            if (shakeCount <= 0) {
+                                clearInterval(shakeInterval);
+                                item.x = originalX;
+                                if (gameActive) {
+                                    gameMessage.textContent = '🔊 听单词，点击正确的图片！';
+                                    gameMessage.className = 'message-area';
+                                }
+                            }
+                        }, 30);
+                    }
+                    break;
+                }
+            }
+        }
+
+        function handleCanvasTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            if (touch) handleCanvasClick({ clientX: touch.clientX, clientY: touch.clientY });
+        }
+
+        carOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                carOptions.forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                selectedCar = opt.dataset.car;
+                // 播放选择音效
+                if (audioCtx) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.frequency.value = 600;
+                    gain.gain.value = 0.1;
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                }
+            });
+        });
+        document.querySelector('[data-car="red"]').classList.add('selected');
+
+        startBtn.addEventListener('click', startGame);
+        finishBtn.addEventListener('click', () => { if (gameActive) finishGame(); });
+        pauseBtn.addEventListener('click', togglePause);
+        resumeBtn.addEventListener('click', togglePause);
+        
+        playAgainBtn.addEventListener('click', () => {
+            resultPanel.classList.add('hidden');
+            carSelectPanel.classList.remove('hidden');
+            pauseBtn.classList.add('hidden');
+            difficultyIndicator.classList.add('hidden');
+            gameMessage.textContent = '✨ 选一辆赛车，开始冒险吧！';
+            gameMessage.className = 'message-area';
+            score = 0; 
+            combo = 0;
+            updateScoreUI();
+            updateComboUI();
+            carX = defaultCarX;
+            if (praiseTimer) clearTimeout(praiseTimer);
+        });
+
+        canvas.addEventListener('click', handleCanvasClick);
+        canvas.addEventListener('touchstart', handleCanvasTouch, {passive: false});
+        canvas.addEventListener('touchmove', (e) => e.preventDefault(), {passive: false});
+        
+        // 键盘控制（空格暂停）
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameActive) {
+                e.preventDefault();
+                togglePause();
+            }
+        });
+        
+        updateScoreUI();
+        updateComboUI();
+        if (!window.speechSynthesis) gameMessage.textContent = '⚠️ 浏览器不支持朗读';
+    })();
+</script>
+</body>
+</html>
