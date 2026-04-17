@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>🔊 会说话的单词小怪兽 · 儿童英语启蒙（含例句）</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f9e7b2 0%, #f5d0b8 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Quicksand', sans-serif;
+            padding: 16px;
+            margin: 0;
+            user-select: none;
+        }
+
+        .game-box {
+            max-width: 750px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 64px 64px 48px 48px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1), inset 0 2px 4px rgba(255,255,255,0.8);
+            border: 3px solid #fff9e6;
+            padding: 28px 24px 36px;
+            transition: all 0.2s ease;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffd89c;
+            padding: 12px 24px;
+            border-radius: 120px;
+            margin-bottom: 24px;
+            box-shadow: inset 0 2px 6px rgba(255,255,240,0.8), 0 6px 0 #b45f2b;
+            border: 2px solid #febf5e;
+        }
+
+        .monster-icon {
+            font-size: 42px;
+            line-height: 1;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.15));
+            background: #ffb882;
+            padding: 8px 14px;
+            border-radius: 60px;
+            box-shadow: inset 0 -2px 0 #b45f2b, 0 4px 0 #9e5e2c;
+            transform: rotate(-4deg);
+        }
+
+        .score-area {
+            background: #fef9e3;
+            border-radius: 50px;
+            padding: 10px 22px;
+            box-shadow: inset 0 1px 5px #ffe3a4, 0 5px 0 #b45f2b;
+            border: 2px solid #ffbe5c;
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 16px;
+            font-weight: 700;
+            color: #7b3f00;
+            letter-spacing: 1px;
+        }
+
+        .score-value {
+            font-size: 34px;
+            font-weight: 800;
+            color: #4b2e1a;
+            line-height: 1.2;
+            text-shadow: 2px 2px 0 #ffd58c;
+        }
+
+        .best-score {
+            font-size: 16px;
+            font-weight: 600;
+            color: #633d14;
+        }
+
+        .question-card {
+            background: #fff2d7;
+            border-radius: 80px 80px 50px 50px;
+            padding: 30px 20px 20px;
+            margin-bottom: 24px;
+            box-shadow: inset 0 -6px 0 #d49b6a, 0 16px 0 #9f6e42, 0 8px 20px rgba(0,0,0,0.1);
+            border: 3px solid #fdcb6e;
+            text-align: center;
+        }
+
+        .big-emoji {
+            font-size: 140px;
+            line-height: 1.2;
+            filter: drop-shadow(8px 12px 0 rgba(160, 100, 40, 0.2));
+            margin: 5px 0 5px;
+            transform: scale(1);
+            transition: transform 0.2s ease;
+        }
+
+        .question-hint {
+            font-size: 28px;
+            font-weight: 700;
+            color: #633d14;
+            background: #ffefc0;
+            display: inline-block;
+            padding: 10px 28px;
+            border-radius: 60px;
+            box-shadow: inset 0 2px 6px #fff3cf, 0 4px 0 #bb7a3e;
+            border: 2px solid #ffc576;
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 28px 0 18px;
+        }
+
+        /* 单词按钮主体 */
+        .word-btn {
+            background: #feeac2;
+            border: 4px solid #ffbc6c;
+            color: #412d1a;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            padding: 18px 4px 10px;
+            border-radius: 48px;
+            box-shadow: 0 8px 0 #b4723a, 0 6px 12px rgba(0,0,0,0.1);
+            cursor: pointer;
+            text-transform: capitalize;
+            letter-spacing: 2px;
+            transition: all 0.05s ease-in;
+            text-shadow: 1px 1px 0 #ffe1a4;
+            line-height: 1.3;
+            touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .word-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #b4723a, 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .word-btn:disabled {
+            opacity: 0.7;
+            filter: grayscale(0.3);
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #8b5a2e, 0 4px 8px rgba(0,0,0,0.1);
+            cursor: not-allowed;
+        }
+
+        .word-main {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        /* 例句样式 — 点击可朗读 */
+        .word-sentence {
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b4423;
+            background: #ffeac2;
+            padding: 6px 10px;
+            border-radius: 30px;
+            margin-top: 4px;
+            border: 2px dashed #febf5e;
+            box-shadow: inset 0 1px 4px #fff0cf;
+            transition: all 0.1s;
+            display: inline-block;
+            cursor: pointer;
+            pointer-events: auto;  /* 确保可点击 */
+            touch-action: manipulation;
+            line-height: 1.4;
+            max-width: 100%;
+            word-break: break-word;
+        }
+
+        .word-sentence:active {
+            background: #f7d9a4;
+            transform: scale(0.97);
+        }
+
+        /* 禁用状态下例句也半透明，但依然可以点击朗读（为了学习） */
+        .word-btn:disabled .word-sentence {
+            opacity: 0.9;
+            pointer-events: auto;  /* 仍然允许点击朗读 */
+        }
+
+        @keyframes shakeNope {
+            0%,100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(4px); }
+        }
+        .word-btn-error {
+            animation: shakeNope 0.3s ease-in-out;
+            background: #ffc2b0 !important;
+            border-color: #e07c5e !important;
+        }
+
+        .word-btn-correct-flash {
+            background: #c7e9b0 !important;
+            border-color: #6da546 !important;
+            box-shadow: 0 8px 0 #5a8737, 0 6px 12px rgba(0,0,0,0.1) !important;
+        }
+
+        .feedback-area {
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 8px 0 18px;
+        }
+
+        .message-bubble {
+            background: #fff6d5;
+            padding: 14px 28px;
+            border-radius: 60px;
+            font-size: 26px;
+            font-weight: 700;
+            color: #52371c;
+            box-shadow: inset 0 2px 8px #fff3cf, 0 5px 0 #be8b54;
+            border: 2px solid #fec165;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: #ffd89c;
+            border: none;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 28px;
+            padding: 16px 32px;
+            border-radius: 60px;
+            box-shadow: 0 8px 0 #a76f38, 0 4px 8px rgba(0,0,0,0.1);
+            border: 3px solid #ffc576;
+            color: #412d1a;
+            cursor: pointer;
+            text-shadow: 1px 1px 0 #ffebc0;
+            transition: all 0.08s;
+            flex: 0 1 auto;
+            min-width: 160px;
+            letter-spacing: 2px;
+            touch-action: manipulation;
+        }
+
+        .action-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #a76f38, 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #7a532b, 0 4px 8px rgba(0,0,0,0.1);
+            pointer-events: none;
+            cursor: default;
+        }
+
+        .confetti-emoji {
+            position: fixed;
+            font-size: 40px;
+            pointer-events: none;
+            z-index: 999;
+            animation: floatUp 1.5s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(-120px) rotate(25deg); }
+        }
+
+        @media (max-width: 500px) {
+            .game-box { padding: 20px 16px 28px; }
+            .big-emoji { font-size: 110px; }
+            .word-main { font-size: 26px; }
+            .word-sentence { font-size: 14px; padding: 4px 8px; }
+            .action-btn { font-size: 22px; padding: 14px 18px; min-width: 130px; }
+            .question-hint { font-size: 22px; }
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            color: #a5581c;
+            font-weight: 600;
+            text-align: center;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-box">
+    <div class="header">
+        <div class="monster-icon"><span>🐣📚</span></div>
+        <div class="score-area">
+            <div class="score-label">⭐ 得分</div>
+            <div class="score-value" id="scoreDisplay">0</div>
+            <div class="best-score" id="bestDisplay">🏆 最高 0</div>
+        </div>
+        <div class="monster-icon" style="transform: rotate(2deg);"><span>🦊✨</span></div>
+    </div>
+
+    <div class="question-card">
+        <div class="big-emoji" id="emojiPicture">🐶</div>
+        <div class="question-hint">🤔 这是什么？</div>
+    </div>
+
+    <div class="options-grid" id="optionsContainer">
+        <!-- 按钮将通过JS动态渲染 -->
+    </div>
+
+    <div class="feedback-area">
+        <div class="message-bubble" id="messageBox">🐾 选一选！点例句会朗读哟～</div>
+    </div>
+
+    <div class="action-bar">
+        <button class="action-btn" id="nextBtn" disabled>➡️ 下一题</button>
+        <button class="action-btn" id="newGameBtn">🔄 新游戏</button>
+    </div>
+    <div class="footer-note">
+        🔊 点击单词选答案 · 点击句子听发音
+    </div>
+</div>
+
+<script>
+    (function(){
+        "use strict";
+
+        // ========== 🌟 陕旅版一年级词库 + 例句 (100+单词) ==========
+        const WORDS = [
+            // 动物
+            { word: 'cat', emoji: '🐱', display: 'Cat', sentence: 'I like cat.' },
+            { word: 'dog', emoji: '🐶', display: 'Dog', sentence: 'This is a dog.' },
+            { word: 'pig', emoji: '🐷', display: 'Pig', sentence: 'The pig is pink.' },
+            { word: 'cow', emoji: '🐮', display: 'Cow', sentence: 'Cow says moo.' },
+            { word: 'bee', emoji: '🐝', display: 'Bee', sentence: 'Bee makes honey.' },
+            { word: 'fish', emoji: '🐟', display: 'Fish', sentence: 'Fish can swim.' },
+            { word: 'bird', emoji: '🐦', display: 'Bird', sentence: 'Bird can fly.' },
+            { word: 'rabbit', emoji: '🐰', display: 'Rabbit', sentence: 'Rabbit has long ears.' },
+            { word: 'monkey', emoji: '🐵', display: 'Monkey', sentence: 'Monkey likes banana.' },
+            { word: 'duck', emoji: '🦆', display: 'Duck', sentence: 'Duck says quack.' },
+            { word: 'bear', emoji: '🐻', display: 'Bear', sentence: 'Bear is big.' },
+            { word: 'tiger', emoji: '🐯', display: 'Tiger', sentence: 'Tiger is strong.' },
+            { word: 'lion', emoji: '🦁', display: 'Lion', sentence: 'Lion is the king.' },
+            { word: 'elephant', emoji: '🐘', display: 'Elephant', sentence: 'Elephant has a long nose.' },
+            { word: 'panda', emoji: '🐼', display: 'Panda', sentence: 'Panda is cute.' },
+            { word: 'frog', emoji: '🐸', display: 'Frog', sentence: 'Frog can jump.' },
+            { word: 'mouse', emoji: '🐭', display: 'Mouse', sentence: 'Mouse likes cheese.' },
+            { word: 'horse', emoji: '🐴', display: 'Horse', sentence: 'Horse runs fast.' },
+            { word: 'sheep', emoji: '🐑', display: 'Sheep', sentence: 'Sheep gives wool.' },
+            { word: 'chicken', emoji: '🐔', display: 'Chicken', sentence: 'Chicken says cluck.' },
+            // 水果
+            { word: 'apple', emoji: '🍎', display: 'Apple', sentence: 'I like apple.' },
+            { word: 'banana', emoji: '🍌', display: 'Banana', sentence: 'Banana is yellow.' },
+            { word: 'pear', emoji: '🍐', display: 'Pear', sentence: 'Pear is sweet.' },
+            { word: 'orange', emoji: '🍊', display: 'Orange', sentence: 'Orange is juicy.' },
+            { word: 'grape', emoji: '🍇', display: 'Grape', sentence: 'I like grape.' },
+            { word: 'watermelon', emoji: '🍉', display: 'Watermelon', sentence: 'Watermelon is big.' },
+            { word: 'strawberry', emoji: '🍓', display: 'Strawberry', sentence: 'Strawberry is red.' },
+            { word: 'peach', emoji: '🍑', display: 'Peach', sentence: 'Peach is soft.' },
+            { word: 'lemon', emoji: '🍋', display: 'Lemon', sentence: 'Lemon is sour.' },
+            { word: 'mango', emoji: '🥭', display: 'Mango', sentence: 'Mango is yummy.' },
+            { word: 'cherry', emoji: '🍒', display: 'Cherry', sentence: 'Cherry is small.' },
+            // 文具
+            { word: 'pen', emoji: '✒️', display: 'Pen', sentence: 'I have a pen.' },
+            { word: 'pencil', emoji: '✏️', display: 'Pencil', sentence: 'This is my pencil.' },
+            { word: 'ruler', emoji: '📏', display: 'Ruler', sentence: 'Ruler is long.' },
+            { word: 'book', emoji: '📚', display: 'Book', sentence: 'I read a book.' },
+            { word: 'eraser', emoji: '🧽', display: 'Eraser', sentence: 'Eraser is white.' },
+            { word: 'crayon', emoji: '🖍️', display: 'Crayon', sentence: 'Crayon has many colors.' },
+            { word: 'bag', emoji: '🎒', display: 'Bag', sentence: 'My bag is blue.' },
+            // 身体部位
+            { word: 'eye', emoji: '👁️', display: 'Eye', sentence: 'I have two eyes.' },
+            { word: 'ear', emoji: '👂', display: 'Ear', sentence: 'I hear with my ear.' },
+            { word: 'nose', emoji: '👃', display: 'Nose', sentence: 'This is my nose.' },
+            { word: 'mouth', emoji: '👄', display: 'Mouth', sentence: 'I eat with my mouth.' },
+            { word: 'hand', emoji: '✋', display: 'Hand', sentence: 'Clap your hands.' },
+            { word: 'leg', emoji: '🦵', display: 'Leg', sentence: 'I have two legs.' },
+            { word: 'foot', emoji: '🦶', display: 'Foot', sentence: 'This is my foot.' },
+            { word: 'head', emoji: '🗣️', display: 'Head', sentence: 'Nod your head.' },
+            { word: 'arm', emoji: '💪', display: 'Arm', sentence: 'Wave your arm.' },
+            { word: 'face', emoji: '😊', display: 'Face', sentence: 'Wash your face.' },
+            { word: 'hair', emoji: '💇', display: 'Hair', sentence: 'I have black hair.' },
+            // 颜色
+            { word: 'red', emoji: '🔴', display: 'Red', sentence: 'Apple is red.' },
+            { word: 'blue', emoji: '🔵', display: 'Blue', sentence: 'Sky is blue.' },
+            { word: 'yellow', emoji: '🟡', display: 'Yellow', sentence: 'Banana is yellow.' },
+            { word: 'green', emoji: '🟢', display: 'Green', sentence: 'Grass is green.' },
+            { word: 'orange', emoji: '🟠', display: 'Orange', sentence: 'Carrot is orange.' },
+            { word: 'black', emoji: '⚫', display: 'Black', sentence: 'My hair is black.' },
+            { word: 'white', emoji: '⚪', display: 'White', sentence: 'Snow is white.' },
+            { word: 'brown', emoji: '🟤', display: 'Brown', sentence: 'Bear is brown.' },
+            { word: 'pink', emoji: '🌸', display: 'Pink', sentence: 'Pig is pink.' },
+            { word: 'purple', emoji: '🟣', display: 'Purple', sentence: 'Grape is purple.' },
+            // 数字
+            { word: 'one', emoji: '1️⃣', display: 'One', sentence: 'I have one nose.' },
+            { word: 'two', emoji: '2️⃣', display: 'Two', sentence: 'I have two eyes.' },
+            { word: 'three', emoji: '3️⃣', display: 'Three', sentence: 'Three little pigs.' },
+            { word: 'four', emoji: '4️⃣', display: 'Four', sentence: 'Four legs.' },
+            { word: 'five', emoji: '5️⃣', display: 'Five', sentence: 'Five fingers.' },
+            { word: 'six', emoji: '6️⃣', display: 'Six', sentence: 'Six eggs.' },
+            { word: 'seven', emoji: '7️⃣', display: 'Seven', sentence: 'Seven days.' },
+            { word: 'eight', emoji: '8️⃣', display: 'Eight', sentence: 'Eight legs.' },
+            { word: 'nine', emoji: '9️⃣', display: 'Nine', sentence: 'Nine cats.' },
+            { word: 'ten', emoji: '🔟', display: 'Ten', sentence: 'Ten fingers.' },
+            // 交通工具
+            { word: 'car', emoji: '🚗', display: 'Car', sentence: 'This is a car.' },
+            { word: 'bus', emoji: '🚌', display: 'Bus', sentence: 'I go to school by bus.' },
+            { word: 'train', emoji: '🚆', display: 'Train', sentence: 'Train is long.' },
+            { word: 'ship', emoji: '🚢', display: 'Ship', sentence: 'Ship is on the sea.' },
+            { word: 'plane', emoji: '✈️', display: 'Plane', sentence: 'Plane flies high.' },
+            { word: 'bike', emoji: '🚲', display: 'Bike', sentence: 'I ride a bike.' },
+            { word: 'taxi', emoji: '🚕', display: 'Taxi', sentence: 'Taxi is yellow.' },
+            // 食物
+            { word: 'milk', emoji: '🥛', display: 'Milk', sentence: 'I drink milk.' },
+            { word: 'bread', emoji: '🍞', display: 'Bread', sentence: 'I eat bread.' },
+            { word: 'egg', emoji: '🥚', display: 'Egg', sentence: 'I like egg.' },
+            { word: 'cake', emoji: '🍰', display: 'Cake', sentence: 'Cake is sweet.' },
+            { word: 'candy', emoji: '🍬', display: 'Candy', sentence: 'I like candy.' },
+            { word: 'water', emoji: '💧', display: 'Water', sentence: 'Drink some water.' },
+            { word: 'juice', emoji: '🧃', display: 'Juice', sentence: 'Apple juice.' },
+            { word: 'rice', emoji: '🍚', display: 'Rice', sentence: 'I eat rice.' },
+            { word: 'ice-cream', emoji: '🍦', display: 'Ice-cream', sentence: 'I love ice-cream.' },
+            // 玩具/其他
+            { word: 'toy', emoji: '🧸', display: 'Toy', sentence: 'This is my toy.' },
+            { word: 'ball', emoji: '⚽', display: 'Ball', sentence: 'Kick the ball.' },
+            { word: 'kite', emoji: '🪁', display: 'Kite', sentence: 'Fly a kite.' },
+            { word: 'doll', emoji: '🪆', display: 'Doll', sentence: 'I have a doll.' },
+            { word: 'sun', emoji: '☀️', display: 'Sun', sentence: 'Sun is hot.' },
+            { word: 'moon', emoji: '🌙', display: 'Moon', sentence: 'Moon is round.' },
+            { word: 'star', emoji: '⭐', display: 'Star', sentence: 'Twinkle little star.' },
+            { word: 'hat', emoji: '🧢', display: 'Hat', sentence: 'I wear a hat.' },
+            { word: 'shoe', emoji: '👟', display: 'Shoe', sentence: 'Put on your shoes.' },
+            { word: 'door', emoji: '🚪', display: 'Door', sentence: 'Open the door.' },
+            { word: 'window', emoji: '🪟', display: 'Window', sentence: 'Close the window.' },
+            { word: 'chair', emoji: '🪑', display: 'Chair', sentence: 'Sit on the chair.' },
+            { word: 'table', emoji: '🪵', display: 'Table', sentence: 'Put it on the table.' },
+            { word: 'bed', emoji: '🛏️', display: 'Bed', sentence: 'Go to bed.' },
+            // 人物
+            { word: 'boy', emoji: '👦', display: 'Boy', sentence: 'I am a boy.' },
+            { word: 'girl', emoji: '👧', display: 'Girl', sentence: 'She is a girl.' },
+            { word: 'baby', emoji: '👶', display: 'Baby', sentence: 'Baby is cute.' },
+            { word: 'mom', emoji: '👩', display: 'Mom', sentence: 'I love mom.' },
+            { word: 'dad', emoji: '👨', display: 'Dad', sentence: 'I love dad.' }
+        ];
+
+        // DOM 元素
+        const emojiPicture = document.getElementById('emojiPicture');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const messageBox = document.getElementById('messageBox');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const bestDisplay = document.getElementById('bestDisplay');
+        const nextBtn = document.getElementById('nextBtn');
+        const newGameBtn = document.getElementById('newGameBtn');
+
+        let currentWord = null;             
+        let options = [];                   
+        let correctAnswerWord = '';         
+        let answered = false;              
+        let score = 0;
+        let bestScore = 0;
+        let optionButtons = [];  // 存储当前三个按钮DOM
+
+        // 语音朗读函数
+        function speakText(text, isSlow = true) {
+            if (!window.speechSynthesis) return;
+            try { window.speechSynthesis.cancel(); } catch(e) {}
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = isSlow ? 0.85 : 0.9;
+            utterance.pitch = 1.1;
+            utterance.volume = 1;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // 读单词
+        function speakWord(word) { speakText(word, true); }
+        // 读例句
+        function speakSentence(sentence) { speakText(sentence, false); }
+
+        // 本地存储
+        try {
+            const saved = localStorage.getItem('kidEnglishBest_v3');
+            if (saved) bestScore = parseInt(saved, 10) || 0;
+        } catch(e) {}
+        updateScoreUI();
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function generateOptions(correctWordObj) {
+            const correctDisplay = correctWordObj.display;
+            const correctRaw = correctWordObj.word;
+            const otherWords = WORDS.filter(item => item.word !== correctRaw);
+            const shuffledOthers = shuffleArray([...otherWords]);
+            const distractor1 = shuffledOthers[0];
+            let distractor2 = shuffledOthers[1];
+            if (distractor1.word === distractor2.word && shuffledOthers.length > 2) {
+                distractor2 = shuffledOthers[2];
+            }
+            let optArray = [correctWordObj, distractor1, distractor2];
+            return shuffleArray(optArray);
+        }
+
+        // 渲染选项按钮
+        function renderOptions(optionWords) {
+            optionsContainer.innerHTML = '';
+            optionButtons = [];
+            optionWords.forEach((wordObj, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'word-btn';
+                btn.dataset.optionIndex = index;
+                btn.dataset.word = wordObj.word;
+                
+                // 单词主体
+                const wordMain = document.createElement('div');
+                wordMain.className = 'word-main';
+                wordMain.textContent = wordObj.display;
+                
+                // 例句 (可点击朗读)
+                const sentenceSpan = document.createElement('div');
+                sentenceSpan.className = 'word-sentence';
+                sentenceSpan.textContent = wordObj.sentence;
+                sentenceSpan.setAttribute('aria-label', '点击朗读例句');
+                
+                // 阻止例句点击冒泡到按钮，并朗读例句
+                sentenceSpan.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    speakSentence(wordObj.sentence);
+                });
+                
+                btn.appendChild(wordMain);
+                btn.appendChild(sentenceSpan);
+                
+                // 按钮点击事件 (选答案)
+                btn.addEventListener('click', handleOptionClick);
+                
+                optionsContainer.appendChild(btn);
+                optionButtons.push(btn);
+            });
+        }
+
+        function loadNewQuestion() {
+            let newIndex = Math.floor(Math.random() * WORDS.length);
+            if (WORDS.length > 1 && currentWord) {
+                while (WORDS[newIndex].word === currentWord.word) {
+                    newIndex = Math.floor(Math.random() * WORDS.length);
+                }
+            }
+            currentWord = WORDS[newIndex];
+            correctAnswerWord = currentWord.word;
+            emojiPicture.textContent = currentWord.emoji;
+            
+            const optionWords = generateOptions(currentWord);
+            options = optionWords.map(opt => opt.display);
+            renderOptions(optionWords);
+            
+            answered = false;
+            nextBtn.disabled = true;
+            messageBox.textContent = '🐣 选一个单词吧！点句子听发音～';
+        }
+
+        function updateScoreUI() {
+            scoreDisplay.textContent = score;
+            bestDisplay.textContent = `🏆 最高 ${bestScore}`;
+        }
+
+        function updateBestScore() {
+            if (score > bestScore) {
+                bestScore = score;
+                try { localStorage.setItem('kidEnglishBest_v3', bestScore); } catch(e) {}
+                bestDisplay.textContent = `🏆 最高 ${bestScore}`;
+                messageBox.textContent = '🎉 新纪录! 好棒! 🎉';
+            }
+        }
+
+        function popConfetti() {
+            for (let i = 0; i < 12; i++) {
+                const confetti = document.createElement('div');
+                confetti.textContent = ['🎈','✨','⭐','🌟','🍭','🧸','🎉','🎊','🪅','🌸','🐾','🦄'][Math.floor(Math.random()*12)];
+                confetti.className = 'confetti-emoji';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = (70 + Math.random() * 20) + '%';
+                confetti.style.fontSize = (24 + Math.floor(Math.random() * 36)) + 'px';
+                confetti.style.position = 'fixed';
+                confetti.style.pointerEvents = 'none';
+                confetti.style.zIndex = '999';
+                document.body.appendChild(confetti);
+                setTimeout(() => { confetti.remove(); }, 1400);
+            }
+        }
+
+        function shakeButton(btn) {
+            btn.classList.add('word-btn-error');
+            setTimeout(() => btn.classList.remove('word-btn-error'), 350);
+        }
+
+        function handleOptionClick(e) {
+            const btn = e.currentTarget;
+            if (answered || btn.disabled) return;
+            
+            const selectedWord = btn.dataset.word;
+            const isCorrect = (selectedWord === currentWord.word);
+            
+            if (isCorrect) {
+                answered = true;
+                score += 10;
+                updateScoreUI();
+                updateBestScore();
+                
+                btn.classList.add('word-btn-correct-flash');
+                optionButtons.forEach(b => { b.disabled = true; });
+                
+                speakWord(currentWord.word);
+                messageBox.textContent = `✅ 太棒啦！ +10  (${currentWord.word}) 🎈`;
+                popConfetti();
+                nextBtn.disabled = false;
+                
+                emojiPicture.style.transform = 'scale(1.08)';
+                setTimeout(() => emojiPicture.style.transform = 'scale(1)', 120);
+            } else {
+                shakeButton(btn);
+                const wrongMessages = ['😕 再试试看!', '🤔 差一点点', '🐢 加油～', '💪 你可以的', '🌟 再选一次'];
+                messageBox.textContent = wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
+            }
+        }
+
+        function goToNextQuestion() {
+            if (!answered) return;
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            loadNewQuestion();
+            emojiPicture.style.transform = 'scale(1)';
+            messageBox.textContent = '✨ 新单词来咯 ✨';
+        }
+
+        function resetNewGame() {
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            score = 0;
+            updateScoreUI();
+            const randomIndex = Math.floor(Math.random() * WORDS.length);
+            currentWord = WORDS[randomIndex];
+            correctAnswerWord = currentWord.word;
+            emojiPicture.textContent = currentWord.emoji;
+            
+            const optionWords = generateOptions(currentWord);
+            renderOptions(optionWords);
+            
+            answered = false;
+            nextBtn.disabled = true;
+            messageBox.textContent = '🐣 新游戏！加油～';
+            emojiPicture.style.transform = 'scale(1)';
+            
+            for (let i=0;i<5;i++) {
+                setTimeout(() => {
+                    const mini = document.createElement('div');
+                    mini.textContent = '✨';
+                    mini.style.position = 'fixed';
+                    mini.style.left = Math.random()*100+'%';
+                    mini.style.top = '50%';
+                    mini.style.fontSize = '30px';
+                    mini.style.pointerEvents = 'none';
+                    mini.style.zIndex = '99';
+                    document.body.appendChild(mini);
+                    setTimeout(()=> mini.remove(), 600);
+                }, i*50);
+            }
+        }
+
+        // 绑定事件
+        nextBtn.addEventListener('click', goToNextQuestion);
+        newGameBtn.addEventListener('click', resetNewGame);
+
+        // 初始化
+        function initGame() {
+            const firstIndex = Math.floor(Math.random() * WORDS.length);
+            currentWord = WORDS[firstIndex];
+            correctAnswerWord = currentWord.word;
+            emojiPicture.textContent = currentWord.emoji;
+            const optionWords = generateOptions(currentWord);
+            renderOptions(optionWords);
+            answered = false;
+            nextBtn.disabled = true;
+            messageBox.textContent = '🐾 选对单词，我会读出来哟！点例句听句子～';
+            score = 0;
+            updateScoreUI();
+            bestDisplay.textContent = `🏆 最高 ${bestScore}`;
+        }
+
+        initGame();
+
+        if (!window.speechSynthesis) {
+            document.querySelector('.footer-note').innerHTML = '✨ 点一点，学单词 ✨ (你的浏览器暂不支持朗读)';
+        }
+    })();
+</script>
+</body>
+</html>
