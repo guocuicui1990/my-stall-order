@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes, viewport-fit=cover">
-    <title>🏎️ 碰碰车单词 · 音效语音修复版</title>
+    <title>🏎️ 碰碰车单词 · 60题闯关版</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -17,6 +17,19 @@
             box-shadow: 0 20px 0 #0a1a2b, 0 20px 30px rgba(0,0,0,0.5); border: 3px solid #ffd966;
             overflow: hidden; padding: 16px 12px 20px; position: relative;
         }
+        .streak-bar-container {
+            background: linear-gradient(145deg, #fbe4b0, #f5d69a); border-radius: 30px; padding: 8px 16px;
+            margin-bottom: 12px; box-shadow: inset 0 2px 6px #fff3cf, 0 4px 0 #b4723a; border: 2px solid #ffbe5c;
+            display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #412d1a;
+        }
+        .streak-label { font-size: 18px; display: flex; align-items: center; gap: 6px; }
+        .streak-value { background: #2c5e2e; color: #f9e75c; padding: 4px 16px; border-radius: 40px; font-size: 22px; box-shadow: inset 0 1px 4px #a5d6a5; }
+        .garage-btn {
+            background: linear-gradient(145deg, #9b59b6, #8e44ad); border: none; color: white; font-weight: bold;
+            font-size: 20px; padding: 6px 16px; border-radius: 40px; box-shadow: 0 5px 0 #6c3483; border: 2px solid #d2b4de;
+            cursor: pointer; transition: 0.05s;
+        }
+        .garage-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #6c3483; }
         .game-header {
             display: flex; align-items: center; justify-content: space-between;
             background: linear-gradient(145deg, #ffc857, #ffb347); padding: 10px 16px;
@@ -47,9 +60,9 @@
         .combo-display.show { opacity: 1; transform: scale(1); }
         .combo-display.pulse { animation: comboPulse 0.5s ease-in-out; }
         @keyframes comboPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        .timer-bar {
+        .progress-bar {
             position: absolute; bottom: 0; left: 0; height: 4px;
-            background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c); width: 100%;
+            background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c); width: 0%;
             transition: width 0.1s linear; border-radius: 0 0 0 60px;
         }
         .header-buttons { display: flex; gap: 8px; }
@@ -113,7 +126,7 @@
             display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 5px;
         }
         .car-icon { font-size: 52px; }
-        .car-option[data-car="green"] .car-icon { filter: hue-rotate(120deg); }
+        .car-option[data-car="green"] .car-icon { filter: hue-rotate(120deg) saturate(1.5) brightness(0.9); }
         .color-dot {
             width: 52px; height: 52px; border-radius: 50%; display: inline-block;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: 2px solid rgba(255,255,255,0.5);
@@ -128,23 +141,12 @@
             color: #1a3e1f; cursor: pointer; width: 100%; margin-top: 20px; text-shadow: 1px 1px 0 #d4ffcf;
             transition: all 0.1s; touch-action: manipulation; letter-spacing: 4px; position: relative; overflow: hidden;
         }
-        .start-btn::after {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
-            transform: rotate(45deg); transition: all 0.5s;
-        }
-        .start-btn:hover::after { left: 100%; }
         .start-btn:active { transform: translateY(5px); box-shadow: 0 3px 0 #1f8f4b, 0 4px 8px rgba(0,0,0,0.1); }
         .result-panel {
             background: linear-gradient(145deg, #fbe4b0, #f5d69a); border-radius: 40px; padding: 20px;
             margin-top: 10px; text-align: center; box-shadow: inset 0 2px 8px #fff8e7, 0 8px 0 #b4723a;
             border: 2px solid #ffbe5c; position: relative; overflow: hidden;
         }
-        .result-panel::before {
-            content: '🎉'; position: absolute; font-size: 100px; opacity: 0.1; top: -20px; left: -20px;
-            animation: rotate 10s linear infinite;
-        }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .result-score {
             font-size: 64px; font-weight: 900; color: #2c5e2e; text-shadow: 3px 3px 0 #b0d37c, 6px 6px 0 rgba(0,0,0,0.1);
             margin: 10px 0; display: inline-block; animation: scorePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -154,9 +156,8 @@
             background: linear-gradient(145deg, #ffaa33, #ff9500); border: none; font-size: 28px;
             padding: 14px 24px; border-radius: 50px; box-shadow: 0 6px 0 #b4731e, 0 4px 8px rgba(0,0,0,0.2);
             font-weight: bold; margin-top: 16px; cursor: pointer; border: 2px solid #ffdd99;
-            color: #4b2e1a; transition: all 0.1s; position: relative; overflow: hidden;
+            color: #4b2e1a; transition: all 0.1s;
         }
-        .play-again-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #b4731e, 0 6px 12px rgba(0,0,0,0.2); }
         .play-again-btn:active { transform: translateY(2px); box-shadow: 0 4px 0 #b4731e, 0 2px 4px rgba(0,0,0,0.2); }
         .hidden { display: none !important; }
         .message-area {
@@ -164,10 +165,6 @@
             margin: 6px 0; text-shadow: 2px 2px 0 #0f1e2c; display: flex; align-items: center;
             justify-content: center; gap: 10px;
         }
-        .message-area.correct { color: #2ecc71; animation: messagePulse 0.5s; }
-        .message-area.wrong { color: #e74c3c; animation: shake 0.5s; }
-        @keyframes messagePulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
         .pause-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
@@ -184,6 +181,55 @@
             position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #f9e75c;
             padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; border: 1px solid #ffd966;
         }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+            display: flex; justify-content: center; align-items: center; z-index: 200; backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: #fbe4b0; border-radius: 48px; padding: 24px; max-width: 500px; width: 95%;
+            max-height: 80vh; overflow-y: auto; box-shadow: 0 16px 0 #b4723a; border: 3px solid #ffbe5c;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 28px; font-weight: 800; color: #412d1a; text-shadow: 2px 2px 0 #ffd58c; }
+        .close-modal {
+            font-size: 32px; cursor: pointer; background: #e74c3c; color: white; width: 48px; height: 48px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #b03a2e;
+        }
+        .skin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .skin-item {
+            background: white; border-radius: 20px; padding: 12px 4px; text-align: center;
+            box-shadow: 0 4px 0 #aaa; border: 2px solid #ddd; cursor: pointer; transition: 0.1s; position: relative;
+        }
+        .skin-item.locked { opacity: 0.5; filter: grayscale(0.8); cursor: not-allowed; }
+        .skin-item.selected { border: 4px solid #f1c40f; box-shadow: 0 0 0 2px #2ecc71, 0 4px 0 #aaa; transform: scale(0.98); }
+        .skin-preview { font-size: 42px; margin-bottom: 5px; }
+        .skin-name { font-size: 14px; font-weight: bold; }
+        .lock-icon { position: absolute; top: 5px; right: 5px; font-size: 20px; }
+        .report-container { background: #fff8e7; border-radius: 32px; padding: 24px; text-align: center; }
+        .report-title { font-size: 32px; font-weight: 800; color: #2c3e50; margin-bottom: 16px; }
+        .report-words { background: #e8f4f8; padding: 12px; border-radius: 24px; margin: 16px 0; }
+        .word-badge {
+            display: inline-block; background: #f1c40f; color: #2c3e50; padding: 6px 16px;
+            margin: 4px; border-radius: 30px; font-weight: bold; font-size: 20px;
+        }
+        .report-stats { display: flex; justify-content: space-around; margin: 20px 0; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 36px; font-weight: 900; color: #e67e22; }
+        .stat-label { font-size: 16px; color: #7f8c8d; }
+        .compare-badge { background: #2ecc71; color: white; padding: 8px; border-radius: 40px; margin: 16px 0; }
+        .save-report-btn {
+            background: #3498db; color: white; border: none; font-size: 24px; padding: 14px 24px;
+            border-radius: 60px; box-shadow: 0 6px 0 #1f618d; font-weight: bold; cursor: pointer;
+            margin-top: 16px; width: 100%;
+        }
+        .save-report-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #1f618d; }
+        .preview-container {
+            display: flex; align-items: center; justify-content: center; gap: 20px; margin: 10px 0;
+        }
+        #carPreviewCanvas { background: transparent; }
+        #currentCarColorDot {
+            width: 52px; height: 52px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
         @media (max-width: 450px) {
             .car-icon { font-size: 42px; } .color-dot { width: 42px; height: 42px; }
             .car-name { font-size: 16px; } .finish-btn, .pause-btn { font-size: 16px; padding: 6px 12px; }
@@ -193,6 +239,11 @@
 </head>
 <body>
 <div class="game-container" id="gameContainer">
+    <div class="streak-bar-container">
+        <div class="streak-label">🔥 连续学习 <span id="streakDays">0</span> 天</div>
+        <div class="streak-value" id="nextUnlockHint">正确率≥90%解锁新皮肤</div>
+        <button class="garage-btn" id="garageBtn">🎨 车库</button>
+    </div>
     <div class="game-header">
         <div class="score-box" id="scoreBox">
             🏆 <span id="scoreValue">0</span>
@@ -202,11 +253,11 @@
             <button class="pause-btn hidden" id="pauseBtn">⏸</button>
             <button class="finish-btn" id="finishGameBtn">🏁 完成</button>
         </div>
-        <div class="timer-bar" id="timerBar"></div>
+        <div class="progress-bar" id="progressBar"></div>
     </div>
     <div class="canvas-wrapper" id="canvasWrapper">
         <canvas id="gameCanvas" width="500" height="600"></canvas>
-        <div class="difficulty-indicator hidden" id="difficultyIndicator">速度: 1x</div>
+        <div class="difficulty-indicator hidden" id="difficultyIndicator">速度: 1.0x</div>
         <div class="pause-overlay hidden" id="pauseOverlay">
             <div class="pause-text">⏸ 游戏暂停</div>
             <button class="resume-btn" id="resumeBtn">▶ 继续游戏</button>
@@ -215,6 +266,11 @@
     <div class="message-area" id="gameMessage">✨ 选一辆赛车，开始冒险吧！</div>
     <div id="carSelectPanel" class="car-selector">
         <div class="selector-title">🚗 选你的战车 🚗</div>
+        <div class="preview-container">
+            <canvas id="carPreviewCanvas" width="80" height="60"></canvas>
+            <div id="currentCarColorDot" class="dot-red"></div>
+            <span id="currentCarNameDisplay" style="font-weight:bold;">闪电红·跑车</span>
+        </div>
         <div class="car-list">
             <div class="car-option" data-car="red">
                 <div class="car-emoji"><span class="car-icon">🏎️</span><span class="color-dot dot-red"></span></div>
@@ -232,21 +288,41 @@
         <button class="start-btn" id="startGameBtn">🚦 出发！</button>
     </div>
     <div id="resultPanel" class="result-panel hidden">
-        <div style="font-size:28px; font-weight:800;">🎉 游戏结束 🎉</div>
+        <div style="font-size:28px; font-weight:800;">🎉 闯关成功 🎉</div>
         <div class="result-score" id="finalScore">0</div>
         <div id="resultComment" style="font-size:20px; margin: 8px 0; color: #5d4037; font-weight: 600;">⭐ 你真棒 ⭐</div>
         <div style="font-size:16px; color: #7f8c8d; margin-top: 8px;">
             最高连击: <span id="maxCombo" style="color: #e74c3c; font-weight: bold;">0</span> | 
             正确率: <span id="accuracy" style="color: #3498db; font-weight: bold;">0%</span>
         </div>
+        <button class="play-again-btn" id="viewReportBtn" style="background: #3498db; box-shadow: 0 6px 0 #1f618d; margin-right: 8px;">📊 学习报告</button>
         <button class="play-again-btn" id="playAgainBtn">🔄 再玩一次</button>
+    </div>
+</div>
+<!-- 车库模态框 -->
+<div id="garageModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header"><div class="modal-title" id="modalTitle">🚗 赛车皮肤</div><div class="close-modal" id="closeModalBtn">✕</div></div>
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <button id="showCarSkinsBtn" class="garage-btn" style="background:#e67e22;">赛车</button>
+            <button id="showTrackSkinsBtn" class="garage-btn" style="background:#2ecc71;">赛道</button>
+        </div>
+        <div id="skinGrid" class="skin-grid"></div>
+    </div>
+</div>
+<!-- 学习报告模态框 -->
+<div id="reportModal" class="modal-overlay hidden">
+    <div class="modal-content report-container">
+        <div class="modal-header"><div class="modal-title">📚 学习报告</div><div class="close-modal" id="closeReportBtn">✕</div></div>
+        <div id="reportContent"></div>
+        <button class="save-report-btn" id="saveReportBtn">📸 保存报告并分享</button>
     </div>
 </div>
 <script>
     (function(){
         "use strict";
 
-        // ---------- 词库 ----------
+        // ---------- 词库：人教版一年级词汇 ----------
         const WORDS = [
             { word: 'cat', emoji: '🐱' }, { word: 'dog', emoji: '🐶' }, { word: 'pig', emoji: '🐷' },
             { word: 'cow', emoji: '🐮' }, { word: 'bee', emoji: '🐝' }, { word: 'fish', emoji: '🐟' },
@@ -254,41 +330,89 @@
             { word: 'duck', emoji: '🦆' }, { word: 'bear', emoji: '🐻' }, { word: 'tiger', emoji: '🐯' },
             { word: 'lion', emoji: '🦁' }, { word: 'elephant', emoji: '🐘' }, { word: 'panda', emoji: '🐼' },
             { word: 'frog', emoji: '🐸' }, { word: 'mouse', emoji: '🐭' }, { word: 'horse', emoji: '🐴' },
-            { word: 'sheep', emoji: '🐑' }, { word: 'chicken', emoji: '🐔' }, { word: 'apple', emoji: '🍎' },
-            { word: 'banana', emoji: '🍌' }, { word: 'pear', emoji: '🍐' }, { word: 'orange', emoji: '🍊' },
-            { word: 'grape', emoji: '🍇' }, { word: 'watermelon', emoji: '🍉' }, { word: 'strawberry', emoji: '🍓' },
-            { word: 'peach', emoji: '🍑' }, { word: 'lemon', emoji: '🍋' }, { word: 'mango', emoji: '🥭' },
-            { word: 'cherry', emoji: '🍒' }, { word: 'pen', emoji: '✒️' }, { word: 'pencil', emoji: '✏️' },
-            { word: 'ruler', emoji: '📏' }, { word: 'book', emoji: '📚' }, { word: 'eraser', emoji: '🧽' },
-            { word: 'crayon', emoji: '🖍️' }, { word: 'bag', emoji: '🎒' }, { word: 'eye', emoji: '👁️' },
-            { word: 'ear', emoji: '👂' }, { word: 'nose', emoji: '👃' }, { word: 'mouth', emoji: '👄' },
-            { word: 'hand', emoji: '✋' }, { word: 'leg', emoji: '🦵' }, { word: 'foot', emoji: '🦶' },
-            { word: 'head', emoji: '🗣️' }, { word: 'arm', emoji: '💪' }, { word: 'face', emoji: '😊' },
-            { word: 'hair', emoji: '💇' }, { word: 'red', emoji: '🔴' }, { word: 'blue', emoji: '🔵' },
-            { word: 'yellow', emoji: '🟡' }, { word: 'green', emoji: '🟢' }, { word: 'black', emoji: '⚫' },
-            { word: 'white', emoji: '⚪' }, { word: 'brown', emoji: '🟤' }, { word: 'pink', emoji: '🌸' },
-            { word: 'purple', emoji: '🟣' }, { word: 'one', emoji: '1️⃣' }, { word: 'two', emoji: '2️⃣' },
-            { word: 'three', emoji: '3️⃣' }, { word: 'four', emoji: '4️⃣' }, { word: 'five', emoji: '5️⃣' },
-            { word: 'six', emoji: '6️⃣' }, { word: 'seven', emoji: '7️⃣' }, { word: 'eight', emoji: '8️⃣' },
-            { word: 'nine', emoji: '9️⃣' }, { word: 'ten', emoji: '🔟' }, { word: 'car', emoji: '🚗' },
-            { word: 'bus', emoji: '🚌' }, { word: 'train', emoji: '🚆' }, { word: 'ship', emoji: '🚢' },
-            { word: 'plane', emoji: '✈️' }, { word: 'bike', emoji: '🚲' }, { word: 'taxi', emoji: '🚕' },
-            { word: 'milk', emoji: '🥛' }, { word: 'bread', emoji: '🍞' }, { word: 'egg', emoji: '🥚' },
-            { word: 'cake', emoji: '🍰' }, { word: 'candy', emoji: '🍬' }, { word: 'water', emoji: '💧' },
-            { word: 'juice', emoji: '🧃' }, { word: 'rice', emoji: '🍚' }, { word: 'ice-cream', emoji: '🍦' },
-            { word: 'toy', emoji: '🧸' }, { word: 'ball', emoji: '⚽' }, { word: 'kite', emoji: '🪁' },
-            { word: 'doll', emoji: '🪆' }, { word: 'sun', emoji: '☀️' }, { word: 'moon', emoji: '🌙' },
-            { word: 'star', emoji: '⭐' }, { word: 'hat', emoji: '🧢' }, { word: 'shoe', emoji: '👟' },
-            { word: 'door', emoji: '🚪' }, { word: 'window', emoji: '🪟' }, { word: 'chair', emoji: '🪑' },
-            { word: 'table', emoji: '🪵' }, { word: 'bed', emoji: '🛏️' }, { word: 'boy', emoji: '👦' },
-            { word: 'girl', emoji: '👧' }, { word: 'baby', emoji: '👶' }, { word: 'mom', emoji: '👩' },
-            { word: 'dad', emoji: '👨' }
+            { word: 'sheep', emoji: '🐑' }, { word: 'chicken', emoji: '🐔' },
+            { word: 'book', emoji: '📚' }, { word: 'teacher', emoji: '👩‍🏫' }, { word: 'ruler', emoji: '📏' },
+            { word: 'pencil', emoji: '✏️' }, { word: 'schoolbag', emoji: '🎒' }, { word: 'face', emoji: '😊' },
+            { word: 'mouth', emoji: '👄' }, { word: 'ear', emoji: '👂' }, { word: 'eye', emoji: '👁️' },
+            { word: 'nose', emoji: '👃' }, { word: 'hand', emoji: '✋' }, { word: 'leg', emoji: '🦵' },
+            { word: 'foot', emoji: '🦶' }, { word: 'arm', emoji: '💪' }, { word: 'hair', emoji: '💇' },
+            { word: 'one', emoji: '1️⃣' }, { word: 'two', emoji: '2️⃣' }, { word: 'three', emoji: '3️⃣' },
+            { word: 'four', emoji: '4️⃣' }, { word: 'five', emoji: '5️⃣' }, { word: 'six', emoji: '6️⃣' },
+            { word: 'seven', emoji: '7️⃣' }, { word: 'eight', emoji: '8️⃣' }, { word: 'nine', emoji: '9️⃣' },
+            { word: 'ten', emoji: '🔟' }, { word: 'red', emoji: '🔴' }, { word: 'yellow', emoji: '🟡' },
+            { word: 'blue', emoji: '🔵' }, { word: 'green', emoji: '🟢' }, { word: 'black', emoji: '⚫' },
+            { word: 'white', emoji: '⚪' }, { word: 'pink', emoji: '🌸' }, { word: 'purple', emoji: '🟣' },
+            { word: 'orange', emoji: '🍊' }, { word: 'brown', emoji: '🟤' }, { word: 'apple', emoji: '🍎' },
+            { word: 'banana', emoji: '🍌' }, { word: 'pear', emoji: '🍐' }, { word: 'grape', emoji: '🍇' },
+            { word: 'watermelon', emoji: '🍉' }, { word: 'strawberry', emoji: '🍓' }, { word: 'peach', emoji: '🍑' },
+            { word: 'lemon', emoji: '🍋' }, { word: 'mango', emoji: '🥭' }, { word: 'cherry', emoji: '🍒' },
+            { word: 'eraser', emoji: '🧽' }, { word: 'pencil case', emoji: '✒️' },
+            { word: 'backpack', emoji: '🎒' }, { word: 'school', emoji: '🏫' },
+            { word: 'chair', emoji: '🪑' }, { word: 'desk', emoji: '🪵' }, { word: 'blackboard', emoji: '⬛' },
+            { word: 'door', emoji: '🚪' }, { word: 'window', emoji: '🪟' }, { word: 'wall', emoji: '🧱' },
+            { word: 'light', emoji: '💡' }, { word: 'bed', emoji: '🛏️' }, { word: 'box', emoji: '📦' },
+            { word: 'plane', emoji: '✈️' }, { word: 'train', emoji: '🚆' }, { word: 'car', emoji: '🚗' },
+            { word: 'bus', emoji: '🚌' }, { word: 'ball', emoji: '⚽' }, { word: 'doll', emoji: '🪆' },
+            { word: 'bear toy', emoji: '🧸' }, { word: 'rice', emoji: '🍚' }, { word: 'egg', emoji: '🥚' },
+            { word: 'noodles', emoji: '🍜' }, { word: 'vegetable', emoji: '🥬' }, { word: 'juice', emoji: '🧃' },
+            { word: 'water', emoji: '💧' }, { word: 'tea', emoji: '🍵' }, { word: 'milk', emoji: '🥛' },
+            { word: 'bread', emoji: '🍞' }, { word: 'cake', emoji: '🍰' }, { word: 'candy', emoji: '🍬' },
+            { word: 'ice-cream', emoji: '🍦' }, { word: 'shirt', emoji: '👕' }, { word: 'T-shirt', emoji: '👕' },
+            { word: 'skirt', emoji: '👗' }, { word: 'dress', emoji: '👗' }, { word: 'socks', emoji: '🧦' },
+            { word: 'shorts', emoji: '🩳' }, { word: 'shoe', emoji: '👟' }, { word: 'hat', emoji: '🧢' },
+            { word: 'toy', emoji: '🧸' }, { word: 'kite', emoji: '🪁' }, { word: 'boat', emoji: '🚢' },
+            { word: 'ship', emoji: '🚢' }, { word: 'bike', emoji: '🚲' }, { word: 'taxi', emoji: '🚕' },
+            { word: 'mother', emoji: '👩' }, { word: 'father', emoji: '👨' }, { word: 'brother', emoji: '👦' },
+            { word: 'sister', emoji: '👧' }, { word: 'baby', emoji: '👶' }, { word: 'boy', emoji: '👦' },
+            { word: 'girl', emoji: '👧' }, { word: 'mom', emoji: '👩' }, { word: 'dad', emoji: '👨' },
+            { word: 'sun', emoji: '☀️' }, { word: 'moon', emoji: '🌙' }, { word: 'star', emoji: '⭐' },
+            { word: 'computer', emoji: '💻' }, { word: 'TV', emoji: '📺' }, { word: 'telephone', emoji: '☎️' },
+            { word: 'table', emoji: '🪵' }, { word: 'picture', emoji: '🖼️' }, { word: 'lamp', emoji: '💡' },
+            { word: 'armchair', emoji: '🛋️' }, { word: 'circle', emoji: '⚪' }, { word: 'triangle', emoji: '🔺' },
+            { word: 'square', emoji: '◼️' }, { word: 'rectangle', emoji: '📐' }, { word: 'jacket', emoji: '🧥' },
+            { word: 'sweater', emoji: '🧶' }, { word: 'pants', emoji: '👖' }, { word: 'meat', emoji: '🥩' },
+            { word: 'salad', emoji: '🥗' }, { word: 'hamburger', emoji: '🍔' }, { word: 'tofu', emoji: '🥟' },
+            { word: 'jiaozi', emoji: '🥟' }
+        ];
+        const FINAL_WORDS = [...new Map(WORDS.map(item => [item.word, item])).values()];
+
+        // ---------- 皮肤数据 ----------
+        const CAR_SKINS = [
+            { id: 0, name: '闪电红 · 跑车', color: '#e03a3a', type: 'sports', unlocked: true },
+            { id: 1, name: '旋风蓝 · SUV', color: '#3a7bd5', type: 'suv', unlocked: true },
+            { id: 2, name: '丛林绿 · 轿车', color: '#2ecc71', type: 'sedan', unlocked: true },
+            ...Array.from({ length: 27 }, (_, i) => {
+                const types = ['sports', 'suv', 'sedan', 'truck', 'race', 'police', 'taxi', 'fire', 'ambulance'];
+                const colors = ['#e67e22', '#9b59b6', '#1abc9c', '#f39c12', '#c0392b', '#2980b9', '#8e44ad', '#d35400', '#27ae60'];
+                const type = types[(i + 3) % types.length];
+                const color = colors[(i + 3) % colors.length];
+                return { id: i + 3, name: `${['极速','越野','城市','梦幻','烈焰','冰霜'][i%6]}${type}${i+1}`, color, type, unlocked: false };
+            })
+        ];
+        const TRACK_SKINS = [
+            { id: 0, name: '经典赛道', bg: ['#1a3a5c','#2d5a7e'], road: '#3a6e4a', line: '#f9e076', unlocked: true },
+            { id: 1, name: '森林小路', bg: ['#2d6a4f','#40916c'], road: '#1b4332', line: '#d8f3dc', unlocked: true },
+            { id: 2, name: '沙漠狂飙', bg: ['#e9c46a','#f4a261'], road: '#d4a373', line: '#e76f51', unlocked: true },
+            ...Array.from({ length: 27 }, (_, i) => {
+                const themes = [
+                    { name: '雪地', bg: ['#a8dadc','#457b9d'], road: '#f1faee', line: '#1d3557' },
+                    { name: '星空', bg: ['#1e1b4b','#312e81'], road: '#4338ca', line: '#fbbf24' },
+                    { name: '火山', bg: ['#7f1d1d','#991b1b'], road: '#450a0a', line: '#f97316' },
+                    { name: '糖果', bg: ['#fbcfe8','#f472b6'], road: '#ec4899', line: '#fef08a' },
+                    { name: '海洋', bg: ['#0c4a6e','#0284c7'], road: '#0f766e', line: '#7dd3fc' },
+                    { name: '科技', bg: ['#1e293b','#334155'], road: '#0f172a', line: '#38bdf8' }
+                ];
+                const theme = themes[i % themes.length];
+                return { id: i+3, name: theme.name + (Math.floor(i/6)+1), bg: theme.bg, road: theme.road, line: theme.line, unlocked: false };
+            })
         ];
 
+        // DOM 元素
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const previewCanvas = document.getElementById('carPreviewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
         const scoreSpan = document.getElementById('scoreValue');
-        const scoreBox = document.getElementById('scoreBox');
         const gameMessage = document.getElementById('gameMessage');
         const carSelectPanel = document.getElementById('carSelectPanel');
         const resultPanel = document.getElementById('resultPanel');
@@ -300,67 +424,45 @@
         const finishBtn = document.getElementById('finishGameBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const playAgainBtn = document.getElementById('playAgainBtn');
-        const resumeBtn = document.getElementById('resumeBtn');
         const pauseOverlay = document.getElementById('pauseOverlay');
-        const canvasWrapper = document.getElementById('canvasWrapper');
         const comboDisplay = document.getElementById('comboDisplay');
-        const timerBar = document.getElementById('timerBar');
+        const progressBar = document.getElementById('progressBar');
         const difficultyIndicator = document.getElementById('difficultyIndicator');
+        const canvasWrapper = document.getElementById('canvasWrapper');
         const carOptions = document.querySelectorAll('.car-option');
 
+        let currentCarSkinId = 0, currentTrackSkinId = 0;
+        let carSkins = CAR_SKINS, trackSkins = TRACK_SKINS;
+        let learnedWords = new Set();
+        let streakData = { days: 0, lastDate: null };
         let selectedCar = 'red';
-        let gameActive = false;
-        let gamePaused = false;
-        let score = 0;
-        let animationFrame = null;
-        let items = [];
-        let particles = [];
-        let floatingTexts = [];
-        let tireMarks = [];
-        let roadOffset = 0;
-        let lastSpawnTime = 0;
-        const SPAWN_INTERVAL = 7000;
-        let currentTargetWord = null;
-        let combo = 0;
-        let maxCombo = 0;
-        let correctCount = 0;
-        let wrongCount = 0;
-        let gameSpeed = 1;
+        let gameActive = false, gamePaused = false, score = 0, combo = 0, maxCombo = 0;
+        let correctCount = 0, wrongCount = 0;
+        let gameSpeed = 1.0;
         let difficultyLevel = 1;
-
         const CW = 500, CH = 600;
-        canvas.width = CW; canvas.height = CH;
-        let carX = CW/2;
-        const carY = CH - 70;
-        const defaultCarX = CW/2;
-        let isMovingForCollision = false;
-        let targetItem = null;
-        let moveSpeedX = 0;
-        let collisionHappened = false;
-        let crashAnim = 0;
+        let carX = CW/2, carY = CH - 70;
+        let items = [];
+        let roadOffset = 0, lastSpawnTime = 0, currentTargetWord = null;
+        let isMovingForCollision = false, targetItem = null, collisionHappened = false, crashAnim = 0;
         let gameStartTime = 0;
+        const SPAWN_INTERVAL = 7000;
+        let animationFrame = null;
+        const TOTAL_QUESTIONS = 60; // 总题数
 
-        // ---------- 音频初始化 (简化且可靠) ----------
+        // ========== 音频系统 ==========
         let audioCtx = null;
         function initAudio() {
             if (audioCtx) return true;
             try {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                // 如果已挂起，不立即 resume，等用户手势
                 return true;
-            } catch(e) {
-                console.warn('Web Audio 不支持');
-                return false;
-            }
+            } catch(e) { console.warn('Web Audio 不支持'); return false; }
         }
-        
-        // 在用户手势中调用，激活音频上下文
         function activateAudio() {
             if (!audioCtx) initAudio();
             if (audioCtx && audioCtx.state === 'suspended') {
                 audioCtx.resume().then(() => {
-                    console.log('AudioContext 已激活');
-                    // 播放一个极短的无声脉冲，确保 iOS 等设备解锁
                     const buffer = audioCtx.createBuffer(1, 1, 22050);
                     const source = audioCtx.createBufferSource();
                     source.buffer = buffer;
@@ -369,52 +471,35 @@
                 }).catch(e => console.warn('音频激活失败', e));
             }
         }
-
-        // 爆炸音效 (嘭嘭嘭)
         function playExplosionSound() {
             if (!audioCtx) { initAudio(); if (!audioCtx) return; }
-            // 如果未激活，尝试激活 (但通常已在开始游戏时激活)
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume().then(() => playExplosionSoundNow()).catch(e => {});
-                return;
-            }
+            if (audioCtx.state === 'suspended') { audioCtx.resume().then(() => playExplosionSoundNow()); return; }
             playExplosionSoundNow();
         }
-
         function playExplosionSoundNow() {
             if (!audioCtx || audioCtx.state !== 'running') return;
             const now = audioCtx.currentTime;
-            // 三个短促方波
             for (let i=0; i<3; i++) {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'square';
-                osc.frequency.setValueAtTime(150 - i * 30, now + i * 0.06);
-                osc.frequency.exponentialRampToValueAtTime(40, now + i * 0.06 + 0.1);
-                gain.gain.setValueAtTime(0.25, now + i * 0.06);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.15);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now + i * 0.06);
-                osc.stop(now + i * 0.06 + 0.2);
+                osc.frequency.setValueAtTime(150 - i*30, now + i*0.06);
+                osc.frequency.exponentialRampToValueAtTime(40, now + i*0.06 + 0.1);
+                gain.gain.setValueAtTime(0.25, now + i*0.06);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i*0.06 + 0.15);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now + i*0.06); osc.stop(now + i*0.06 + 0.2);
             }
-            // 白噪声尾音
             const bufferSize = audioCtx.sampleRate * 0.2;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.2));
-            }
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
+            for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.2));
+            const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
             const noiseGain = audioCtx.createGain();
-            noiseGain.gain.setValueAtTime(0.3, now);
-            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-            noise.connect(noiseGain);
-            noiseGain.connect(audioCtx.destination);
+            noiseGain.gain.setValueAtTime(0.3, now); noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            noise.connect(noiseGain); noiseGain.connect(audioCtx.destination);
             noise.start(now);
         }
-
         function playWrongSound() {
             if (!audioCtx) { initAudio(); if (!audioCtx) return; }
             if (audioCtx.state === 'suspended') { audioCtx.resume().then(() => playWrongSoundNow()); return; }
@@ -430,12 +515,9 @@
             osc.frequency.linearRampToValueAtTime(100, now + 0.2);
             gain.gain.setValueAtTime(0.15, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now);
-            osc.stop(now + 0.3);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(now); osc.stop(now + 0.3);
         }
-
         function playComboSound(comboCount) {
             if (!audioCtx) { initAudio(); if (!audioCtx) return; }
             if (audioCtx.state === 'suspended') { audioCtx.resume().then(() => playComboSoundNow(comboCount)); return; }
@@ -452,20 +534,17 @@
                 osc.frequency.value = baseFreq + i * 100;
                 gain.gain.setValueAtTime(0.1, now + i * 0.05);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.05 + 0.1);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now + i * 0.05);
-                osc.stop(now + i * 0.05 + 0.1);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(now + i * 0.05); osc.stop(now + i * 0.05 + 0.1);
             }
         }
 
-        // 语音合成 (确保在用户手势后调用)
+        // ========== 语音合成 ==========
         let speechEnabled = false;
-        function enableSpeech() { speechEnabled = true; }
         let praiseTimer = null;
+        function enableSpeech() { speechEnabled = true; }
         function speakText(text, lang='en-US', rate=0.9) {
-            if (!window.speechSynthesis) return;
-            if (!speechEnabled) return; // 未激活时不朗读
+            if (!window.speechSynthesis || !speechEnabled) return;
             try { window.speechSynthesis.cancel(); } catch(e) {}
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = lang; utterance.rate = rate; utterance.pitch = 1.1;
@@ -482,307 +561,336 @@
         }
         function speakWrong() { speakText('错了', 'zh-CN', 0.9); }
 
-        function updateScoreUI() { scoreSpan.textContent = score; scoreBox.classList.add('bounce'); setTimeout(() => scoreBox.classList.remove('bounce'), 500); }
-        function updateComboUI() {
-            comboDisplay.textContent = `连击 x${combo}`;
-            if (combo > 1) { comboDisplay.classList.add('show', 'pulse'); setTimeout(() => comboDisplay.classList.remove('pulse'), 500); }
-            else comboDisplay.classList.remove('show');
-        }
-        function getRandomWords(count) { return [...WORDS].sort(() => Math.random() - 0.5).slice(0, count); }
-
-        function spawnItems() {
-            if (!gameActive || gamePaused) return;
-            const wordItems = getRandomWords(3);
-            const targetIndex = Math.floor(Math.random() * 3);
-            currentTargetWord = wordItems[targetIndex];
-            // 朗读目标单词 (确保 speechEnabled 已开启)
-            speakWord(currentTargetWord.word);
-            [120, 250, 380].forEach((x, i) => {
-                items.push({
-                    x, y: -80, wordObj: wordItems[i], isTarget: i === targetIndex, radius: 45,
-                    speed: (2.2 + difficultyLevel * 0.3) * gameSpeed, wobble: Math.random() * Math.PI * 2,
-                    scale: 1, circleRotation: Math.random() * Math.PI * 2
-                });
-            });
-        }
-
-        class Particle {
-            constructor(x, y, color, speed, size) {
-                this.x = x; this.y = y; this.vx = (Math.random() - 0.5) * speed; this.vy = (Math.random() - 0.5) * speed - 2;
-                this.life = 1; this.decay = 0.02 + Math.random() * 0.02; this.color = color; this.size = size || (3 + Math.random() * 5);
-                this.rotation = Math.random() * Math.PI * 2; this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+        // 打卡系统
+        function loadStreak() {
+            const saved = localStorage.getItem('bbCar_streak_v9');
+            if (saved) try { streakData = JSON.parse(saved); } catch(e){}
+            const today = new Date().toDateString();
+            if (streakData.lastDate !== today) {
+                const last = streakData.lastDate ? new Date(streakData.lastDate) : null;
+                if (last && (new Date() - last) / 86400000 > 1) streakData.days = 0;
+                streakData.lastDate = today;
+                localStorage.setItem('bbCar_streak_v9', JSON.stringify(streakData));
             }
-            update() { this.x += this.vx; this.y += this.vy; this.vy += 0.15; this.life -= this.decay; this.rotation += this.rotationSpeed; this.size *= 0.98; }
-            draw(ctx) { ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rotation); ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size); ctx.restore(); }
+            document.getElementById('streakDays').textContent = streakData.days;
         }
-        class FloatingText {
-            constructor(x, y, text, color, size = 24) {
-                this.x = x; this.y = y; this.text = text; this.color = color; this.size = size;
-                this.life = 1; this.vy = -2; this.scale = 0; this.targetScale = 1;
+        function incrementStreak() {
+            const today = new Date().toDateString();
+            if (streakData.lastDate !== today) { streakData.days++; streakData.lastDate = today; }
+            localStorage.setItem('bbCar_streak_v9', JSON.stringify(streakData));
+            document.getElementById('streakDays').textContent = streakData.days;
+        }
+
+        // 皮肤解锁
+        function saveUnlocks() {
+            localStorage.setItem('bbCar_unlockedCars_v9', JSON.stringify(carSkins.filter(s => s.unlocked).map(s => s.id)));
+            localStorage.setItem('bbCar_unlockedTracks_v9', JSON.stringify(trackSkins.filter(s => s.unlocked).map(s => s.id)));
+        }
+        function loadUnlocks() {
+            try {
+                const carIds = JSON.parse(localStorage.getItem('bbCar_unlockedCars_v9') || '[0,1,2]');
+                const trackIds = JSON.parse(localStorage.getItem('bbCar_unlockedTracks_v9') || '[0,1,2]');
+                carSkins.forEach(s => s.unlocked = carIds.includes(s.id));
+                trackSkins.forEach(s => s.unlocked = trackIds.includes(s.id));
+            } catch(e) {}
+        }
+        function unlockNextSkins() {
+            let carUnlocked = false, trackUnlocked = false;
+            for (let s of carSkins) { if (!s.unlocked) { s.unlocked = true; carUnlocked = true; break; } }
+            for (let s of trackSkins) { if (!s.unlocked) { s.unlocked = true; trackUnlocked = true; break; } }
+            if (carUnlocked || trackUnlocked) {
+                saveUnlocks();
+                gameMessage.textContent = '🎁 正确率≥90%！解锁新皮肤！';
             }
-            update() { this.y += this.vy; this.vy *= 0.95; if (this.scale < this.targetScale) this.scale += 0.1; this.life -= 0.015; }
-            draw(ctx) { ctx.save(); ctx.translate(this.x, this.y); ctx.scale(this.scale, this.scale); ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color; ctx.strokeStyle = 'white'; ctx.lineWidth = 3; ctx.font = `bold ${this.size}px "Quicksand", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.strokeText(this.text, 0, 0); ctx.fillText(this.text, 0, 0); ctx.restore(); }
         }
 
-        function createExplosion(x, y, color = '#FFD700') {
-            const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
-            for (let i = 0; i < 20; i++) particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)], 8 + Math.random() * 6));
-        }
-        function createTireMark(x, y) { tireMarks.push({ x, y, alpha: 0.6, size: 8 + Math.random() * 4 }); }
-
-        function resetGame() {
-            gameActive = true; gamePaused = false; score = 0; combo = 0; maxCombo = 0; correctCount = 0; wrongCount = 0;
-            gameSpeed = 1; difficultyLevel = 1; items = []; particles = []; floatingTexts = []; tireMarks = [];
-            roadOffset = 0; carX = defaultCarX; isMovingForCollision = false; targetItem = null; collisionHappened = false;
-            crashAnim = 0; lastSpawnTime = performance.now(); gameStartTime = performance.now();
-            updateScoreUI(); updateComboUI(); timerBar.style.width = '100%'; difficultyIndicator.textContent = '速度: 1x';
-            difficultyIndicator.classList.remove('hidden'); gameMessage.textContent = '🔊 听单词，点击正确的图片！'; gameMessage.className = 'message-area';
-            // 延迟一点生成单词，确保语音已激活
-            setTimeout(() => spawnItems(), 50);
-        }
-
-        function finishGame() {
-            if (!gameActive) return;
-            gameActive = false; gamePaused = false;
-            if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
-            const totalAttempts = correctCount + wrongCount;
-            const accuracy = totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 0;
-            finalScoreSpan.textContent = score; maxComboSpan.textContent = maxCombo; accuracySpan.textContent = accuracy + '%';
-            let comment = accuracy >= 90 ? '🏆 完美表现！🏆' : accuracy >= 80 ? '🌟 非常优秀！🌟' : accuracy >= 60 ? '👍 做得不错！👍' : '⭐ 继续加油 ⭐';
-            resultComment.textContent = comment;
-            resultPanel.classList.remove('hidden'); carSelectPanel.classList.add('hidden'); pauseBtn.classList.add('hidden');
-            difficultyIndicator.classList.add('hidden'); gameMessage.textContent = '🎯 完成啦！看看你的得分！';
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
-            if (praiseTimer) clearTimeout(praiseTimer);
-        }
-
-        function togglePause() {
-            if (!gameActive) return;
-            gamePaused = !gamePaused;
-            if (gamePaused) { pauseOverlay.classList.remove('hidden'); gameMessage.textContent = '⏸ 游戏已暂停'; }
-            else { pauseOverlay.classList.add('hidden'); gameMessage.textContent = '🔊 听单词，点击正确的图片！'; lastSpawnTime = performance.now(); gameLoop(performance.now()); }
-        }
-
-        function drawRoad() {
-            ctx.fillStyle = '#2d5016'; ctx.fillRect(0, 0, CW, CH);
-            ctx.fillStyle = '#3a3f5c'; ctx.fillRect(30, 0, CW-60, CH);
-            ctx.fillStyle = '#4a5068'; ctx.fillRect(50, 0, CW-100, CH);
-            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(30, 0, 10, CH); ctx.fillRect(CW-40, 0, 10, CH);
-            ctx.strokeStyle = 'rgba(249, 224, 118, 0.6)'; ctx.lineWidth = 4; ctx.setLineDash([30, 30]); ctx.lineDashOffset = -roadOffset;
-            [120, 250, 380].forEach(x => { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CH); ctx.stroke(); });
-            ctx.setLineDash([]); ctx.fillStyle = '#1a3a1a';
-            for (let y = -50 + (roadOffset % 100); y < CH; y += 100) {
-                ctx.beginPath(); ctx.arc(15, y, 8, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(CW-15, y + 50, 8, 0, Math.PI * 2); ctx.fill();
+        // 绘制车辆
+        function drawCarGeneric(ctx, skin, x, y, crashOffset = 0) {
+            const color = skin.color;
+            y += crashOffset;
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y+42, 28, 12, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = color;
+            if (skin.type.includes('sports') || skin.type === 'race') {
+                ctx.beginPath(); ctx.moveTo(x-28, y+12); ctx.lineTo(x-30, y-8); ctx.quadraticCurveTo(x-32, y-22, x-20, y-28);
+                ctx.lineTo(x+20, y-28); ctx.quadraticCurveTo(x+32, y-22, x+30, y-8); ctx.lineTo(x+28, y+12); ctx.fill();
+                ctx.fillStyle = '#1e2f4b'; ctx.fillRect(x-14, y-28, 28, 5);
+            } else if (skin.type === 'suv' || skin.type === 'truck') {
+                ctx.fillRect(x-26, y-30, 52, 60);
+                ctx.fillStyle = '#1e2f4b'; ctx.fillRect(x-18, y-22, 14, 18); ctx.fillRect(x+4, y-22, 14, 18);
+            } else {
+                ctx.beginPath(); ctx.ellipse(x, y-5, 28, 20, 0, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#1e2f4b'; ctx.fillRect(x-16, y-22, 32, 10);
             }
-            if (gameActive && !gamePaused) roadOffset = (roadOffset + 6 * gameSpeed) % 100;
+            ctx.fillStyle = '#1a1a1a';
+            [[-30,6],[30,6],[-30,-12],[30,-12]].forEach(p => { ctx.beginPath(); ctx.arc(x+p[0], y+p[1], 9, 0, 2*Math.PI); ctx.fill(); });
+            ctx.fillStyle = '#bdc3c7';
+            [[-30,6],[30,6],[-30,-12],[30,-12]].forEach(p => { ctx.beginPath(); ctx.arc(x+p[0], y+p[1], 5, 0, 2*Math.PI); ctx.fill(); });
+            ctx.restore();
         }
-
-        function drawTireMarks() {
-            tireMarks.forEach(mark => {
-                ctx.save(); ctx.globalAlpha = mark.alpha; ctx.fillStyle = '#2c3e50';
-                ctx.beginPath(); ctx.arc(mark.x - 15, mark.y, mark.size, 0, Math.PI * 2);
-                ctx.arc(mark.x + 15, mark.y, mark.size, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-                if (gameActive && !gamePaused) { mark.alpha -= 0.005; mark.y += 6 * gameSpeed; }
-            });
-            tireMarks = tireMarks.filter(mark => mark.alpha > 0 && mark.y < CH + 50);
-        }
-
         function drawCar() {
             let offsetY = 0;
             if (crashAnim > 0) { offsetY = -8 * crashAnim; crashAnim *= 0.85; if (crashAnim < 0.05) crashAnim = 0; }
-            const x = carX, y = carY + offsetY;
-            ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y + 42, 28, 12, 0, 0, Math.PI*2); ctx.fill();
-
-            if (selectedCar === 'red') drawRedSportsCar(x, y);
-            else if (selectedCar === 'blue') drawBlueSUV(x, y);
-            else drawGreenSedan(x, y);
+            drawCarGeneric(ctx, carSkins[currentCarSkinId], carX, carY + offsetY, 0);
+        }
+        function updatePreview() {
+            previewCtx.clearRect(0, 0, 80, 60);
+            drawCarGeneric(previewCtx, carSkins[currentCarSkinId], 40, 30);
+            const dot = document.getElementById('currentCarColorDot');
+            dot.style.backgroundColor = carSkins[currentCarSkinId].color;
+            document.getElementById('currentCarNameDisplay').textContent = carSkins[currentCarSkinId].name;
         }
 
-        function drawRedSportsCar(x, y) {
-            const grad = ctx.createLinearGradient(x-25, y-20, x+25, y+20);
-            grad.addColorStop(0, '#e03a3a'); grad.addColorStop(1, '#c0392b');
-            ctx.fillStyle = grad;
-            ctx.beginPath(); ctx.moveTo(x-28, y+12); ctx.lineTo(x-30, y-8); ctx.quadraticCurveTo(x-32, y-22, x-20, y-28);
-            ctx.lineTo(x+20, y-28); ctx.quadraticCurveTo(x+32, y-22, x+30, y-8); ctx.lineTo(x+28, y+12); ctx.closePath(); ctx.fill();
-            ctx.fillStyle = '#1e2f4b';
-            ctx.beginPath(); ctx.moveTo(x-18, y-24); ctx.lineTo(x-10, y-14); ctx.lineTo(x+10, y-14); ctx.lineTo(x+18, y-24); ctx.fill();
-            ctx.fillStyle = '#2c3e50'; ctx.fillRect(x-14, y-28, 28, 5);
-            ctx.fillStyle = '#f9e076'; ctx.shadowColor = '#f9e076'; ctx.shadowBlur = 12;
-            ctx.beginPath(); ctx.arc(x-24, y-18, 6, 0, 2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(x+24, y-18, 6, 0, 2*Math.PI); ctx.fill(); ctx.shadowBlur = 0;
-            ctx.fillStyle = '#ff4444'; ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 8;
-            ctx.beginPath(); ctx.arc(x-20, y+10, 5, 0, 2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(x+20, y+10, 5, 0, 2*Math.PI); ctx.fill(); ctx.shadowBlur = 0;
-            drawTire(x-30, y+6, 9, 14); drawTire(x+30, y+6, 9, 14); drawTire(x-30, y-12, 9, 14); drawTire(x+30, y-12, 9, 14);
-            ctx.fillStyle = '#bdc3c7'; [[-30,6],[30,6],[-30,-12],[30,-12]].forEach(p => { ctx.beginPath(); ctx.arc(x+p[0], y+p[1], 5, 0, 2*Math.PI); ctx.fill(); });
+        // 绘制道路
+        function drawRoad() {
+            const track = trackSkins[currentTrackSkinId];
+            const grad = ctx.createLinearGradient(0, 0, 0, CH);
+            grad.addColorStop(0, track.bg[0]); grad.addColorStop(1, track.bg[1]);
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, CW, CH);
+            ctx.fillStyle = track.road; ctx.fillRect(30, 0, CW-60, CH);
+            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(30, 0, 10, CH); ctx.fillRect(CW-40, 0, 10, CH);
+            ctx.strokeStyle = track.line; ctx.lineWidth = 4; ctx.setLineDash([30, 30]); ctx.lineDashOffset = -roadOffset;
+            [120, 250, 380].forEach(x => { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CH); ctx.stroke(); });
+            ctx.setLineDash([]);
+            if (gameActive && !gamePaused) roadOffset = (roadOffset + 6 * gameSpeed) % 100;
         }
-        function drawBlueSUV(x, y) {
-            const grad = ctx.createLinearGradient(x-24, y-25, x+24, y+25);
-            grad.addColorStop(0, '#3a7bd5'); grad.addColorStop(1, '#2980b9');
-            ctx.fillStyle = grad; ctx.beginPath(); ctx.rect(x-26, y-30, 52, 60); ctx.fill();
-            ctx.strokeStyle = '#7f8c8d'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x-22, y-32); ctx.lineTo(x-22, y-38); ctx.lineTo(x+22, y-38); ctx.lineTo(x+22, y-32); ctx.stroke();
-            ctx.fillStyle = '#1e2f4b'; ctx.fillRect(x-18, y-22, 14, 18); ctx.fillRect(x+4, y-22, 14, 18);
-            ctx.fillStyle = '#f9e076'; ctx.shadowColor = '#f9e076'; ctx.shadowBlur = 10;
-            ctx.beginPath(); ctx.arc(x-20, y-20, 6, 0, 2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(x+20, y-20, 6, 0, 2*Math.PI); ctx.fill(); ctx.shadowBlur = 0;
-            ctx.fillStyle = '#ff4444'; ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 8;
-            ctx.beginPath(); ctx.arc(x-18, y+22, 6, 0, 2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(x+18, y+22, 6, 0, 2*Math.PI); ctx.fill(); ctx.shadowBlur = 0;
-            drawTire(x-30, y-8, 12, 18); drawTire(x+30, y-8, 12, 18); drawTire(x-30, y+18, 12, 18); drawTire(x+30, y+18, 12, 18);
-            ctx.fillStyle = '#bdc3c7'; [[-30,-8],[30,-8],[-30,18],[30,18]].forEach(p => { ctx.beginPath(); ctx.arc(x+p[0], y+p[1], 6, 0, 2*Math.PI); ctx.fill(); });
-        }
-        function drawGreenSedan(x, y) {
-            ctx.fillStyle = '#2ecc71';
-            ctx.beginPath();
-            ctx.moveTo(x-28, y+10); ctx.lineTo(x-30, y-8); ctx.quadraticCurveTo(x-32, y-20, x-20, y-24);
-            ctx.lineTo(x-10, y-24); ctx.lineTo(x-4, y-12); ctx.lineTo(x+4, y-12); ctx.lineTo(x+10, y-24);
-            ctx.lineTo(x+20, y-24); ctx.quadraticCurveTo(x+32, y-20, x+30, y-8); ctx.lineTo(x+28, y+10);
-            ctx.closePath(); ctx.fill();
-            ctx.fillStyle = '#1e8449';
-            ctx.beginPath(); ctx.moveTo(x-28, y+5); ctx.lineTo(x-30, y-2); ctx.quadraticCurveTo(x-32, y-14, x-20, y-18);
-            ctx.lineTo(x-10, y-18); ctx.lineTo(x-4, y-8); ctx.lineTo(x+4, y-8); ctx.lineTo(x+10, y-18);
-            ctx.lineTo(x+20, y-18); ctx.quadraticCurveTo(x+32, y-14, x+30, y-2); ctx.lineTo(x+28, y+5);
-            ctx.closePath(); ctx.fill();
-            ctx.fillStyle = '#1e2f4b';
-            ctx.beginPath(); ctx.moveTo(x-16, y-22); ctx.lineTo(x-6, y-12); ctx.lineTo(x, y-12); ctx.lineTo(x-10, y-22); ctx.fill();
-            ctx.beginPath(); ctx.moveTo(x+16, y-22); ctx.lineTo(x+6, y-12); ctx.lineTo(x, y-12); ctx.lineTo(x+10, y-22); ctx.fill();
-            ctx.fillStyle = '#f9e076'; ctx.shadowColor = '#f9e076'; ctx.shadowBlur = 10;
-            ctx.beginPath(); ctx.arc(x-24, y-16, 5, 0, 2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(x+24, y-16, 5, 0, 2*Math.PI); ctx.fill(); ctx.shadowBlur = 0;
-            ctx.fillStyle = '#ff4444'; ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 8;
-            ctx.beginPath(); ctx.arc(x-20, y+8, 5, 0, 2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(x+20, y+8, 5, 0, 2*Math.PI); ctx.fill(); ctx.shadowBlur = 0;
-            drawTire(x-30, y-6, 10, 15); drawTire(x+30, y-6, 10, 15);
-            drawTire(x-30, y+10, 10, 15); drawTire(x+30, y+10, 10, 15);
-            ctx.fillStyle = '#bdc3c7'; [[-30,-6],[30,-6],[-30,10],[30,10]].forEach(p => { ctx.beginPath(); ctx.arc(x+p[0], y+p[1], 5, 0, 2*Math.PI); ctx.fill(); });
-        }
-        function drawTire(x, y, w, h) { ctx.beginPath(); ctx.ellipse(x, y, w, h, 0, 0, Math.PI*2); ctx.fillStyle = '#1a1a1a'; ctx.fill(); }
 
+        // 绘制物品
         function drawItems() {
             items.forEach(item => {
-                const x = item.x, y = item.y, floatY = Math.sin(item.wobble + performance.now() * 0.002) * 5;
+                const x = item.x, y = item.y;
+                const floatY = Math.sin(item.wobble + performance.now() * 0.002) * 5;
                 ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y + 50, 40, 10, 0, 0, Math.PI*2); ctx.fill();
-                ctx.save(); ctx.translate(x, y + floatY); ctx.rotate(item.circleRotation); ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3;
-                ctx.setLineDash([15, 10]); ctx.lineDashOffset = -performance.now() / 10; ctx.beginPath(); ctx.arc(0, 0, 68, 0, Math.PI * 2); ctx.stroke();
-                ctx.setLineDash([8, 8]); ctx.lineWidth = 2; ctx.strokeStyle = '#FFA500'; ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-                if (item.isTarget) { ctx.save(); ctx.translate(x, y + floatY); ctx.scale(1+Math.sin(performance.now()*0.005)*0.05, 1+Math.sin(performance.now()*0.005)*0.05); ctx.strokeStyle = 'rgba(255,215,0,0.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
-                ctx.save(); ctx.translate(x, y + floatY); ctx.scale(item.scale, item.scale);
+                ctx.save(); ctx.translate(x, y + floatY);
+                ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3; ctx.setLineDash([15, 10]); 
+                ctx.beginPath(); ctx.arc(0, 0, 68, 0, Math.PI*2); ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'rgba(255,215,0,0.5)'; ctx.lineWidth = 2; 
+                ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI*2); ctx.stroke();
                 ctx.font = '110px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 15; ctx.shadowOffsetY = 10; ctx.fillText(item.wordObj.emoji, 0, 0); ctx.restore();
-                ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.beginPath(); roundRect(ctx, x-50, y+floatY+55, 100, 32, 16); ctx.fill();
-                ctx.font = 'bold 26px "Quicksand", sans-serif'; ctx.fillStyle = '#FFD966'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4; ctx.fillText(item.wordObj.word, x, y+floatY+71); ctx.shadowBlur = 0;
-                if (gameActive && !gamePaused) { item.wobble += 0.02; item.circleRotation += 0.02; }
+                ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 15; ctx.shadowOffsetY = 10;
+                ctx.fillText(item.wordObj.emoji, 0, 0);
+                ctx.restore();
+                ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.beginPath(); 
+                ctx.ellipse(x, y+floatY+55, 50, 20, 0, 0, Math.PI*2); ctx.fill();
+                ctx.font = 'bold 26px "Quicksand", sans-serif'; ctx.fillStyle = '#FFD966'; ctx.textAlign = 'center';
+                ctx.fillText(item.wordObj.word, x, y+floatY+71);
+                if (gameActive && !gamePaused) item.wobble += 0.02;
             });
-        }
-        function roundRect(ctx, x, y, w, h, r) {
-            if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2;
-            ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-            ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-            ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-            ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
         }
 
         function updateItems() {
             for (let i=items.length-1; i>=0; i--) {
                 if (!gamePaused) items[i].y += items[i].speed;
                 if (items[i].y > CH + 100) {
-                    if (items[i].isTarget && gameActive) {
-                        combo = 0; updateComboUI(); gameMessage.textContent = '💨 漏掉了！下次加油！';
-                        gameMessage.className = 'message-area wrong';
-                        setTimeout(() => { if (gameActive) { gameMessage.textContent = '🔊 听单词，点击正确的图片！'; gameMessage.className = 'message-area'; } }, 1500);
-                    }
+                    if (items[i].isTarget && gameActive) { combo = 0; updateComboUI(); gameMessage.textContent = '💨 漏掉了！'; }
                     items.splice(i, 1);
                 }
             }
         }
 
-        function updateParticlesAndTexts() {
-            particles.forEach((p, i) => { p.update(); p.draw(ctx); if (p.life <= 0) particles.splice(i, 1); });
-            floatingTexts.forEach((ft, i) => { ft.update(); ft.draw(ctx); if (ft.life <= 0) floatingTexts.splice(i, 1); });
+        function spawnItems() {
+            if (!gameActive || gamePaused) return;
+            const wordItems = [...FINAL_WORDS].sort(() => Math.random() - 0.5).slice(0, 3);
+            const targetIndex = Math.floor(Math.random() * 3);
+            currentTargetWord = wordItems[targetIndex];
+            speakWord(currentTargetWord.word);
+            [120, 250, 380].forEach((x, i) => {
+                items.push({
+                    x, y: -80, wordObj: wordItems[i], isTarget: i === targetIndex,
+                    speed: (2.2 + difficultyLevel * 0.3) * gameSpeed, wobble: Math.random() * Math.PI * 2
+                });
+            });
         }
 
-        function updateCollisionMovement() {
-            if (!isMovingForCollision || !targetItem || gamePaused) return;
-            const idx = items.indexOf(targetItem);
-            if (idx === -1) { isMovingForCollision = false; targetItem = null; carX = defaultCarX; return; }
-            const distanceY = carY - targetItem.y - 10;
-            if (distanceY <= 0) { isMovingForCollision = false; targetItem = null; carX = defaultCarX; return; }
-            const frames = distanceY / targetItem.speed, dx = targetItem.x - carX;
-            moveSpeedX = Math.abs(dx) > 1 ? dx / frames : 0;
-            carX += moveSpeedX;
-            if (Math.hypot(carX - targetItem.x, carY - targetItem.y) < 70 && !collisionHappened) {
-                collisionHappened = true; crashAnim = 1.0; canvasWrapper.classList.add('shake');
-                setTimeout(() => canvasWrapper.classList.remove('shake'), 400);
-                createExplosion(targetItem.x, targetItem.y);
-                combo++; if (combo > maxCombo) maxCombo = combo; correctCount++;
-                if (combo % 5 === 0) { difficultyLevel = Math.min(5, 1 + Math.floor(combo / 5)); gameSpeed = 1 + (difficultyLevel - 1) * 0.2; difficultyIndicator.textContent = `速度: ${gameSpeed.toFixed(1)}x`; floatingTexts.push(new FloatingText(CW/2, CH/2, `速度提升!`, '#e74c3c', 36)); }
-                const points = 10 + (combo > 1 ? combo * 2 : 0); score += points; updateScoreUI(); updateComboUI();
-                playExplosionSound();
-                if (combo > 1) playComboSound(combo);
-                floatingTexts.push(new FloatingText(targetItem.x, targetItem.y - 50, combo > 1 ? `+${points} 连击x${combo}!` : `+${points}`, combo > 2 ? '#e74c3c' : '#2ecc71', 28));
-                gameMessage.textContent = `✅ 正确！${targetItem.wordObj.word}`; gameMessage.className = 'message-area correct';
-                speakChinesePraise();
-                items.splice(idx, 1); isMovingForCollision = false; targetItem = null;
-                const intv = setInterval(() => { if (!gameActive || isMovingForCollision || gamePaused) clearInterval(intv); else { const diff = defaultCarX - carX; if (Math.abs(diff) < 3) { carX = defaultCarX; clearInterval(intv); } else carX += diff * 0.08; } }, 20);
+        function resetGame() {
+            gameActive = true; gamePaused = false; score = 0; combo = 0; maxCombo = 0; correctCount = 0; wrongCount = 0;
+            gameSpeed = 1.0; difficultyLevel = 1; items = []; carX = CW/2; roadOffset = 0; gameStartTime = performance.now();
+            lastSpawnTime = performance.now(); learnedWords.clear();
+            updateScoreUI(); updateComboUI(); progressBar.style.width = '0%';
+            difficultyIndicator.classList.remove('hidden'); gameMessage.textContent = '🔊 听单词，点击正确的图片！';
+            updateSpeedDisplay();
+            spawnItems();
+        }
+
+        function finishGame() {
+            if (!gameActive) return;
+            gameActive = false; gamePaused = false;
+            if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
+            items.filter(i => i.isTarget && i.y > 600).forEach(i => learnedWords.add(i.wordObj.word));
+            incrementStreak();
+            const total = correctCount + wrongCount;
+            const acc = total > 0 ? Math.round(correctCount / total * 100) : 0;
+            finalScoreSpan.textContent = score; maxComboSpan.textContent = maxCombo; accuracySpan.textContent = acc+'%';
+            resultComment.textContent = acc >= 90 ? '🏆 完美表现！' : acc >= 60 ? '👍 做得不错！' : '⭐ 继续加油';
+            resultPanel.classList.remove('hidden'); carSelectPanel.classList.add('hidden');
+            pauseBtn.classList.add('hidden'); difficultyIndicator.classList.add('hidden');
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            if (acc >= 90) unlockNextSkins();
+        }
+
+        function updateScoreUI() { scoreSpan.textContent = score; }
+        function updateComboUI() { comboDisplay.textContent = `连击 x${combo}`; comboDisplay.classList.toggle('show', combo>1); }
+
+        // 速度逻辑：基于总答题数(正确+错误)相对于目标题数60，每完成4题增加0.1，上限2.5
+        function updateGameSpeed() {
+            const totalAttempts = correctCount + wrongCount;
+            const targetTotal = TOTAL_QUESTIONS;
+            const maxSpeed = 2.5;
+            const minSpeed = 1.0;
+            const steps = 15;
+            const attemptsPerStep = targetTotal / steps;
+            
+            let step = Math.floor(totalAttempts / attemptsPerStep);
+            let newSpeed = Math.min(maxSpeed, minSpeed + step * 0.1);
+            gameSpeed = Math.round(newSpeed * 10) / 10;
+            difficultyLevel = 1 + Math.floor((gameSpeed - 1.0) * 5);
+            
+            updateSpeedDisplay();
+            updateProgressBar();
+            
+            // 检查是否完成所有题目
+            if (totalAttempts >= targetTotal) {
+                finishGame();
             }
         }
 
-        function checkSpawn(now) { if (gameActive && !gamePaused && now - lastSpawnTime >= SPAWN_INTERVAL / gameSpeed) { spawnItems(); lastSpawnTime = now; } }
-        function updateTimer(now) { if (gameActive && !gamePaused) { const rem = Math.max(0, 120000 - (now - gameStartTime)); timerBar.style.width = (rem / 120000) * 100 + '%'; if (rem <= 0) finishGame(); } }
-
-        function gameLoop(now) {
-            if (!gameActive) return;
-            checkSpawn(now); updateItems(); updateCollisionMovement(); updateTimer(now);
-            drawRoad(); drawTireMarks(); drawItems(); drawCar(); updateParticlesAndTexts();
-            if (!gamePaused) animationFrame = requestAnimationFrame(gameLoop);
+        function updateSpeedDisplay() {
+            difficultyIndicator.textContent = `速度: ${gameSpeed.toFixed(1)}x (${correctCount+wrongCount}/${TOTAL_QUESTIONS})`;
         }
 
-        function startGame() {
-            // 激活音频和语音
-            activateAudio();
-            enableSpeech();
-            // 初始化音频上下文（如果尚未创建）
-            initAudio();
-            carSelectPanel.classList.add('hidden'); resultPanel.classList.add('hidden'); pauseBtn.classList.remove('hidden');
-            resetGame();
-            animationFrame = requestAnimationFrame(gameLoop);
+        function updateProgressBar() {
+            const totalAttempts = correctCount + wrongCount;
+            const percent = Math.min(100, (totalAttempts / TOTAL_QUESTIONS) * 100);
+            progressBar.style.width = percent + '%';
+        }
+
+        function createExplosion() {
+            canvasWrapper.classList.add('shake');
+            setTimeout(() => canvasWrapper.classList.remove('shake'), 400);
         }
 
         function handleCanvasClick(e) {
             if (!gameActive || gamePaused || isMovingForCollision) return;
-            const rect = canvas.getBoundingClientRect(), sx = canvas.width / rect.width, sy = canvas.height / rect.height;
-            const cx = (e.clientX - rect.left) * sx, cy = (e.clientY - rect.top) * sy;
+            const rect = canvas.getBoundingClientRect();
+            const cx = (e.clientX - rect.left) * (CW/rect.width), cy = (e.clientY - rect.top) * (CH/rect.height);
             for (let item of items) {
                 if (Math.hypot(cx - item.x, cy - item.y) < 80) {
-                    if (item.isTarget) { targetItem = item; isMovingForCollision = true; collisionHappened = false; gameMessage.textContent = `🚗 撞击准备！`; speakWord(item.wordObj.word); createExplosion(cx, cy, '#3498db'); }
-                    else { wrongCount++; combo = 0; updateComboUI(); gameMessage.textContent = `❌ 错了！是 ${item.wordObj.word}`; gameMessage.className = 'message-area wrong'; playWrongSound(); speakWrong(); floatingTexts.push(new FloatingText(item.x, item.y - 30, '-5', '#e74c3c', 24)); score = Math.max(0, score - 5); updateScoreUI(); }
+                    if (item.isTarget) {
+                        targetItem = item; isMovingForCollision = true; collisionHappened = false;
+                        gameMessage.textContent = `🚗 撞击准备！`; speakWord(item.wordObj.word);
+                    } else {
+                        wrongCount++; combo = 0; updateComboUI();
+                        gameMessage.textContent = `❌ 错了！是 ${item.wordObj.word}`;
+                        score = Math.max(0, score-5); updateScoreUI();
+                        playWrongSound(); speakWrong();
+                        updateGameSpeed();
+                    }
                     break;
                 }
             }
         }
 
-        function handleCanvasTouch(e) { e.preventDefault(); const t = e.touches[0]; if (t) handleCanvasClick({ clientX: t.clientX, clientY: t.clientY }); }
+        function gameLoop(now) {
+            if (!gameActive) return;
+            if (!gamePaused) {
+                if (now - lastSpawnTime >= SPAWN_INTERVAL / gameSpeed) { spawnItems(); lastSpawnTime = now; }
+                updateItems();
+                if (isMovingForCollision && targetItem) {
+                    const dx = targetItem.x - carX, dy = carY - targetItem.y;
+                    carX += dx * 0.1;
+                    if (Math.abs(dx) < 5 && dy < 30 && !collisionHappened) {
+                        collisionHappened = true; crashAnim = 1.0;
+                        combo++; if(combo>maxCombo) maxCombo=combo; correctCount++;
+                        score += 10 + (combo>1?combo*2:0); updateScoreUI(); updateComboUI();
+                        playExplosionSound(); if (combo > 1) playComboSound(combo);
+                        speakChinesePraise();
+                        gameMessage.textContent = `✅ 正确！${targetItem.wordObj.word}`;
+                        createExplosion();
+                        updateGameSpeed();
+                        items = items.filter(i => i !== targetItem);
+                        isMovingForCollision = false; targetItem = null;
+                    }
+                } else { carX = carX * 0.9 + (CW/2) * 0.1; }
+            }
+            drawRoad(); drawItems(); drawCar();
+            requestAnimationFrame(gameLoop);
+        }
 
-        carOptions.forEach(opt => opt.addEventListener('click', () => {
-            carOptions.forEach(o => o.classList.remove('selected'));
-            opt.classList.add('selected');
-            selectedCar = opt.dataset.car;
-        }));
-        document.querySelector('[data-car="red"]').classList.add('selected');
+        function renderSkinGrid(type) {
+            const skins = type==='car'?carSkins:trackSkins;
+            const cur = type==='car'?currentCarSkinId:currentTrackSkinId;
+            document.getElementById('modalTitle').textContent = type==='car'?'🚗 赛车皮肤':'🛣️ 赛道皮肤';
+            const grid = document.getElementById('skinGrid');
+            grid.innerHTML = '';
+            skins.forEach(s => {
+                const div = document.createElement('div');
+                div.className = `skin-item ${s.unlocked?'':'locked'} ${s.id===cur?'selected':''}`;
+                div.innerHTML = `<div class="skin-preview">${type==='car'?'🚗':'🛣️'}</div><div class="skin-name">${s.name}</div>${s.unlocked?'':'<div class="lock-icon">🔒</div>'}`;
+                if (s.unlocked) div.onclick = () => {
+                    if (type==='car') { 
+                        currentCarSkinId = s.id; 
+                        updatePreview();
+                        if (s.id < 3) {
+                            selectedCar = s.id===0?'red':(s.id===1?'blue':'green');
+                            carOptions.forEach(opt => opt.classList.remove('selected'));
+                            document.querySelector(`.car-option[data-car="${selectedCar}"]`).classList.add('selected');
+                        } else carOptions.forEach(opt => opt.classList.remove('selected'));
+                    } else currentTrackSkinId = s.id;
+                    renderSkinGrid(type);
+                };
+                grid.appendChild(div);
+            });
+        }
 
-        startBtn.addEventListener('click', startGame);
-        finishBtn.addEventListener('click', () => { if (gameActive) finishGame(); });
-        pauseBtn.addEventListener('click', togglePause);
-        resumeBtn.addEventListener('click', togglePause);
-        playAgainBtn.addEventListener('click', () => {
-            resultPanel.classList.add('hidden'); carSelectPanel.classList.remove('hidden'); pauseBtn.classList.add('hidden');
-            difficultyIndicator.classList.add('hidden'); gameMessage.textContent = '✨ 选一辆赛车，开始冒险吧！';
-            score = 0; combo = 0; updateScoreUI(); updateComboUI(); carX = defaultCarX;
-            if (praiseTimer) clearTimeout(praiseTimer);
-        });
-        canvas.addEventListener('click', handleCanvasClick);
-        canvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
-        canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-        document.addEventListener('keydown', e => { if (e.code === 'Space' && gameActive) { e.preventDefault(); togglePause(); } });
+        window.onload = () => {
+            loadStreak(); loadUnlocks(); updatePreview();
+            carOptions.forEach(opt => opt.addEventListener('click', () => {
+                carOptions.forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                selectedCar = opt.dataset.car;
+                const map = { red:0, blue:1, green:2 };
+                currentCarSkinId = map[selectedCar];
+                updatePreview();
+            }));
+            document.querySelector('[data-car="red"]').classList.add('selected');
 
-        updateScoreUI(); updateComboUI();
-        if (!window.speechSynthesis) gameMessage.textContent = '⚠️ 浏览器不支持朗读';
+            document.getElementById('garageBtn').onclick = () => {
+                document.getElementById('garageModal').classList.remove('hidden');
+                renderSkinGrid('car');
+            };
+            document.getElementById('closeModalBtn').onclick = () => document.getElementById('garageModal').classList.add('hidden');
+            document.getElementById('showCarSkinsBtn').onclick = () => renderSkinGrid('car');
+            document.getElementById('showTrackSkinsBtn').onclick = () => renderSkinGrid('track');
+
+            startBtn.onclick = () => {
+                activateAudio(); enableSpeech(); initAudio();
+                carSelectPanel.classList.add('hidden'); resultPanel.classList.add('hidden'); pauseBtn.classList.remove('hidden');
+                resetGame(); animationFrame = requestAnimationFrame(gameLoop);
+            };
+            finishBtn.onclick = () => { if(gameActive) finishGame(); };
+            playAgainBtn.onclick = () => { resultPanel.classList.add('hidden'); carSelectPanel.classList.remove('hidden'); };
+            pauseBtn.onclick = () => { gamePaused=!gamePaused; pauseOverlay.classList.toggle('hidden', !gamePaused); };
+            document.getElementById('resumeBtn').onclick = () => { gamePaused=false; pauseOverlay.classList.add('hidden'); };
+            canvas.onclick = handleCanvasClick;
+            canvas.ontouchstart = (e) => { e.preventDefault(); const t = e.touches[0]; handleCanvasClick({ clientX: t.clientX, clientY: t.clientY }); };
+
+            document.getElementById('viewReportBtn').onclick = () => {
+                const words = Array.from(learnedWords).slice(0,8);
+                const acc = accuracySpan.textContent;
+                const last = localStorage.getItem('bbCar_lastScore_v9')||0;
+                localStorage.setItem('bbCar_lastScore_v9', score);
+                document.getElementById('reportContent').innerHTML = `
+                    <div class="report-title">🎓 宝宝真棒！</div>
+                    <div class="report-words">${words.map(w=>`<span class="word-badge">${w}</span>`).join('')}</div>
+                    <div class="report-stats"><div class="stat-item"><div class="stat-value">${score}</div><div class="stat-label">总分</div></div><div class="stat-item"><div class="stat-value">${acc}</div><div class="stat-label">正确率</div></div><div class="stat-item"><div class="stat-value">${maxCombo}</div><div class="stat-label">最高连击</div></div></div>
+                    <div class="compare-badge">${score>last?'🎉 比上次进步了 '+(score-last)+' 分！':'💪 保持状态！'}</div>
+                    <p>连续学习 ${streakData.days} 天 🔥</p>`;
+                document.getElementById('reportModal').classList.remove('hidden');
+            };
+            document.getElementById('closeReportBtn').onclick = () => document.getElementById('reportModal').classList.add('hidden');
+            document.getElementById('saveReportBtn').onclick = () => alert('长按屏幕截图即可保存分享！');
+        };
     })();
 </script>
 </body>
