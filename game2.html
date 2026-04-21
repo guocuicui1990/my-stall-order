@@ -3,86 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes, viewport-fit=cover">
-    <title>🏎️ 碰碰车单词 · 60题闯关版</title>
+    <title>🏎️ 碰碰车单词 · 连续打卡版</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap');
+        
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: linear-gradient(145deg, #1a3a5c 0%, #2d5a7e 100%);
+            background: linear-gradient(145deg, #0f2847 0%, #1a3a5c 50%, #2d5a7e 100%);
             min-height: 100vh; display: flex; justify-content: center; align-items: center;
             font-family: 'Quicksand', 'Segoe UI', sans-serif; padding: 12px; margin: 0;
             user-select: none; touch-action: manipulation; overflow-x: hidden;
         }
         .game-container {
-            max-width: 550px; width: 100%; background: #0f2a44; border-radius: 48px 48px 32px 32px;
-            box-shadow: 0 20px 0 #0a1a2b, 0 20px 30px rgba(0,0,0,0.5); border: 3px solid #ffd966;
+            max-width: 550px; width: 100%; background: linear-gradient(180deg, #0c2238 0%, #0f2a44 100%); 
+            border-radius: 48px 48px 32px 32px;
+            box-shadow: 
+                0 20px 0 #061220, 
+                0 20px 40px rgba(0,0,0,0.6),
+                inset 0 1px 0 rgba(255,255,255,0.1); 
+            border: 3px solid #ffd966;
             overflow: hidden; padding: 16px 12px 20px; position: relative;
         }
         .streak-bar-container {
-            background: linear-gradient(145deg, #fbe4b0, #f5d69a); border-radius: 30px; padding: 8px 16px;
-            margin-bottom: 12px; box-shadow: inset 0 2px 6px #fff3cf, 0 4px 0 #b4723a; border: 2px solid #ffbe5c;
+            background: linear-gradient(145deg, #fdf0d5, #f5d69a); 
+            border-radius: 30px; padding: 10px 16px;
+            margin-bottom: 14px; 
+            box-shadow: 
+                inset 0 2px 6px #fff3cf, 
+                0 4px 0 #b4723a, 
+                0 4px 8px rgba(0,0,0,0.2); 
+            border: 2px solid #ffbe5c;
             display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #412d1a;
         }
         .streak-label { font-size: 18px; display: flex; align-items: center; gap: 6px; }
-        .streak-value { background: #2c5e2e; color: #f9e75c; padding: 4px 16px; border-radius: 40px; font-size: 22px; box-shadow: inset 0 1px 4px #a5d6a5; }
+        .streak-value { 
+            background: linear-gradient(145deg, #2c5e2e, #1e4520); 
+            color: #f9e75c; padding: 6px 16px; border-radius: 40px; font-size: 22px; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 2px 0 rgba(255,255,255,0.1);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
         .garage-btn {
-            background: linear-gradient(145deg, #9b59b6, #8e44ad); border: none; color: white; font-weight: bold;
-            font-size: 20px; padding: 6px 16px; border-radius: 40px; box-shadow: 0 5px 0 #6c3483; border: 2px solid #d2b4de;
-            cursor: pointer; transition: 0.05s;
+            background: linear-gradient(145deg, #9b59b6, #8e44ad); 
+            border: none; color: white; font-weight: bold;
+            font-size: 20px; padding: 8px 18px; border-radius: 40px; 
+            box-shadow: 
+                0 5px 0 #6c3483, 
+                0 4px 8px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.2); 
+            border: 2px solid #d2b4de;
+            cursor: pointer; transition: all 0.05s;
         }
         .garage-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #6c3483; }
         .game-header {
             display: flex; align-items: center; justify-content: space-between;
-            background: linear-gradient(145deg, #ffc857, #ffb347); padding: 10px 16px;
-            border-radius: 60px; margin-bottom: 12px; box-shadow: inset 0 2px 6px #fff3cf, 0 6px 0 #b47d2c;
+            background: linear-gradient(145deg, #ffc857, #ffb347); 
+            padding: 12px 16px;
+            border-radius: 60px; margin-bottom: 14px; 
+            box-shadow: 
+                inset 0 2px 6px #fff3cf, 
+                0 6px 0 #b47d2c,
+                0 6px 12px rgba(0,0,0,0.2); 
             border: 2px solid #ffe39a; position: relative; overflow: hidden;
         }
         .game-header::before {
             content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
             animation: shine 3s infinite;
         }
         @keyframes shine { 0% { left: -100%; } 50%, 100% { left: 100%; } }
         .score-box {
-            background: linear-gradient(145deg, #1e3a5f, #152a45); padding: 8px 20px;
+            background: linear-gradient(145deg, #1e3a5f, #152a45); 
+            padding: 10px 20px;
             border-radius: 40px; color: #f9e75c; font-weight: 800; font-size: 24px;
-            text-shadow: 2px 2px 0 #0f1e2c; box-shadow: inset 0 2px 5px #6d9ecc, 0 4px 0 #0a1925;
+            text-shadow: 2px 2px 0 #0f1e2c; 
+            box-shadow: 
+                inset 0 2px 5px #6d9ecc, 
+                0 4px 0 #0a1925,
+                0 4px 8px rgba(0,0,0,0.3); 
             border: 1px solid #ffd966; display: flex; align-items: center; gap: 8px;
             position: relative; overflow: hidden;
         }
         .score-box.bounce { animation: scoreBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes scoreBounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); color: #fff; } }
         .combo-display {
-            background: linear-gradient(145deg, #ff6b6b, #ee5a5a); color: white; padding: 4px 12px;
+            background: linear-gradient(145deg, #ff6b6b, #ee5a5a); 
+            color: white; padding: 6px 14px;
             border-radius: 20px; font-size: 14px; font-weight: bold; margin-left: 8px; opacity: 0;
             transform: scale(0); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.3);
         }
         .combo-display.show { opacity: 1; transform: scale(1); }
         .combo-display.pulse { animation: comboPulse 0.5s ease-in-out; }
         @keyframes comboPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
         .progress-bar {
-            position: absolute; bottom: 0; left: 0; height: 4px;
-            background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c); width: 0%;
+            position: absolute; bottom: 0; left: 0; height: 5px;
+            background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c); 
+            width: 0%;
             transition: width 0.1s linear; border-radius: 0 0 0 60px;
+            box-shadow: 0 -1px 4px rgba(0,0,0,0.3);
         }
-        .header-buttons { display: flex; gap: 8px; }
+        .header-buttons { display: flex; gap: 10px; }
         .finish-btn, .pause-btn {
-            background: linear-gradient(145deg, #f1592b, #d94820); border: none; color: white;
-            font-weight: bold; font-size: 18px; padding: 8px 16px; border-radius: 40px;
-            box-shadow: 0 5px 0 #9f3015, 0 2px 8px rgba(0,0,0,0.2); border: 2px solid #ffb08e;
-            cursor: pointer; transition: 0.05s linear; touch-action: manipulation; letter-spacing: 1px;
+            background: linear-gradient(145deg, #f1592b, #d94820); 
+            border: none; color: white;
+            font-weight: bold; font-size: 18px; padding: 10px 18px; border-radius: 40px;
+            box-shadow: 
+                0 5px 0 #9f3015, 
+                0 2px 8px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.2); 
+            border: 2px solid #ffb08e;
+            cursor: pointer; transition: all 0.05s linear; touch-action: manipulation; letter-spacing: 1px;
         }
         .pause-btn {
             background: linear-gradient(145deg, #3498db, #2980b9);
-            box-shadow: 0 5px 0 #1a5276, 0 2px 8px rgba(0,0,0,0.2); border: 2px solid #85c1e9;
-            font-size: 20px; padding: 8px 12px;
+            box-shadow: 
+                0 5px 0 #1a5276, 
+                0 2px 8px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.2); 
+            border: 2px solid #85c1e9;
+            font-size: 20px; padding: 10px 14px;
         }
         .finish-btn:active, .pause-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #9f3015, 0 2px 8px rgba(0,0,0,0.2); }
         .pause-btn:active { box-shadow: 0 2px 0 #1a5276, 0 2px 8px rgba(0,0,0,0.2); }
         .canvas-wrapper {
             position: relative; border-radius: 24px; overflow: hidden;
-            box-shadow: inset 0 0 0 3px #fec165, 0 12px 0 #0a1a2b, 0 12px 20px rgba(0,0,0,0.4);
-            border: 3px solid #ffdb8a; margin-bottom: 12px; background: #2a5a3a; transform-origin: center;
+            box-shadow: 
+                inset 0 0 0 3px #fec165, 
+                0 12px 0 #0a1a2b, 
+                0 12px 24px rgba(0,0,0,0.5),
+                inset 0 0 20px rgba(0,0,0,0.2); 
+            border: 3px solid #ffdb8a; margin-bottom: 14px; 
+            background: #2a5a3a; 
+            transform-origin: center;
         }
         .canvas-wrapper.shake { animation: screenShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
         @keyframes screenShake {
@@ -93,147 +146,246 @@
         }
         #gameCanvas { display: block; width: 100%; height: auto; background: #3a6e4a; cursor: pointer; touch-action: none; }
         .car-selector {
-            background: linear-gradient(145deg, #fbe4b0, #f5d69a); border-radius: 40px 40px 20px 20px;
-            padding: 20px 16px; margin: 8px 0 4px; box-shadow: inset 0 2px 10px #fff2d7, 0 8px 0 #b4723a;
+            background: linear-gradient(145deg, #fdf0d5, #f5d69a); 
+            border-radius: 40px 40px 20px 20px;
+            padding: 24px 18px; margin: 8px 0 4px; 
+            box-shadow: 
+                inset 0 2px 10px #fff2d7, 
+                0 8px 0 #b4723a,
+                0 8px 16px rgba(0,0,0,0.2); 
             border: 2px solid #ffbe5c; transition: all 0.2s;
         }
         .selector-title {
-            font-size: 24px; font-weight: 800; color: #412d1a; text-align: center; margin-bottom: 16px;
+            font-size: 26px; font-weight: 800; color: #412d1a; text-align: center; margin-bottom: 20px;
             text-shadow: 2px 2px 0 #ffd58c; position: relative;
         }
         .selector-title::after { content: '✨'; position: absolute; right: 20%; top: -5px; animation: float 2s ease-in-out infinite; }
         @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .car-list { display: flex; justify-content: space-around; gap: 12px; }
         .car-option {
-            background: linear-gradient(145deg, #feeac2, #fce8b8); border-radius: 30px; padding: 16px 8px;
-            flex: 1; text-align: center; box-shadow: 0 6px 0 #b4723a, 0 4px 8px rgba(0,0,0,0.1);
+            background: linear-gradient(145deg, #fef5e7, #fce8b8); 
+            border-radius: 30px; padding: 18px 10px;
+            flex: 1; text-align: center; 
+            box-shadow: 
+                0 6px 0 #b4723a, 
+                0 4px 8px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8); 
             border: 3px solid #ffbc6c; cursor: pointer; transition: all 0.1s; touch-action: manipulation;
             position: relative; overflow: hidden;
         }
-        .car-option:hover { transform: translateY(-2px); }
+        .car-option:hover { transform: translateY(-3px); }
         .car-option.selected {
-            background: linear-gradient(145deg, #c7e9b0, #a8d990); border-color: #6da546;
-            box-shadow: 0 6px 0 #5a8737, 0 4px 8px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.5);
+            background: linear-gradient(145deg, #c7e9b0, #a8d990); 
+            border-color: #6da546;
+            box-shadow: 
+                0 6px 0 #5a8737, 
+                0 4px 8px rgba(0,0,0,0.1), 
+                inset 0 0 20px rgba(255,255,255,0.5);
             transform: scale(0.98);
         }
         .car-option.selected::before {
-            content: '✓'; position: absolute; top: 5px; right: 10px; background: #6da546;
-            color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 14px;
-            line-height: 20px; font-weight: bold;
+            content: '✓'; position: absolute; top: 8px; right: 12px; 
+            background: linear-gradient(145deg, #6da546, #5a8737);
+            color: white; width: 24px; height: 24px; border-radius: 50%; font-size: 16px;
+            line-height: 24px; font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .car-emoji {
             font-size: 52px; line-height: 1.2; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.2));
-            display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 5px;
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;
         }
         .car-icon { font-size: 52px; }
         .car-option[data-car="green"] .car-icon { filter: hue-rotate(120deg) saturate(1.5) brightness(0.9); }
         .color-dot {
             width: 52px; height: 52px; border-radius: 50%; display: inline-block;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: 2px solid rgba(255,255,255,0.5);
+            box-shadow: 
+                0 4px 8px rgba(0,0,0,0.3), 
+                inset 0 -3px 6px rgba(0,0,0,0.2),
+                inset 0 3px 6px rgba(255,255,255,0.4); 
+            border: 2px solid rgba(255,255,255,0.6);
         }
-        .dot-red { background: #e03a3a; } .dot-blue { background: #3a7bd5; } .dot-green { background: #2ecc71; }
-        .car-option.selected .color-dot { box-shadow: 0 0 0 3px #f1c40f, 0 4px 6px rgba(0,0,0,0.2); }
-        .car-name { font-size: 18px; font-weight: 700; color: #4b2e1a; }
+        .dot-red { background: radial-gradient(circle at 35% 35%, #ff6b6b, #e03a3a); } 
+        .dot-blue { background: radial-gradient(circle at 35% 35%, #5dade2, #3a7bd5); } 
+        .dot-green { background: radial-gradient(circle at 35% 35%, #58d68d, #2ecc71); }
+        .car-option.selected .color-dot { 
+            box-shadow: 
+                0 0 0 3px #f1c40f, 
+                0 4px 8px rgba(0,0,0,0.3),
+                inset 0 -3px 6px rgba(0,0,0,0.2),
+                inset 0 3px 6px rgba(255,255,255,0.4); 
+        }
+        .car-name { font-size: 18px; font-weight: 700; color: #4b2e1a; margin-top: 4px; }
         .start-btn {
-            background: linear-gradient(145deg, #2ecc71, #27ae60); border: none; font-weight: 800;
-            font-size: 32px; padding: 16px 20px; border-radius: 60px;
-            box-shadow: 0 8px 0 #1f8f4b, 0 4px 8px rgba(0,0,0,0.1); border: 3px solid #a3e4b0;
-            color: #1a3e1f; cursor: pointer; width: 100%; margin-top: 20px; text-shadow: 1px 1px 0 #d4ffcf;
+            background: linear-gradient(145deg, #2ecc71, #27ae60); 
+            border: none; font-weight: 800;
+            font-size: 32px; padding: 18px 24px; border-radius: 60px;
+            box-shadow: 
+                0 8px 0 #1f8f4b, 
+                0 4px 12px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.3); 
+            border: 3px solid #a3e4b0;
+            color: #1a3e1f; cursor: pointer; width: 100%; margin-top: 24px; 
+            text-shadow: 1px 1px 0 #d4ffcf;
             transition: all 0.1s; touch-action: manipulation; letter-spacing: 4px; position: relative; overflow: hidden;
         }
         .start-btn:active { transform: translateY(5px); box-shadow: 0 3px 0 #1f8f4b, 0 4px 8px rgba(0,0,0,0.1); }
         .result-panel {
-            background: linear-gradient(145deg, #fbe4b0, #f5d69a); border-radius: 40px; padding: 20px;
-            margin-top: 10px; text-align: center; box-shadow: inset 0 2px 8px #fff8e7, 0 8px 0 #b4723a;
+            background: linear-gradient(145deg, #fdf0d5, #f5d69a); 
+            border-radius: 40px; padding: 24px;
+            margin-top: 12px; text-align: center; 
+            box-shadow: 
+                inset 0 2px 8px #fff8e7, 
+                0 8px 0 #b4723a,
+                0 8px 16px rgba(0,0,0,0.2); 
             border: 2px solid #ffbe5c; position: relative; overflow: hidden;
         }
         .result-score {
-            font-size: 64px; font-weight: 900; color: #2c5e2e; text-shadow: 3px 3px 0 #b0d37c, 6px 6px 0 rgba(0,0,0,0.1);
-            margin: 10px 0; display: inline-block; animation: scorePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 72px; font-weight: 900; 
+            background: linear-gradient(180deg, #2c5e2e, #1e4520);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            filter: drop-shadow(3px 3px 0 #b0d37c) drop-shadow(6px 6px 0 rgba(0,0,0,0.1));
+            margin: 10px 0; display: inline-block; 
+            animation: scorePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes scorePop { 0% { transform: scale(0) rotate(-10deg); } 100% { transform: scale(1) rotate(0deg); } }
         .play-again-btn {
-            background: linear-gradient(145deg, #ffaa33, #ff9500); border: none; font-size: 28px;
-            padding: 14px 24px; border-radius: 50px; box-shadow: 0 6px 0 #b4731e, 0 4px 8px rgba(0,0,0,0.2);
-            font-weight: bold; margin-top: 16px; cursor: pointer; border: 2px solid #ffdd99;
+            background: linear-gradient(145deg, #ffaa33, #ff9500); 
+            border: none; font-size: 28px;
+            padding: 16px 28px; border-radius: 50px; 
+            box-shadow: 
+                0 6px 0 #b4731e, 
+                0 4px 8px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.2); 
+            font-weight: bold; margin-top: 18px; cursor: pointer; border: 2px solid #ffdd99;
             color: #4b2e1a; transition: all 0.1s;
         }
         .play-again-btn:active { transform: translateY(2px); box-shadow: 0 4px 0 #b4731e, 0 2px 4px rgba(0,0,0,0.2); }
         .hidden { display: none !important; }
         .message-area {
-            min-height: 40px; color: #f9e75c; font-weight: 700; font-size: 20px; text-align: center;
-            margin: 6px 0; text-shadow: 2px 2px 0 #0f1e2c; display: flex; align-items: center;
+            min-height: 44px; color: #f9e75c; font-weight: 700; font-size: 22px; text-align: center;
+            margin: 8px 0; text-shadow: 2px 2px 0 #0f1e2c; display: flex; align-items: center;
             justify-content: center; gap: 10px;
         }
         .pause-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85);
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
-            border-radius: 24px; backdrop-filter: blur(5px);
+            border-radius: 24px; backdrop-filter: blur(8px);
         }
-        .pause-text { font-size: 48px; color: white; font-weight: bold; text-shadow: 0 4px 8px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        .pause-text { font-size: 52px; color: white; font-weight: bold; text-shadow: 0 4px 12px rgba(0,0,0,0.5); margin-bottom: 24px; }
         .resume-btn {
-            background: linear-gradient(145deg, #2ecc71, #27ae60); border: none; color: white; font-size: 24px;
-            padding: 12px 32px; border-radius: 40px; cursor: pointer; font-weight: bold; box-shadow: 0 6px 0 #1f8f4b;
+            background: linear-gradient(145deg, #2ecc71, #27ae60); 
+            border: none; color: white; font-size: 26px;
+            padding: 14px 36px; border-radius: 40px; cursor: pointer; font-weight: bold; 
+            box-shadow: 
+                0 6px 0 #1f8f4b,
+                inset 0 1px 0 rgba(255,255,255,0.2); 
             transition: all 0.1s;
         }
         .resume-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1f8f4b; }
         .difficulty-indicator {
-            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #f9e75c;
-            padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; border: 1px solid #ffd966;
+            position: absolute; top: 12px; right: 12px; 
+            background: rgba(0,0,0,0.7); color: #f9e75c;
+            padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold; 
+            border: 1px solid #ffd966;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
         }
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7);
-            display: flex; justify-content: center; align-items: center; z-index: 200; backdrop-filter: blur(4px);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8);
+            display: flex; justify-content: center; align-items: center; z-index: 200; 
+            backdrop-filter: blur(6px);
         }
         .modal-content {
-            background: #fbe4b0; border-radius: 48px; padding: 24px; max-width: 500px; width: 95%;
-            max-height: 80vh; overflow-y: auto; box-shadow: 0 16px 0 #b4723a; border: 3px solid #ffbe5c;
+            background: linear-gradient(180deg, #fdf0d5, #f5d69a); 
+            border-radius: 48px; padding: 28px; max-width: 500px; width: 95%;
+            max-height: 80vh; overflow-y: auto; 
+            box-shadow: 
+                0 16px 0 #b4723a, 
+                0 16px 32px rgba(0,0,0,0.4); 
+            border: 3px solid #ffbe5c;
         }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-title { font-size: 28px; font-weight: 800; color: #412d1a; text-shadow: 2px 2px 0 #ffd58c; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-title { font-size: 30px; font-weight: 800; color: #412d1a; text-shadow: 2px 2px 0 #ffd58c; }
         .close-modal {
-            font-size: 32px; cursor: pointer; background: #e74c3c; color: white; width: 48px; height: 48px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 0 #b03a2e;
+            font-size: 32px; cursor: pointer; 
+            background: linear-gradient(145deg, #e74c3c, #c0392b); 
+            color: white; width: 48px; height: 48px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            box-shadow: 0 4px 0 #b03a2e, inset 0 1px 0 rgba(255,255,255,0.2);
         }
-        .skin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .skin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .skin-item {
-            background: white; border-radius: 20px; padding: 12px 4px; text-align: center;
+            background: white; border-radius: 20px; padding: 14px 6px; text-align: center;
             box-shadow: 0 4px 0 #aaa; border: 2px solid #ddd; cursor: pointer; transition: 0.1s; position: relative;
         }
         .skin-item.locked { opacity: 0.5; filter: grayscale(0.8); cursor: not-allowed; }
-        .skin-item.selected { border: 4px solid #f1c40f; box-shadow: 0 0 0 2px #2ecc71, 0 4px 0 #aaa; transform: scale(0.98); }
-        .skin-preview { font-size: 42px; margin-bottom: 5px; }
+        .skin-item.selected { 
+            border: 4px solid #f1c40f; 
+            box-shadow: 0 0 0 2px #2ecc71, 0 4px 0 #aaa; 
+            transform: scale(0.98); 
+        }
+        .skin-preview { font-size: 42px; margin-bottom: 6px; }
         .skin-name { font-size: 14px; font-weight: bold; }
         .lock-icon { position: absolute; top: 5px; right: 5px; font-size: 20px; }
-        .report-container { background: #fff8e7; border-radius: 32px; padding: 24px; text-align: center; }
-        .report-title { font-size: 32px; font-weight: 800; color: #2c3e50; margin-bottom: 16px; }
-        .report-words { background: #e8f4f8; padding: 12px; border-radius: 24px; margin: 16px 0; }
+        .report-container { background: #fff8e7; border-radius: 32px; padding: 28px; text-align: center; }
+        .report-title { font-size: 36px; font-weight: 800; color: #2c3e50; margin-bottom: 20px; }
+        .report-words { background: #e8f4f8; padding: 16px; border-radius: 24px; margin: 18px 0; }
         .word-badge {
-            display: inline-block; background: #f1c40f; color: #2c3e50; padding: 6px 16px;
+            display: inline-block; 
+            background: linear-gradient(145deg, #f1c40f, #f39c12); 
+            color: #2c3e50; padding: 8px 18px;
             margin: 4px; border-radius: 30px; font-weight: bold; font-size: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .report-stats { display: flex; justify-content: space-around; margin: 20px 0; }
+        .report-stats { display: flex; justify-content: space-around; margin: 24px 0; }
         .stat-item { text-align: center; }
-        .stat-value { font-size: 36px; font-weight: 900; color: #e67e22; }
-        .stat-label { font-size: 16px; color: #7f8c8d; }
-        .compare-badge { background: #2ecc71; color: white; padding: 8px; border-radius: 40px; margin: 16px 0; }
+        .stat-value { 
+            font-size: 40px; font-weight: 900; 
+            background: linear-gradient(180deg, #e67e22, #d35400);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label { font-size: 16px; color: #7f8c8d; font-weight: 600; }
+        .compare-badge { 
+            background: linear-gradient(145deg, #2ecc71, #27ae60); 
+            color: white; padding: 10px; border-radius: 40px; margin: 18px 0; 
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
         .save-report-btn {
-            background: #3498db; color: white; border: none; font-size: 24px; padding: 14px 24px;
-            border-radius: 60px; box-shadow: 0 6px 0 #1f618d; font-weight: bold; cursor: pointer;
-            margin-top: 16px; width: 100%;
+            background: linear-gradient(145deg, #3498db, #2980b9); 
+            color: white; border: none; font-size: 24px; padding: 16px 28px;
+            border-radius: 60px; 
+            box-shadow: 0 6px 0 #1f618d, inset 0 1px 0 rgba(255,255,255,0.2); 
+            font-weight: bold; cursor: pointer;
+            margin-top: 18px; width: 100%;
         }
         .save-report-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #1f618d; }
         .preview-container {
-            display: flex; align-items: center; justify-content: center; gap: 20px; margin: 10px 0;
+            display: flex; align-items: center; justify-content: center; gap: 24px; margin: 14px 0;
+            background: rgba(0,0,0,0.05);
+            padding: 16px;
+            border-radius: 20px;
         }
         #carPreviewCanvas { background: transparent; }
         #currentCarColorDot {
-            width: 52px; height: 52px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            width: 56px; height: 56px; border-radius: 50%; 
+            box-shadow: 
+                0 4px 8px rgba(0,0,0,0.3), 
+                inset 0 -3px 6px rgba(0,0,0,0.2),
+                inset 0 3px 6px rgba(255,255,255,0.4);
         }
         @media (max-width: 450px) {
             .car-icon { font-size: 42px; } .color-dot { width: 42px; height: 42px; }
-            .car-name { font-size: 16px; } .finish-btn, .pause-btn { font-size: 16px; padding: 6px 12px; }
+            .car-name { font-size: 16px; } .finish-btn, .pause-btn { font-size: 16px; padding: 8px 14px; }
             .score-box { font-size: 20px; }
+            .result-score { font-size: 56px; }
         }
     </style>
 </head>
@@ -241,7 +393,7 @@
 <div class="game-container" id="gameContainer">
     <div class="streak-bar-container">
         <div class="streak-label">🔥 连续学习 <span id="streakDays">0</span> 天</div>
-        <div class="streak-value" id="nextUnlockHint">正确率≥90%解锁新皮肤</div>
+        <div class="streak-value" id="nextUnlockHint">再学3天解锁新赛道</div>
         <button class="garage-btn" id="garageBtn">🎨 车库</button>
     </div>
     <div class="game-header">
@@ -267,9 +419,9 @@
     <div id="carSelectPanel" class="car-selector">
         <div class="selector-title">🚗 选你的战车 🚗</div>
         <div class="preview-container">
-            <canvas id="carPreviewCanvas" width="80" height="60"></canvas>
+            <canvas id="carPreviewCanvas" width="100" height="80"></canvas>
             <div id="currentCarColorDot" class="dot-red"></div>
-            <span id="currentCarNameDisplay" style="font-weight:bold;">闪电红·跑车</span>
+            <span id="currentCarNameDisplay" style="font-weight:bold; font-size:18px; color:#4b2e1a;">闪电红·跑车</span>
         </div>
         <div class="car-list">
             <div class="car-option" data-car="red">
@@ -288,10 +440,10 @@
         <button class="start-btn" id="startGameBtn">🚦 出发！</button>
     </div>
     <div id="resultPanel" class="result-panel hidden">
-        <div style="font-size:28px; font-weight:800;">🎉 闯关成功 🎉</div>
+        <div style="font-size:32px; font-weight:800; color:#412d1a; text-shadow:2px 2px 0 #ffd58c;">🎉 闯关成功 🎉</div>
         <div class="result-score" id="finalScore">0</div>
-        <div id="resultComment" style="font-size:20px; margin: 8px 0; color: #5d4037; font-weight: 600;">⭐ 你真棒 ⭐</div>
-        <div style="font-size:16px; color: #7f8c8d; margin-top: 8px;">
+        <div id="resultComment" style="font-size:22px; margin: 10px 0; color: #5d4037; font-weight: 600;">⭐ 你真棒 ⭐</div>
+        <div style="font-size:16px; color: #7f8c8d; margin-top: 10px; font-weight:600;">
             最高连击: <span id="maxCombo" style="color: #e74c3c; font-weight: bold;">0</span> | 
             正确率: <span id="accuracy" style="color: #3498db; font-weight: bold;">0%</span>
         </div>
@@ -303,7 +455,7 @@
 <div id="garageModal" class="modal-overlay hidden">
     <div class="modal-content">
         <div class="modal-header"><div class="modal-title" id="modalTitle">🚗 赛车皮肤</div><div class="close-modal" id="closeModalBtn">✕</div></div>
-        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 20px; margin-bottom: 24px;">
             <button id="showCarSkinsBtn" class="garage-btn" style="background:#e67e22;">赛车</button>
             <button id="showTrackSkinsBtn" class="garage-btn" style="background:#2ecc71;">赛道</button>
         </div>
@@ -376,7 +528,7 @@
         ];
         const FINAL_WORDS = [...new Map(WORDS.map(item => [item.word, item])).values()];
 
-        // ---------- 皮肤数据 ----------
+        // ---------- 皮肤数据 (前三款默认解锁) ----------
         const CAR_SKINS = [
             { id: 0, name: '闪电红 · 跑车', color: '#e03a3a', type: 'sports', unlocked: true },
             { id: 1, name: '旋风蓝 · SUV', color: '#3a7bd5', type: 'suv', unlocked: true },
@@ -430,6 +582,8 @@
         const difficultyIndicator = document.getElementById('difficultyIndicator');
         const canvasWrapper = document.getElementById('canvasWrapper');
         const carOptions = document.querySelectorAll('.car-option');
+        const streakDaysSpan = document.getElementById('streakDays');
+        const nextUnlockHint = document.getElementById('nextUnlockHint');
 
         let currentCarSkinId = 0, currentTrackSkinId = 0;
         let carSkins = CAR_SKINS, trackSkins = TRACK_SKINS;
@@ -448,7 +602,7 @@
         let gameStartTime = 0;
         const SPAWN_INTERVAL = 7000;
         let animationFrame = null;
-        const TOTAL_QUESTIONS = 60; // 总题数
+        const TOTAL_QUESTIONS = 60;
 
         // ========== 音频系统 ==========
         let audioCtx = null;
@@ -561,120 +715,675 @@
         }
         function speakWrong() { speakText('错了', 'zh-CN', 0.9); }
 
-        // 打卡系统
+        // ---------- 打卡与解锁系统 ----------
         function loadStreak() {
-            const saved = localStorage.getItem('bbCar_streak_v9');
+            const saved = localStorage.getItem('bbCar_streak_v10');
             if (saved) try { streakData = JSON.parse(saved); } catch(e){}
             const today = new Date().toDateString();
             if (streakData.lastDate !== today) {
                 const last = streakData.lastDate ? new Date(streakData.lastDate) : null;
                 if (last && (new Date() - last) / 86400000 > 1) streakData.days = 0;
                 streakData.lastDate = today;
-                localStorage.setItem('bbCar_streak_v9', JSON.stringify(streakData));
+                localStorage.setItem('bbCar_streak_v10', JSON.stringify(streakData));
             }
-            document.getElementById('streakDays').textContent = streakData.days;
-        }
-        function incrementStreak() {
-            const today = new Date().toDateString();
-            if (streakData.lastDate !== today) { streakData.days++; streakData.lastDate = today; }
-            localStorage.setItem('bbCar_streak_v9', JSON.stringify(streakData));
-            document.getElementById('streakDays').textContent = streakData.days;
+            updateStreakUI();
+            applyStreakUnlocks();
         }
 
-        // 皮肤解锁
-        function saveUnlocks() {
-            localStorage.setItem('bbCar_unlockedCars_v9', JSON.stringify(carSkins.filter(s => s.unlocked).map(s => s.id)));
-            localStorage.setItem('bbCar_unlockedTracks_v9', JSON.stringify(trackSkins.filter(s => s.unlocked).map(s => s.id)));
+        function incrementStreak() {
+            const today = new Date().toDateString();
+            if (streakData.lastDate !== today) {
+                const last = streakData.lastDate ? new Date(streakData.lastDate) : null;
+                if (last && (new Date() - last) / 86400000 < 2) {
+                    streakData.days++;
+                } else {
+                    streakData.days = 1;
+                }
+                streakData.lastDate = today;
+                localStorage.setItem('bbCar_streak_v10', JSON.stringify(streakData));
+                applyStreakUnlocks();
+            }
+            updateStreakUI();
         }
+
+        function updateStreakUI() {
+            streakDaysSpan.textContent = streakData.days;
+            const days = streakData.days;
+            let nextTrackMilestone = 3;
+            let nextCarMilestone = 7;
+            if (days >= 7) {
+                const base = days - 7;
+                const pairs = Math.floor(base / 2);
+                if (base % 2 === 0) {
+                    nextTrackMilestone = 7 + pairs * 2 + 2;
+                    nextCarMilestone = null;
+                } else {
+                    nextCarMilestone = 7 + pairs * 2 + 2;
+                    nextTrackMilestone = null;
+                }
+            }
+            
+            let hint = '';
+            if (nextTrackMilestone && nextTrackMilestone > days) {
+                hint = `再学${nextTrackMilestone - days}天解锁新赛道`;
+            } else if (nextCarMilestone && nextCarMilestone > days) {
+                hint = `再学${nextCarMilestone - days}天解锁新车`;
+            } else {
+                hint = '🎉 已解锁全部皮肤！';
+            }
+            nextUnlockHint.textContent = hint;
+        }
+
+        function applyStreakUnlocks() {
+            const days = streakData.days;
+            let trackBonus = 0;
+            if (days >= 3) {
+                const extraDays = days - 3;
+                const extraBatches = Math.floor(extraDays / 2);
+                trackBonus = 5 + extraBatches * 5;
+            }
+            const maxTracks = 27;
+            trackBonus = Math.min(trackBonus, maxTracks);
+            
+            let carBonus = 0;
+            if (days >= 7) {
+                const extraDays = days - 7;
+                const extraBatches = Math.floor(extraDays / 2);
+                carBonus = 5 + extraBatches * 5;
+            }
+            const maxCars = 27;
+            carBonus = Math.min(carBonus, maxCars);
+            
+            let trackUnlockedCount = 0;
+            let carUnlockedCount = 0;
+            
+            for (let s of trackSkins) {
+                if (s.id >= 3 && !s.unlocked && trackUnlockedCount < trackBonus) {
+                    s.unlocked = true;
+                    trackUnlockedCount++;
+                }
+            }
+            for (let s of carSkins) {
+                if (s.id >= 3 && !s.unlocked && carUnlockedCount < carBonus) {
+                    s.unlocked = true;
+                    carUnlockedCount++;
+                }
+            }
+            
+            if (trackUnlockedCount > 0 || carUnlockedCount > 0) {
+                saveUnlocks();
+                gameMessage.textContent = `🎁 连续${days}天！解锁了新皮肤！`;
+            }
+            
+            updateStreakUI();
+        }
+
+        function saveUnlocks() {
+            localStorage.setItem('bbCar_unlockedCars_v10', JSON.stringify(carSkins.filter(s => s.unlocked).map(s => s.id)));
+            localStorage.setItem('bbCar_unlockedTracks_v10', JSON.stringify(trackSkins.filter(s => s.unlocked).map(s => s.id)));
+        }
+
         function loadUnlocks() {
             try {
-                const carIds = JSON.parse(localStorage.getItem('bbCar_unlockedCars_v9') || '[0,1,2]');
-                const trackIds = JSON.parse(localStorage.getItem('bbCar_unlockedTracks_v9') || '[0,1,2]');
+                const carIds = JSON.parse(localStorage.getItem('bbCar_unlockedCars_v10') || '[0,1,2]');
+                const trackIds = JSON.parse(localStorage.getItem('bbCar_unlockedTracks_v10') || '[0,1,2]');
                 carSkins.forEach(s => s.unlocked = carIds.includes(s.id));
                 trackSkins.forEach(s => s.unlocked = trackIds.includes(s.id));
             } catch(e) {}
         }
-        function unlockNextSkins() {
-            let carUnlocked = false, trackUnlocked = false;
-            for (let s of carSkins) { if (!s.unlocked) { s.unlocked = true; carUnlocked = true; break; } }
-            for (let s of trackSkins) { if (!s.unlocked) { s.unlocked = true; trackUnlocked = true; break; } }
-            if (carUnlocked || trackUnlocked) {
-                saveUnlocks();
-                gameMessage.textContent = '🎁 正确率≥90%！解锁新皮肤！';
-            }
+
+        // ==================== 视觉优化核心：车辆绘制系统 ====================
+        
+        // 颜色处理工具函数
+        function lightenColor(hex, percent) {
+            const num = parseInt(hex.replace("#",""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+        }
+        
+        function darkenColor(hex, percent) {
+            const num = parseInt(hex.replace("#",""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R>0?R:0)*0x10000 + (G>0?G:0)*0x100 + (B>0?B:0)).toString(16).slice(1);
         }
 
-        // 绘制车辆
-        function drawCarGeneric(ctx, skin, x, y, crashOffset = 0) {
+        // 绘制带渐变和立体感的车辆
+        function drawCarGeneric(ctx, skin, x, y, crashOffset = 0, scale = 1) {
             const color = skin.color;
+            const lightColor = lightenColor(color, 30);
+            const darkColor = darkenColor(color, 25);
+            const shadowColor = darkenColor(color, 50);
+            
             y += crashOffset;
             ctx.save();
-            ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y+42, 28, 12, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = color;
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            
+            // 1. 阴影（更真实的椭圆阴影）
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.beginPath();
+            ctx.ellipse(0, 42, 32, 14, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 2. 车身主体 - 使用渐变创造立体感
+            const bodyGrad = ctx.createLinearGradient(-30, -30, 30, 30);
+            bodyGrad.addColorStop(0, lightColor);
+            bodyGrad.addColorStop(0.5, color);
+            bodyGrad.addColorStop(1, darkColor);
+            
             if (skin.type.includes('sports') || skin.type === 'race') {
-                ctx.beginPath(); ctx.moveTo(x-28, y+12); ctx.lineTo(x-30, y-8); ctx.quadraticCurveTo(x-32, y-22, x-20, y-28);
-                ctx.lineTo(x+20, y-28); ctx.quadraticCurveTo(x+32, y-22, x+30, y-8); ctx.lineTo(x+28, y+12); ctx.fill();
-                ctx.fillStyle = '#1e2f4b'; ctx.fillRect(x-14, y-28, 28, 5);
+                // 跑车形状 - 更流线型
+                ctx.fillStyle = bodyGrad;
+                ctx.beginPath();
+                ctx.moveTo(-32, 14);
+                ctx.quadraticCurveTo(-36, 5, -34, -5);
+                ctx.lineTo(-30, -20);
+                ctx.quadraticCurveTo(-25, -32, -15, -34);
+                ctx.lineTo(15, -34);
+                ctx.quadraticCurveTo(25, -32, 30, -20);
+                ctx.lineTo(34, -5);
+                ctx.quadraticCurveTo(36, 5, 32, 14);
+                ctx.closePath();
+                ctx.fill();
+                
+                // 车身高光层
+                ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                ctx.beginPath();
+                ctx.moveTo(-20, -25);
+                ctx.quadraticCurveTo(0, -32, 20, -25);
+                ctx.lineTo(18, -15);
+                ctx.quadraticCurveTo(0, -20, -18, -15);
+                ctx.closePath();
+                ctx.fill();
+                
+                // 车窗 - 深色渐变
+                const windowGrad = ctx.createLinearGradient(-14, -32, 14, -22);
+                windowGrad.addColorStop(0, '#2c3e50');
+                windowGrad.addColorStop(0.5, '#34495e');
+                windowGrad.addColorStop(1, '#2c3e50');
+                ctx.fillStyle = windowGrad;
+                ctx.beginPath();
+                ctx.moveTo(-16, -28);
+                ctx.lineTo(-14, -34);
+                ctx.lineTo(14, -34);
+                ctx.lineTo(16, -28);
+                ctx.closePath();
+                ctx.fill();
+                
+                // 车窗高光
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(-12, -30);
+                ctx.lineTo(12, -30);
+                ctx.stroke();
+                
+                // 尾翼
+                ctx.fillStyle = darkColor;
+                ctx.fillRect(-28, -36, 56, 4);
+                ctx.fillRect(-24, -40, 8, 6);
+                ctx.fillRect(16, -40, 8, 6);
+                
             } else if (skin.type === 'suv' || skin.type === 'truck') {
-                ctx.fillRect(x-26, y-30, 52, 60);
-                ctx.fillStyle = '#1e2f4b'; ctx.fillRect(x-18, y-22, 14, 18); ctx.fillRect(x+4, y-22, 14, 18);
+                // SUV形状 - 更方正但有圆角
+                ctx.fillStyle = bodyGrad;
+                ctx.beginPath();
+                ctx.moveTo(-28, 28);
+                ctx.lineTo(-28, -22);
+                ctx.quadraticCurveTo(-28, -32, -18, -32);
+                ctx.lineTo(18, -32);
+                ctx.quadraticCurveTo(28, -32, 28, -22);
+                ctx.lineTo(28, 28);
+                ctx.closePath();
+                ctx.fill();
+                
+                // 车顶高光
+                ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                ctx.fillRect(-20, -28, 40, 12);
+                
+                // 车窗
+                const windowGrad = ctx.createLinearGradient(-20, -22, 20, -12);
+                windowGrad.addColorStop(0, '#2c3e50');
+                windowGrad.addColorStop(0.5, '#34495e');
+                windowGrad.addColorStop(1, '#2c3e50');
+                ctx.fillStyle = windowGrad;
+                ctx.fillRect(-20, -22, 18, 16);
+                ctx.fillRect(2, -22, 18, 16);
+                
+                // 车窗分隔线
+                ctx.strokeStyle = darkColor;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, -22);
+                ctx.lineTo(0, -6);
+                ctx.stroke();
+                
+                // 车门线
+                ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(-15, 0);
+                ctx.lineTo(-15, 20);
+                ctx.moveTo(15, 0);
+                ctx.lineTo(15, 20);
+                ctx.stroke();
+                
             } else {
-                ctx.beginPath(); ctx.ellipse(x, y-5, 28, 20, 0, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = '#1e2f4b'; ctx.fillRect(x-16, y-22, 32, 10);
+                // 轿车形状 - 圆润优雅
+                ctx.fillStyle = bodyGrad;
+                ctx.beginPath();
+                ctx.moveTo(-30, 22);
+                ctx.quadraticCurveTo(-32, 10, -30, 0);
+                ctx.lineTo(-26, -18);
+                ctx.quadraticCurveTo(-22, -30, -12, -32);
+                ctx.lineTo(12, -32);
+                ctx.quadraticCurveTo(22, -30, 26, -18);
+                ctx.lineTo(30, 0);
+                ctx.quadraticCurveTo(32, 10, 30, 22);
+                ctx.closePath();
+                ctx.fill();
+                
+                // 车身高光
+                ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                ctx.beginPath();
+                ctx.ellipse(0, -10, 18, 10, 0, 0, Math.PI*2);
+                ctx.fill();
+                
+                // 车窗
+                const windowGrad = ctx.createLinearGradient(-16, -28, 16, -18);
+                windowGrad.addColorStop(0, '#2c3e50');
+                windowGrad.addColorStop(0.5, '#34495e');
+                windowGrad.addColorStop(1, '#2c3e50');
+                ctx.fillStyle = windowGrad;
+                ctx.beginPath();
+                ctx.moveTo(-18, -24);
+                ctx.quadraticCurveTo(-16, -32, -8, -32);
+                ctx.lineTo(8, -32);
+                ctx.quadraticCurveTo(16, -32, 18, -24);
+                ctx.lineTo(16, -18);
+                ctx.lineTo(-16, -18);
+                ctx.closePath();
+                ctx.fill();
             }
-            ctx.fillStyle = '#1a1a1a';
-            [[-30,6],[30,6],[-30,-12],[30,-12]].forEach(p => { ctx.beginPath(); ctx.arc(x+p[0], y+p[1], 9, 0, 2*Math.PI); ctx.fill(); });
-            ctx.fillStyle = '#bdc3c7';
-            [[-30,6],[30,6],[-30,-12],[30,-12]].forEach(p => { ctx.beginPath(); ctx.arc(x+p[0], y+p[1], 5, 0, 2*Math.PI); ctx.fill(); });
+            
+            // 3. 车灯系统（前灯和尾灯）
+            // 前灯（白色发光效果）
+            const headlightGrad = ctx.createRadialGradient(-22, 18, 0, -22, 18, 8);
+            headlightGrad.addColorStop(0, 'rgba(255,255,220,0.9)');
+            headlightGrad.addColorStop(0.5, 'rgba(255,255,200,0.4)');
+            headlightGrad.addColorStop(1, 'rgba(255,255,200,0)');
+            ctx.fillStyle = headlightGrad;
+            ctx.beginPath();
+            ctx.arc(-22, 18, 8, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.fillStyle = headlightGrad;
+            ctx.beginPath();
+            ctx.arc(22, 18, 8, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 尾灯（红色）
+            const taillightGrad = ctx.createRadialGradient(-24, -28, 0, -24, -28, 6);
+            taillightGrad.addColorStop(0, 'rgba(255,80,80,0.8)');
+            taillightGrad.addColorStop(1, 'rgba(255,80,80,0)');
+            ctx.fillStyle = taillightGrad;
+            ctx.beginPath();
+            ctx.arc(-24, -28, 6, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.fillStyle = taillightGrad;
+            ctx.beginPath();
+            ctx.arc(24, -28, 6, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 4. 车轮系统 - 更精细的轮胎和轮毂
+            const wheelPositions = [[-30, 8], [30, 8], [-30, -12], [30, -12]];
+            wheelPositions.forEach(([wx, wy]) => {
+                // 轮胎外圈
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.arc(wx, wy, 10, 0, 2*Math.PI);
+                ctx.fill();
+                
+                // 轮胎纹理
+                ctx.strokeStyle = '#2a2a2a';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(wx, wy, 10, 0, 2*Math.PI);
+                ctx.stroke();
+                
+                // 轮毂
+                const hubGrad = ctx.createRadialGradient(wx-2, wy-2, 0, wx, wy, 6);
+                hubGrad.addColorStop(0, '#ecf0f1');
+                hubGrad.addColorStop(0.7, '#bdc3c7');
+                hubGrad.addColorStop(1, '#7f8c8d');
+                ctx.fillStyle = hubGrad;
+                ctx.beginPath();
+                ctx.arc(wx, wy, 6, 0, 2*Math.PI);
+                ctx.fill();
+                
+                // 轮毂高光
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.beginPath();
+                ctx.arc(wx-2, wy-2, 3, 0, 2*Math.PI);
+                ctx.fill();
+                
+                // 轮毂螺丝
+                ctx.fillStyle = '#95a5a6';
+                for(let i=0; i<5; i++) {
+                    const angle = (i * 72) * Math.PI / 180;
+                    ctx.beginPath();
+                    ctx.arc(wx + Math.cos(angle)*3.5, wy + Math.sin(angle)*3.5, 1, 0, 2*Math.PI);
+                    ctx.fill();
+                }
+            });
+            
+            // 5. 车身底部阴影增强立体感
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(0, 30, 28, 6, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 6. 特殊类型装饰
+            if(skin.type === 'police') {
+                // 警灯
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(-8, -36, 5, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#3498db';
+                ctx.beginPath();
+                ctx.arc(8, -36, 5, 0, Math.PI*2);
+                ctx.fill();
+                // 警灯光晕
+                ctx.fillStyle = 'rgba(231,76,60,0.3)';
+                ctx.beginPath();
+                ctx.arc(-8, -36, 10, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(52,152,219,0.3)';
+                ctx.beginPath();
+                ctx.arc(8, -36, 10, 0, Math.PI*2);
+                ctx.fill();
+            } else if(skin.type === 'taxi') {
+                // 出租车标志
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(-10, -36, 20, 4);
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = 'bold 8px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('TAXI', 0, -38);
+            } else if(skin.type === 'fire') {
+                // 消防标志
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.moveTo(0, -40);
+                ctx.lineTo(-6, -32);
+                ctx.lineTo(6, -32);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
             ctx.restore();
         }
+
+        // 绘制主车辆（带碰撞动画）
         function drawCar() {
             let offsetY = 0;
-            if (crashAnim > 0) { offsetY = -8 * crashAnim; crashAnim *= 0.85; if (crashAnim < 0.05) crashAnim = 0; }
-            drawCarGeneric(ctx, carSkins[currentCarSkinId], carX, carY + offsetY, 0);
+            let scale = 1;
+            if (crashAnim > 0) { 
+                offsetY = -10 * Math.sin(crashAnim * Math.PI); 
+                scale = 1 + 0.1 * Math.sin(crashAnim * Math.PI);
+                crashAnim *= 0.88; 
+                if (crashAnim < 0.05) crashAnim = 0; 
+            }
+            drawCarGeneric(ctx, carSkins[currentCarSkinId], carX, carY + offsetY, 0, scale);
         }
+
+        // 更新预览画布
         function updatePreview() {
-            previewCtx.clearRect(0, 0, 80, 60);
-            drawCarGeneric(previewCtx, carSkins[currentCarSkinId], 40, 30);
+            previewCtx.clearRect(0, 0, 100, 80);
+            drawCarGeneric(previewCtx, carSkins[currentCarSkinId], 50, 40, 0, 0.85);
             const dot = document.getElementById('currentCarColorDot');
-            dot.style.backgroundColor = carSkins[currentCarSkinId].color;
+            dot.style.background = `radial-gradient(circle at 35% 35%, ${lightenColor(carSkins[currentCarSkinId].color, 30)}, ${carSkins[currentCarSkinId].color})`;
             document.getElementById('currentCarNameDisplay').textContent = carSkins[currentCarSkinId].name;
         }
 
-        // 绘制道路
+        // ==================== 粒子特效系统 ====================
+        let particles = [];
+        
+        function createCollisionParticles(x, y, color) {
+            const count = 12;
+            for(let i=0; i<count; i++) {
+                const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+                const speed = 3 + Math.random() * 5;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2,
+                    life: 1.0,
+                    decay: 0.02 + Math.random() * 0.03,
+                    size: 4 + Math.random() * 6,
+                    color: color || '#f1c40f',
+                    type: 'spark'
+                });
+            }
+            // 添加星星粒子
+            for(let i=0; i<5; i++) {
+                particles.push({
+                    x: x + (Math.random() - 0.5) * 40,
+                    y: y + (Math.random() - 0.5) * 40,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: -3 - Math.random() * 3,
+                    life: 1.0,
+                    decay: 0.015,
+                    size: 0,
+                    color: '#ffffff',
+                    type: 'star',
+                    rotation: Math.random() * Math.PI * 2
+                });
+            }
+        }
+        
+        function updateAndDrawParticles() {
+            for(let i=particles.length-1; i>=0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.15; // 重力
+                p.life -= p.decay;
+                
+                if(p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                
+                if(p.type === 'spark') {
+                    // 火花效果
+                    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+                    grad.addColorStop(0, p.color);
+                    grad.addColorStop(0.5, lightenColor(p.color, 20));
+                    grad.addColorStop(1, 'rgba(255,255,255,0)');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2);
+                    ctx.fill();
+                } else if(p.type === 'star') {
+                    // 星星效果
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation + p.life * 3);
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    for(let j=0; j<5; j++) {
+                        const angle = (j * 72 - 18) * Math.PI / 180;
+                        const outerR = 8 * p.life;
+                        const innerR = 4 * p.life;
+                        ctx.lineTo(Math.cos(angle) * outerR, Math.sin(angle) * outerR);
+                        const innerAngle = ((j * 72 + 36) - 18) * Math.PI / 180;
+                        ctx.lineTo(Math.cos(innerAngle) * innerR, Math.sin(innerAngle) * innerR);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        // ==================== 道路绘制优化 ====================
         function drawRoad() {
             const track = trackSkins[currentTrackSkinId];
+            
+            // 背景渐变
             const grad = ctx.createLinearGradient(0, 0, 0, CH);
-            grad.addColorStop(0, track.bg[0]); grad.addColorStop(1, track.bg[1]);
-            ctx.fillStyle = grad; ctx.fillRect(0, 0, CW, CH);
-            ctx.fillStyle = track.road; ctx.fillRect(30, 0, CW-60, CH);
-            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(30, 0, 10, CH); ctx.fillRect(CW-40, 0, 10, CH);
-            ctx.strokeStyle = track.line; ctx.lineWidth = 4; ctx.setLineDash([30, 30]); ctx.lineDashOffset = -roadOffset;
-            [120, 250, 380].forEach(x => { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CH); ctx.stroke(); });
+            grad.addColorStop(0, track.bg[0]); 
+            grad.addColorStop(1, track.bg[1]);
+            ctx.fillStyle = grad; 
+            ctx.fillRect(0, 0, CW, CH);
+            
+            // 远景装饰（山脉/城市轮廓）
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.beginPath();
+            ctx.moveTo(0, CH * 0.3);
+            for(let i=0; i<=CW; i+=50) {
+                ctx.lineTo(i, CH * 0.3 - Math.sin(i * 0.02) * 20 - Math.random() * 10);
+            }
+            ctx.lineTo(CW, CH);
+            ctx.lineTo(0, CH);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 道路主体
+            const roadGrad = ctx.createLinearGradient(0, 0, CW, 0);
+            roadGrad.addColorStop(0, darkenColor(track.road, 10));
+            roadGrad.addColorStop(0.5, track.road);
+            roadGrad.addColorStop(1, darkenColor(track.road, 10));
+            ctx.fillStyle = roadGrad; 
+            ctx.fillRect(30, 0, CW-60, CH);
+            
+            // 路肩
+            ctx.fillStyle = darkenColor(track.road, 20);
+            ctx.fillRect(30, 0, 12, CH); 
+            ctx.fillRect(CW-42, 0, 12, CH);
+            
+            // 路肩高光
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(30, 0, 4, CH);
+            ctx.fillRect(CW-38, 0, 4, CH);
+            
+            // 车道线 - 虚线带发光效果
+            ctx.save();
+            ctx.shadowColor = track.line;
+            ctx.shadowBlur = 10;
+            ctx.strokeStyle = track.line; 
+            ctx.lineWidth = 5; 
+            ctx.setLineDash([40, 30]); 
+            ctx.lineDashOffset = -roadOffset;
+            [120, 250, 380].forEach(x => { 
+                ctx.beginPath(); 
+                ctx.moveTo(x, 0); 
+                ctx.lineTo(x, CH); 
+                ctx.stroke(); 
+            });
+            ctx.restore();
             ctx.setLineDash([]);
+            
+            // 道路纹理细节
+            ctx.fillStyle = 'rgba(0,0,0,0.05)';
+            for(let i=0; i<CH; i+=100) {
+                const offset = (i + roadOffset) % 100;
+                ctx.fillRect(50, i + offset - 50, CW-100, 2);
+            }
+            
             if (gameActive && !gamePaused) roadOffset = (roadOffset + 6 * gameSpeed) % 100;
         }
 
-        // 绘制物品
+        // ==================== 物品绘制优化 ====================
         function drawItems() {
             items.forEach(item => {
                 const x = item.x, y = item.y;
-                const floatY = Math.sin(item.wobble + performance.now() * 0.002) * 5;
-                ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y + 50, 40, 10, 0, 0, Math.PI*2); ctx.fill();
-                ctx.save(); ctx.translate(x, y + floatY);
-                ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3; ctx.setLineDash([15, 10]); 
-                ctx.beginPath(); ctx.arc(0, 0, 68, 0, Math.PI*2); ctx.stroke();
+                const floatY = Math.sin(item.wobble + performance.now() * 0.002) * 6;
+                const scale = 1 + Math.sin(item.wobble + performance.now() * 0.003) * 0.05;
+                
+                ctx.save();
+                ctx.translate(x, y + floatY);
+                ctx.scale(scale, scale);
+                
+                // 阴影
+                ctx.fillStyle = 'rgba(0,0,0,0.25)'; 
+                ctx.beginPath(); 
+                ctx.ellipse(0, 55, 42, 12, 0, 0, Math.PI*2); 
+                ctx.fill();
+                
+                // 外圈光环 - 动态呼吸效果
+                const glowIntensity = 0.3 + Math.sin(performance.now() * 0.005) * 0.2;
+                ctx.strokeStyle = `rgba(255,215,0,${glowIntensity})`; 
+                ctx.lineWidth = 3; 
+                ctx.setLineDash([20, 15]); 
+                ctx.beginPath(); 
+                ctx.arc(0, 0, 72, 0, Math.PI*2); 
+                ctx.stroke();
+                
+                // 内圈光环
+                ctx.strokeStyle = `rgba(255,215,0,${glowIntensity * 0.5})`; 
+                ctx.lineWidth = 2; 
+                ctx.beginPath(); 
+                ctx.arc(0, 0, 78, 0, Math.PI*2); 
+                ctx.stroke();
                 ctx.setLineDash([]);
-                ctx.strokeStyle = 'rgba(255,215,0,0.5)'; ctx.lineWidth = 2; 
-                ctx.beginPath(); ctx.arc(0, 0, 75, 0, Math.PI*2); ctx.stroke();
-                ctx.font = '110px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 15; ctx.shadowOffsetY = 10;
+                
+                // 目标指示器（如果是目标单词）
+                if(item.isTarget) {
+                    ctx.strokeStyle = 'rgba(46,204,113,0.6)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 85, performance.now() * 0.002, performance.now() * 0.002 + Math.PI * 1.5);
+                    ctx.stroke();
+                }
+                
+                // Emoji 绘制 - 带阴影和高光
+                ctx.font = '110px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; 
+                ctx.textAlign = 'center'; 
+                ctx.textBaseline = 'middle';
+                
+                // 文字阴影
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.fillText(item.wordObj.emoji, 3, 3);
+                
+                // 主文字
+                ctx.shadowColor = 'rgba(0,0,0,0.3)'; 
+                ctx.shadowBlur = 15; 
+                ctx.shadowOffsetY = 8;
+                ctx.fillStyle = '#ffffff';
                 ctx.fillText(item.wordObj.emoji, 0, 0);
+                ctx.shadowColor = 'transparent';
+                
                 ctx.restore();
-                ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.beginPath(); 
-                ctx.ellipse(x, y+floatY+55, 50, 20, 0, 0, Math.PI*2); ctx.fill();
-                ctx.font = 'bold 26px "Quicksand", sans-serif'; ctx.fillStyle = '#FFD966'; ctx.textAlign = 'center';
-                ctx.fillText(item.wordObj.word, x, y+floatY+71);
+                
+                // 单词标签背景
+                ctx.fillStyle = 'rgba(0,0,0,0.6)'; 
+                ctx.beginPath(); 
+                ctx.roundRect(x - 55, y + floatY + 58, 110, 32, 16); 
+                ctx.fill();
+                
+                // 单词文字
+                ctx.font = 'bold 24px "Quicksand", sans-serif'; 
+                ctx.fillStyle = '#FFD966'; 
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(item.wordObj.word, x, y + floatY + 80);
+                ctx.shadowColor = 'transparent';
+                
                 if (gameActive && !gamePaused) item.wobble += 0.02;
             });
         }
@@ -683,7 +1392,11 @@
             for (let i=items.length-1; i>=0; i--) {
                 if (!gamePaused) items[i].y += items[i].speed;
                 if (items[i].y > CH + 100) {
-                    if (items[i].isTarget && gameActive) { combo = 0; updateComboUI(); gameMessage.textContent = '💨 漏掉了！'; }
+                    if (items[i].isTarget && gameActive) { 
+                        combo = 0; 
+                        updateComboUI(); 
+                        gameMessage.textContent = '💨 漏掉了！'; 
+                    }
                     items.splice(i, 1);
                 }
             }
@@ -704,35 +1417,72 @@
         }
 
         function resetGame() {
-            gameActive = true; gamePaused = false; score = 0; combo = 0; maxCombo = 0; correctCount = 0; wrongCount = 0;
-            gameSpeed = 1.0; difficultyLevel = 1; items = []; carX = CW/2; roadOffset = 0; gameStartTime = performance.now();
-            lastSpawnTime = performance.now(); learnedWords.clear();
-            updateScoreUI(); updateComboUI(); progressBar.style.width = '0%';
-            difficultyIndicator.classList.remove('hidden'); gameMessage.textContent = '🔊 听单词，点击正确的图片！';
+            gameActive = true; 
+            gamePaused = false; 
+            score = 0; 
+            combo = 0; 
+            maxCombo = 0; 
+            correctCount = 0; 
+            wrongCount = 0;
+            gameSpeed = 1.0; 
+            difficultyLevel = 1; 
+            items = []; 
+            particles = [];
+            carX = CW/2; 
+            roadOffset = 0; 
+            gameStartTime = performance.now();
+            lastSpawnTime = performance.now(); 
+            learnedWords.clear();
+            updateScoreUI(); 
+            updateComboUI(); 
+            progressBar.style.width = '0%';
+            difficultyIndicator.classList.remove('hidden'); 
+            gameMessage.textContent = '🔊 听单词，点击正确的图片！';
             updateSpeedDisplay();
             spawnItems();
         }
 
         function finishGame() {
             if (!gameActive) return;
-            gameActive = false; gamePaused = false;
-            if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
+            gameActive = false; 
+            gamePaused = false;
+            if (animationFrame) { 
+                cancelAnimationFrame(animationFrame); 
+                animationFrame = null; 
+            }
             items.filter(i => i.isTarget && i.y > 600).forEach(i => learnedWords.add(i.wordObj.word));
             incrementStreak();
             const total = correctCount + wrongCount;
             const acc = total > 0 ? Math.round(correctCount / total * 100) : 0;
-            finalScoreSpan.textContent = score; maxComboSpan.textContent = maxCombo; accuracySpan.textContent = acc+'%';
+            finalScoreSpan.textContent = score; 
+            maxComboSpan.textContent = maxCombo; 
+            accuracySpan.textContent = acc+'%';
             resultComment.textContent = acc >= 90 ? '🏆 完美表现！' : acc >= 60 ? '👍 做得不错！' : '⭐ 继续加油';
-            resultPanel.classList.remove('hidden'); carSelectPanel.classList.add('hidden');
-            pauseBtn.classList.add('hidden'); difficultyIndicator.classList.add('hidden');
+            resultPanel.classList.remove('hidden'); 
+            carSelectPanel.classList.add('hidden');
+            pauseBtn.classList.add('hidden'); 
+            difficultyIndicator.classList.add('hidden');
             if (window.speechSynthesis) window.speechSynthesis.cancel();
-            if (acc >= 90) unlockNextSkins();
         }
 
-        function updateScoreUI() { scoreSpan.textContent = score; }
-        function updateComboUI() { comboDisplay.textContent = `连击 x${combo}`; comboDisplay.classList.toggle('show', combo>1); }
+        function updateScoreUI() { 
+            scoreSpan.textContent = score; 
+            const scoreBox = document.getElementById('scoreBox');
+            scoreBox.classList.remove('bounce');
+            void scoreBox.offsetWidth; // 触发重绘
+            scoreBox.classList.add('bounce');
+        }
+        
+        function updateComboUI() { 
+            comboDisplay.textContent = `连击 x${combo}`; 
+            comboDisplay.classList.toggle('show', combo>1); 
+            if(combo > 1) {
+                comboDisplay.classList.remove('pulse');
+                void comboDisplay.offsetWidth;
+                comboDisplay.classList.add('pulse');
+            }
+        }
 
-        // 速度逻辑：基于总答题数(正确+错误)相对于目标题数60，每完成4题增加0.1，上限2.5
         function updateGameSpeed() {
             const totalAttempts = correctCount + wrongCount;
             const targetTotal = TOTAL_QUESTIONS;
@@ -749,7 +1499,6 @@
             updateSpeedDisplay();
             updateProgressBar();
             
-            // 检查是否完成所有题目
             if (totalAttempts >= targetTotal) {
                 finishGame();
             }
@@ -777,13 +1526,20 @@
             for (let item of items) {
                 if (Math.hypot(cx - item.x, cy - item.y) < 80) {
                     if (item.isTarget) {
-                        targetItem = item; isMovingForCollision = true; collisionHappened = false;
-                        gameMessage.textContent = `🚗 撞击准备！`; speakWord(item.wordObj.word);
+                        targetItem = item; 
+                        isMovingForCollision = true; 
+                        collisionHappened = false;
+                        gameMessage.textContent = `🚗 撞击准备！`; 
+                        speakWord(item.wordObj.word);
                     } else {
-                        wrongCount++; combo = 0; updateComboUI();
+                        wrongCount++; 
+                        combo = 0; 
+                        updateComboUI();
                         gameMessage.textContent = `❌ 错了！是 ${item.wordObj.word}`;
-                        score = Math.max(0, score-5); updateScoreUI();
-                        playWrongSound(); speakWrong();
+                        score = Math.max(0, score-5); 
+                        updateScoreUI();
+                        playWrongSound(); 
+                        speakWrong();
                         updateGameSpeed();
                     }
                     break;
@@ -794,27 +1550,49 @@
         function gameLoop(now) {
             if (!gameActive) return;
             if (!gamePaused) {
-                if (now - lastSpawnTime >= SPAWN_INTERVAL / gameSpeed) { spawnItems(); lastSpawnTime = now; }
+                if (now - lastSpawnTime >= SPAWN_INTERVAL / gameSpeed) { 
+                    spawnItems(); 
+                    lastSpawnTime = now; 
+                }
                 updateItems();
+                
                 if (isMovingForCollision && targetItem) {
                     const dx = targetItem.x - carX, dy = carY - targetItem.y;
-                    carX += dx * 0.1;
+                    carX += dx * 0.12;
                     if (Math.abs(dx) < 5 && dy < 30 && !collisionHappened) {
-                        collisionHappened = true; crashAnim = 1.0;
-                        combo++; if(combo>maxCombo) maxCombo=combo; correctCount++;
-                        score += 10 + (combo>1?combo*2:0); updateScoreUI(); updateComboUI();
-                        playExplosionSound(); if (combo > 1) playComboSound(combo);
+                        collisionHappened = true; 
+                        crashAnim = 1.0;
+                        combo++; 
+                        if(combo>maxCombo) maxCombo=combo; 
+                        correctCount++;
+                        score += 10 + (combo>1?combo*2:0); 
+                        updateScoreUI(); 
+                        updateComboUI();
+                        playExplosionSound(); 
+                        if (combo > 1) playComboSound(combo);
                         speakChinesePraise();
                         gameMessage.textContent = `✅ 正确！${targetItem.wordObj.word}`;
                         createExplosion();
+                        
+                        // 触发粒子特效
+                        createCollisionParticles(targetItem.x, targetItem.y, carSkins[currentCarSkinId].color);
+                        
                         updateGameSpeed();
                         items = items.filter(i => i !== targetItem);
-                        isMovingForCollision = false; targetItem = null;
+                        isMovingForCollision = false; 
+                        targetItem = null;
                     }
-                } else { carX = carX * 0.9 + (CW/2) * 0.1; }
+                } else { 
+                    carX = carX * 0.92 + (CW/2) * 0.08; 
+                }
             }
-            drawRoad(); drawItems(); drawCar();
-            requestAnimationFrame(gameLoop);
+            
+            drawRoad(); 
+            drawItems(); 
+            updateAndDrawParticles();
+            drawCar();
+            
+            animationFrame = requestAnimationFrame(gameLoop);
         }
 
         function renderSkinGrid(type) {
@@ -826,7 +1604,15 @@
             skins.forEach(s => {
                 const div = document.createElement('div');
                 div.className = `skin-item ${s.unlocked?'':'locked'} ${s.id===cur?'selected':''}`;
-                div.innerHTML = `<div class="skin-preview">${type==='car'?'🚗':'🛣️'}</div><div class="skin-name">${s.name}</div>${s.unlocked?'':'<div class="lock-icon">🔒</div>'}`;
+                
+                // 皮肤预览使用Canvas绘制缩略图
+                const canvasId = `skinPreview_${type}_${s.id}`;
+                div.innerHTML = `
+                    <canvas id="${canvasId}" width="60" height="50" style="margin-bottom:5px;"></canvas>
+                    <div class="skin-name">${s.name}</div>
+                    ${s.unlocked?'':'<div class="lock-icon">🔒</div>'}
+                `;
+                
                 if (s.unlocked) div.onclick = () => {
                     if (type==='car') { 
                         currentCarSkinId = s.id; 
@@ -835,16 +1621,46 @@
                             selectedCar = s.id===0?'red':(s.id===1?'blue':'green');
                             carOptions.forEach(opt => opt.classList.remove('selected'));
                             document.querySelector(`.car-option[data-car="${selectedCar}"]`).classList.add('selected');
-                        } else carOptions.forEach(opt => opt.classList.remove('selected'));
-                    } else currentTrackSkinId = s.id;
+                        } else {
+                            carOptions.forEach(opt => opt.classList.remove('selected'));
+                        }
+                    } else {
+                        currentTrackSkinId = s.id;
+                    }
                     renderSkinGrid(type);
                 };
+                
                 grid.appendChild(div);
+                
+                // 绘制缩略图
+                setTimeout(() => {
+                    const previewCvs = document.getElementById(canvasId);
+                    if(previewCvs) {
+                        const pCtx = previewCvs.getContext('2d');
+                        if(type === 'car') {
+                            drawCarGeneric(pCtx, s, 30, 25, 0, 0.6);
+                        } else {
+                            // 赛道预览
+                            const grad = pCtx.createLinearGradient(0, 0, 0, 50);
+                            grad.addColorStop(0, s.bg[0]);
+                            grad.addColorStop(1, s.bg[1]);
+                            pCtx.fillStyle = grad;
+                            pCtx.fillRect(0, 0, 60, 50);
+                            pCtx.fillStyle = s.road;
+                            pCtx.fillRect(10, 0, 40, 50);
+                            pCtx.fillStyle = s.line;
+                            pCtx.fillRect(28, 0, 4, 50);
+                        }
+                    }
+                }, 0);
             });
         }
 
         window.onload = () => {
-            loadStreak(); loadUnlocks(); updatePreview();
+            loadStreak();
+            loadUnlocks();
+            updatePreview();
+            
             carOptions.forEach(opt => opt.addEventListener('click', () => {
                 carOptions.forEach(o => o.classList.remove('selected'));
                 opt.classList.add('selected');
@@ -864,30 +1680,70 @@
             document.getElementById('showTrackSkinsBtn').onclick = () => renderSkinGrid('track');
 
             startBtn.onclick = () => {
-                activateAudio(); enableSpeech(); initAudio();
-                carSelectPanel.classList.add('hidden'); resultPanel.classList.add('hidden'); pauseBtn.classList.remove('hidden');
-                resetGame(); animationFrame = requestAnimationFrame(gameLoop);
+                activateAudio(); 
+                enableSpeech(); 
+                initAudio();
+                carSelectPanel.classList.add('hidden'); 
+                resultPanel.classList.add('hidden'); 
+                pauseBtn.classList.remove('hidden');
+                resetGame(); 
+                animationFrame = requestAnimationFrame(gameLoop);
             };
-            finishBtn.onclick = () => { if(gameActive) finishGame(); };
-            playAgainBtn.onclick = () => { resultPanel.classList.add('hidden'); carSelectPanel.classList.remove('hidden'); };
-            pauseBtn.onclick = () => { gamePaused=!gamePaused; pauseOverlay.classList.toggle('hidden', !gamePaused); };
-            document.getElementById('resumeBtn').onclick = () => { gamePaused=false; pauseOverlay.classList.add('hidden'); };
+            
+            finishBtn.onclick = () => { 
+                if(gameActive) finishGame(); 
+            };
+            
+            playAgainBtn.onclick = () => { 
+                resultPanel.classList.add('hidden'); 
+                carSelectPanel.classList.remove('hidden'); 
+            };
+            
+            pauseBtn.onclick = () => { 
+                gamePaused=!gamePaused; 
+                pauseOverlay.classList.toggle('hidden', !gamePaused); 
+            };
+            
+            document.getElementById('resumeBtn').onclick = () => { 
+                gamePaused=false; 
+                pauseOverlay.classList.add('hidden'); 
+            };
+            
             canvas.onclick = handleCanvasClick;
-            canvas.ontouchstart = (e) => { e.preventDefault(); const t = e.touches[0]; handleCanvasClick({ clientX: t.clientX, clientY: t.clientY }); };
+            canvas.ontouchstart = (e) => { 
+                e.preventDefault(); 
+                const t = e.touches[0]; 
+                handleCanvasClick({ clientX: t.clientX, clientY: t.clientY }); 
+            };
 
             document.getElementById('viewReportBtn').onclick = () => {
                 const words = Array.from(learnedWords).slice(0,8);
                 const acc = accuracySpan.textContent;
-                const last = localStorage.getItem('bbCar_lastScore_v9')||0;
-                localStorage.setItem('bbCar_lastScore_v9', score);
+                const last = localStorage.getItem('bbCar_lastScore_v10')||0;
+                localStorage.setItem('bbCar_lastScore_v10', score);
                 document.getElementById('reportContent').innerHTML = `
                     <div class="report-title">🎓 宝宝真棒！</div>
                     <div class="report-words">${words.map(w=>`<span class="word-badge">${w}</span>`).join('')}</div>
-                    <div class="report-stats"><div class="stat-item"><div class="stat-value">${score}</div><div class="stat-label">总分</div></div><div class="stat-item"><div class="stat-value">${acc}</div><div class="stat-label">正确率</div></div><div class="stat-item"><div class="stat-value">${maxCombo}</div><div class="stat-label">最高连击</div></div></div>
+                    <div class="report-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${score}</div>
+                            <div class="stat-label">总分</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${acc}</div>
+                            <div class="stat-label">正确率</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${maxCombo}</div>
+                            <div class="stat-label">最高连击</div>
+                        </div>
+                    </div>
                     <div class="compare-badge">${score>last?'🎉 比上次进步了 '+(score-last)+' 分！':'💪 保持状态！'}</div>
-                    <p>连续学习 ${streakData.days} 天 🔥</p>`;
+                    <p style="font-size:18px; color:#7f8c8d; margin-top:10px;">连续学习 ${streakData.days} 天 🔥</p>
+                `;
                 document.getElementById('reportModal').classList.remove('hidden');
             };
+            
             document.getElementById('closeReportBtn').onclick = () => document.getElementById('reportModal').classList.add('hidden');
             document.getElementById('saveReportBtn').onclick = () => alert('长按屏幕截图即可保存分享！');
         };
