@@ -1308,85 +1308,94 @@
         }
 
         // ==================== 物品绘制优化 ====================
-        function drawItems() {
-            items.forEach(item => {
-                const x = item.x, y = item.y;
-                const floatY = Math.sin(item.wobble + performance.now() * 0.002) * 6;
-                const scale = 1 + Math.sin(item.wobble + performance.now() * 0.003) * 0.05;
-                
-                ctx.save();
-                ctx.translate(x, y + floatY);
-                ctx.scale(scale, scale);
-                
-                // 阴影
-                ctx.fillStyle = 'rgba(0,0,0,0.25)'; 
-                ctx.beginPath(); 
-                ctx.ellipse(0, 55, 42, 12, 0, 0, Math.PI*2); 
-                ctx.fill();
-                
-                // 外圈光环 - 动态呼吸效果
-                const glowIntensity = 0.3 + Math.sin(performance.now() * 0.005) * 0.2;
-                ctx.strokeStyle = `rgba(255,215,0,${glowIntensity})`; 
-                ctx.lineWidth = 3; 
-                ctx.setLineDash([20, 15]); 
-                ctx.beginPath(); 
-                ctx.arc(0, 0, 72, 0, Math.PI*2); 
-                ctx.stroke();
-                
-                // 内圈光环
-                ctx.strokeStyle = `rgba(255,215,0,${glowIntensity * 0.5})`; 
-                ctx.lineWidth = 2; 
-                ctx.beginPath(); 
-                ctx.arc(0, 0, 78, 0, Math.PI*2); 
-                ctx.stroke();
-                ctx.setLineDash([]);
-                
-                // 目标指示器（如果是目标单词）
-                if(item.isTarget) {
-                    ctx.strokeStyle = 'rgba(46,204,113,0.6)';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, 85, performance.now() * 0.002, performance.now() * 0.002 + Math.PI * 1.5);
-                    ctx.stroke();
-                }
-                
-                // Emoji 绘制 - 带阴影和高光
-                ctx.font = '110px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; 
-                ctx.textAlign = 'center'; 
-                ctx.textBaseline = 'middle';
-                
-                // 文字阴影
-                ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                ctx.fillText(item.wordObj.emoji, 3, 3);
-                
-                // 主文字
-                ctx.shadowColor = 'rgba(0,0,0,0.3)'; 
-                ctx.shadowBlur = 15; 
-                ctx.shadowOffsetY = 8;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(item.wordObj.emoji, 0, 0);
-                ctx.shadowColor = 'transparent';
-                
-                ctx.restore();
-                
-                // 单词标签背景
-                ctx.fillStyle = 'rgba(0,0,0,0.6)'; 
-                ctx.beginPath(); 
-                ctx.roundRect(x - 55, y + floatY + 58, 110, 32, 16); 
-                ctx.fill();
-                
-                // 单词文字
-                ctx.font = 'bold 24px "Quicksand", sans-serif'; 
-                ctx.fillStyle = '#FFD966'; 
-                ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                ctx.shadowBlur = 4;
-                ctx.fillText(item.wordObj.word, x, y + floatY + 80);
-                ctx.shadowColor = 'transparent';
-                
-                if (gameActive && !gamePaused) item.wobble += 0.02;
-            });
-        }
+function drawItems() {
+    items.forEach(item => {
+        const x = item.x, y = item.y;
+        const floatY = Math.sin(item.wobble + performance.now() * 0.002) * 6;
+        const scale = 1 + Math.sin(item.wobble + performance.now() * 0.003) * 0.05;
+        
+        ctx.save();
+        ctx.translate(x, y + floatY);
+        ctx.scale(scale, scale);
+        
+        // ========== 统一的圆圈效果（所有物品完全一致）==========
+        
+        // 1. 底层阴影
+        ctx.fillStyle = 'rgba(0,0,0,0.25)'; 
+        ctx.beginPath(); 
+        ctx.ellipse(0, 55, 42, 12, 0, 0, Math.PI*2); 
+        ctx.fill();
+        
+        // 2. 外层虚线光环 - 动态呼吸效果
+        const glowIntensity = 0.3 + Math.sin(performance.now() * 0.005) * 0.2;
+        ctx.strokeStyle = `rgba(255,215,0,${glowIntensity})`; 
+        ctx.lineWidth = 3; 
+        ctx.setLineDash([20, 15]); 
+        ctx.beginPath(); 
+        ctx.arc(0, 0, 72, 0, Math.PI*2); 
+        ctx.stroke();
+        
+        // 3. 内层实线圆环
+        ctx.strokeStyle = `rgba(255,215,0,${glowIntensity * 0.8})`; 
+        ctx.lineWidth = 2; 
+        ctx.setLineDash([]);  // 实线
+        ctx.beginPath(); 
+        ctx.arc(0, 0, 65, 0, Math.PI*2); 
+        ctx.stroke();
+        
+        // 4. 内圈装饰线
+        ctx.strokeStyle = `rgba(255,255,255,${glowIntensity * 0.4})`; 
+        ctx.lineWidth = 1; 
+        ctx.beginPath(); 
+        ctx.arc(0, 0, 58, 0, Math.PI*2); 
+        ctx.stroke();
+        
+        ctx.setLineDash([]);
+        
+        // ========== Emoji 绘制（所有物品完全一致）==========
+        ctx.font = '110px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; 
+        ctx.textAlign = 'center'; 
+        ctx.textBaseline = 'middle';
+        
+        // 文字阴影
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.fillText(item.wordObj.emoji, 3, 3);
+        
+        // 主文字
+        ctx.shadowColor = 'rgba(0,0,0,0.3)'; 
+        ctx.shadowBlur = 15; 
+        ctx.shadowOffsetY = 8;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(item.wordObj.emoji, 0, 0);
+        ctx.shadowColor = 'transparent';
+        
+        ctx.restore();
+        
+        // ========== 单词标签（所有物品完全一致）==========
+        ctx.fillStyle = 'rgba(0,0,0,0.6)'; 
+        ctx.beginPath(); 
+        ctx.roundRect(x - 55, y + floatY + 58, 110, 32, 16); 
+        ctx.fill();
+        
+        // 所有单词标签边框统一（无特殊高亮）
+        ctx.strokeStyle = 'rgba(255,215,0,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(x - 55, y + floatY + 58, 110, 32, 16);
+        ctx.stroke();
+        
+        // 单词文字颜色统一（无特殊高亮）
+        ctx.font = 'bold 24px "Quicksand", sans-serif'; 
+        ctx.fillStyle = '#FFD966';  // 所有单词统一金色
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(item.wordObj.word, x, y + floatY + 80);
+        ctx.shadowColor = 'transparent';
+        
+        if (gameActive && !gamePaused) item.wobble += 0.02;
+    });
+}
 
         function updateItems() {
             for (let i=items.length-1; i>=0; i--) {
