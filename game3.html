@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>数学飞车 · 赛博霓虹 (移动端修复)</title>
+    <title>数学飞车 · 赛博霓虹 (完美居中修复)</title>
     <style>
         * {
             margin: 0;
@@ -87,15 +87,9 @@
         }
         .garage-btn-top {
             background: linear-gradient(135deg, #9b30ff, #6a0dad);
-            border: none;
-            color: white;
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 0 10px #b366ff;
-            transition: 0.1s;
-            font-size: 13px;
+            border: none; color: white; padding: 6px 14px; border-radius: 30px;
+            font-weight: bold; cursor: pointer; box-shadow: 0 0 10px #b366ff;
+            transition: 0.1s; font-size: 13px;
         }
         .garage-btn-top:active { transform: scale(0.95); box-shadow: 0 0 20px #c285ff; }
         .problem-card {
@@ -111,8 +105,7 @@
         }
         .problem-label { font-size: 12px; color: #ffaa33; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
         .problem-equation {
-            font-size: 36px;
-            font-weight: 900;
+            font-size: 36px; font-weight: 900;
             background: linear-gradient(to right, #ffffff, #ffbb88);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -120,37 +113,22 @@
         }
         .timer-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 8px; overflow: hidden; }
         .timer-fill {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             background: linear-gradient(90deg, #00ff88, #ffcc00, #ff3333);
-            transition: width 0.1s linear;
-            border-radius: 4px;
+            transition: width 0.1s linear; border-radius: 4px;
         }
         .score-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; flex-shrink: 0;
         }
         .score-badge {
             background: rgba(0,0,0,0.6);
-            border: 1px solid #ffaa00;
-            border-radius: 20px;
-            padding: 6px 16px;
-            color: #ffbb33;
-            font-weight: 800;
-            font-size: 18px;
-            backdrop-filter: blur(5px);
+            border: 1px solid #ffaa00; border-radius: 20px; padding: 6px 16px;
+            color: #ffbb33; font-weight: 800; font-size: 18px; backdrop-filter: blur(5px);
         }
         .speed-badge {
-            background: #cc3333;
-            color: white;
-            padding: 5px 14px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 14px;
-            transition: 0.2s;
+            background: #cc3333; color: white; padding: 5px 14px; border-radius: 20px;
+            font-weight: 700; font-size: 14px; transition: 0.2s;
         }
         .speed-badge.boost {
             background: #00aa44;
@@ -161,16 +139,9 @@
             to { box-shadow: 0 0 25px #00ff88; }
         }
         .finish-btn {
-            background: rgba(255,80,0,0.8);
-            backdrop-filter: blur(5px);
-            border: none;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-            transition: 0.1s;
+            background: rgba(255,80,0,0.8); backdrop-filter: blur(5px);
+            border: none; color: white; padding: 6px 16px; border-radius: 20px;
+            font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.1s;
         }
         .finish-btn:active { transform: scale(0.95); }
         .game-area {
@@ -183,6 +154,8 @@
             -ms-overflow-style: none;
         }
         .game-area::-webkit-scrollbar { display: none; }
+
+        /* 画布容器：固定宽度 100%，水平居中 Canvas */
         .canvas-box {
             position: relative;
             border-radius: 20px;
@@ -191,29 +164,30 @@
             border: 2px solid #ff7700;
             margin-bottom: 8px;
             flex: 1;
-            min-height: 250px;
-        }
-        #gameCanvas { display: block; width: 100%; height: 100%; background: #0b0b15; }
-        .answer-row {
             display: flex;
+            align-items: center;
             justify-content: center;
-            gap: 12px;
-            padding: 0 4px;
-            flex-shrink: 0;
+            background: #0b0b15;
+            min-height: 200px;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .answer-row {
+            display: flex; justify-content: center; gap: 12px;
+            padding: 0 4px; flex-shrink: 0;
         }
         .ans-btn {
             flex: 1;
-            background: rgba(20,20,35,0.8);
-            backdrop-filter: blur(8px);
-            border: 2px solid #ff9900;
-            border-radius: 16px;
-            color: white;
-            font-size: 26px;
-            font-weight: 900;
-            padding: 12px 0;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.1s;
+            background: rgba(20,20,35,0.8); backdrop-filter: blur(8px);
+            border: 2px solid #ff9900; border-radius: 16px; color: white;
+            font-size: 26px; font-weight: 900; padding: 12px 0;
+            text-align: center; cursor: pointer; transition: 0.1s;
             box-shadow: 0 0 12px #ff8800aa;
         }
         .ans-btn:active { transform: translateY(3px); box-shadow: 0 0 20px #ffaa00; }
@@ -221,113 +195,61 @@
         .ans-btn.wrong { background: #ff3333; border-color: #ff8888; animation: shakeWrong 0.4s; }
         @keyframes popCorrect { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
         @keyframes shakeWrong { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
         .select-screen, .result-screen {
-            background: rgba(15,15,25,0.9);
-            backdrop-filter: blur(15px);
-            border-radius: 24px;
-            padding: 20px;
-            margin-bottom: 8px;
-            border: 1px solid #ff9500;
-            box-shadow: 0 0 30px #ff5500;
+            background: rgba(15,15,25,0.9); backdrop-filter: blur(15px);
+            border-radius: 24px; padding: 20px; margin-bottom: 8px;
+            border: 1px solid #ff9500; box-shadow: 0 0 30px #ff5500;
             flex-shrink: 0;
         }
         .bike-preview-large { text-align: center; margin-bottom: 12px; }
         .track-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            justify-content: center;
-            margin: 12px 0;
-            max-height: 300px;
-            overflow-y: auto;
-            padding: 4px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            justify-content: center; margin: 12px 0;
+            max-height: 300px; overflow-y: auto; padding: 4px;
         }
         .track-item {
-            width: 100%;
-            aspect-ratio: 1.6/1;
-            border-radius: 14px;
-            border: 2px solid #444;
-            cursor: pointer;
-            transition: all 0.2s;
-            overflow: hidden;
-            position: relative;
+            width: 100%; aspect-ratio: 1.6/1; border-radius: 14px; border: 2px solid #444;
+            cursor: pointer; transition: all 0.2s; overflow: hidden; position: relative;
             box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #000;
+            display: flex; align-items: center; justify-content: center; background: #000;
         }
         .track-item canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
         .track-item.selected { border-color: #ffaa00; box-shadow: 0 0 15px #ff7700, 0 0 25px #ff550066; }
         .track-name-overlay {
-            position: absolute;
-            bottom: 2px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 10px;
-            white-space: nowrap;
-            backdrop-filter: blur(4px);
+            position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: #fff; font-size: 10px; font-weight: 700;
+            padding: 2px 8px; border-radius: 10px; white-space: nowrap; backdrop-filter: blur(4px);
         }
         .start-btn-big {
-            width: 100%;
-            padding: 14px;
+            width: 100%; padding: 14px;
             background: linear-gradient(135deg, #ff6600, #ff3300);
-            border: none;
-            border-radius: 30px;
-            color: white;
-            font-size: 20px;
-            font-weight: 900;
-            box-shadow: 0 0 25px #ff4400;
-            cursor: pointer;
-            letter-spacing: 2px;
-            margin-top: 8px;
+            border: none; border-radius: 30px; color: white; font-size: 20px; font-weight: 900;
+            box-shadow: 0 0 25px #ff4400; cursor: pointer; letter-spacing: 2px; margin-top: 8px;
         }
         .start-btn-big:active { transform: scale(0.96); }
         .result-score-big {
-            font-size: 64px;
-            font-weight: 900;
+            font-size: 64px; font-weight: 900;
             background: linear-gradient(to bottom, #ffcc00, #ff5500);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-align: center;
         }
         .modal-panel {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center; z-index: 200;
         }
         .modal-inner {
-            background: #1a1a2e;
-            border: 1px solid #ffaa00;
-            border-radius: 24px;
-            padding: 20px;
-            max-width: 420px;
-            width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 0 40px #ff6600;
+            background: #1a1a2e; border: 1px solid #ffaa00; border-radius: 24px;
+            padding: 20px; max-width: 420px; width: 90%; max-height: 85vh;
+            overflow-y: auto; box-shadow: 0 0 40px #ff6600;
         }
         .hidden { display: none !important; }
         .combo-popup {
-            position: fixed;
-            top: 40%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 42px;
-            font-weight: 900;
-            color: #ffea00;
+            position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 42px; font-weight: 900; color: #ffea00;
             text-shadow: 0 0 20px #ffaa00, 0 0 40px #ff6600;
-            z-index: 300;
-            pointer-events: none;
+            z-index: 300; pointer-events: none;
             animation: comboFly 0.8s forwards;
         }
         @keyframes comboFly {
@@ -355,8 +277,9 @@
         <button class="finish-btn" id="finishBtn">🏁 结束</button>
     </div>
     <div class="game-area" id="gameArea">
+        <!-- 画布容器使用 flex 居中 -->
         <div class="canvas-box" id="canvasBox">
-            <canvas id="gameCanvas"></canvas>
+            <canvas id="gameCanvas" width="500" height="500"></canvas>
         </div>
         <div class="answer-row hidden" id="answerRow">
             <div class="ans-btn" id="ansBtn0"></div>
@@ -422,6 +345,7 @@
         return '#' + (0x1000000 + Math.max(0,(num>>16)-amt)*0x10000 + Math.max(0,((num>>8)&0xff)-amt)*0x100 + Math.max(0,(num&0xff)-amt)).toString(16).slice(1);
     };
 
+    // 音频
     let audioCtx, engineOsc, engineGain, engineOn = false;
     function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
     function startEngine() {
@@ -449,6 +373,7 @@
         o.start(); o.stop(audioCtx.currentTime+0.2);
     }
 
+    // 粒子系统
     const particleCanvas = document.getElementById('particleCanvas'), pctx = particleCanvas.getContext('2d');
     function resizePCanvas() { particleCanvas.width = window.innerWidth; particleCanvas.height = window.innerHeight; }
     window.addEventListener('resize', resizePCanvas); resizePCanvas();
@@ -474,6 +399,7 @@
         document.body.appendChild(el); setTimeout(()=>el.remove(), 800);
     }
 
+    // 皮肤数据
     const BIKE_SKINS = [
         { id:0, name:'烈焰红', color:'#ff3333', accent:'#cc0000', unlocked:true },
         { id:1, name:'闪电蓝', color:'#3399ff', accent:'#0055cc', unlocked:true },
@@ -484,7 +410,6 @@
             return { id:i+3, name:names[i%12]+(Math.floor(i/12)+1), color:cols[i%cols.length], accent:darken(cols[i%cols.length],30), unlocked:false };
         })
     ];
-
     const TRACKS = [
         { id:0, name:'城市', road:'#3a3a4a', line:'#00ffff', curb1:'#ff00ff', curb2:'#cc00cc', bg:'#0a0a1a', bgDetail:'#1a1a2e' },
         { id:1, name:'沙漠', road:'#8B7355', line:'#FFD700', curb1:'#e67e22', curb2:'#d35400', bg:'#D2A645', bgDetail:'#c49535' },
@@ -566,92 +491,47 @@
         }catch(e){ BIKE_SKINS.forEach(s=>s.unlocked=s.id<3); }
     }
 
-    let canvas, ctx, CW, CH, PLAYER_Y;
+    // 固定画布尺寸
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const CW = 500, CH = 500;  // 固定500x500，通过CSS缩放
     let gameActive=false, currentBike=0, currentTrack=0;
     let score=0, correct=0, wrong=0, combo=0, maxCombo=0;
     let playerSpeed=60, boostTimer=0, roadOffset=0;
     let problem=null, countdown=10;
     let racers=[], animFrame=null;
 
-    // 道路动态变量
-    let ROAD_L, ROAD_R, ROAD_W, LANE_W, LANE_C;
+    // 固定道路坐标
+    const ROAD_L=110, ROAD_R=390, ROAD_W=280, LANE_W=ROAD_W/3;
+    const LANE_C=[ROAD_L+LANE_W/2, ROAD_L+1.5*LANE_W, ROAD_L+2.5*LANE_W];
+    const PLAYER_Y = CH * 0.82;
 
-    function resizeCanvas() {
-        const box = document.getElementById('canvasBox');
-        const rect = box.getBoundingClientRect();
-        CW = rect.width;
-        CH = rect.height;
-        canvas.width = CW;
-        canvas.height = CH;
-        // 动态道路：左右边界为画布宽度的20%和80%
-        ROAD_L = CW * 0.2;
-        ROAD_R = CW * 0.8;
-        ROAD_W = ROAD_R - ROAD_L;
-        LANE_W = ROAD_W / 3;
-        LANE_C = [
-            ROAD_L + LANE_W * 0.5,
-            ROAD_L + LANE_W * 1.5,
-            ROAD_L + LANE_W * 2.5
-        ];
-        PLAYER_Y = CH * 0.82;
-    }
-
-    // 绘制欢呼小人（动态位置）
+    // 小人绘制
     function drawCheeringFans() {
-        const fanSpacing = 70;
-        const fanOffset = roadOffset % fanSpacing;
-        const leftX = ROAD_L - 25;
-        const rightX = ROAD_R + 25;
+        const fanSpacing = 70, fanOffset = roadOffset % fanSpacing;
+        const leftX = ROAD_L - 25, rightX = ROAD_R + 25;
         const swingAngle = Math.sin(Date.now() * 0.01) * 0.3;
-
         for (let y = -fanSpacing; y < CH + fanSpacing; y += fanSpacing) {
-            const fanY = y + fanOffset;
-            drawFan(ctx, leftX, fanY, swingAngle, true);
-            drawFan(ctx, rightX, fanY, swingAngle, false);
+            drawFan(ctx, leftX, y + fanOffset, swingAngle, true);
+            drawFan(ctx, rightX, y + fanOffset, swingAngle, false);
         }
     }
-
     function drawFan(ctx, x, y, angle, leftSide) {
-        ctx.save();
-        ctx.translate(x, y);
-        // 身体
-        ctx.fillStyle = '#ffcc88';
-        ctx.fillRect(-4, 0, 8, 15);
-        // 头
-        ctx.beginPath();
-        ctx.arc(0, -5, 6, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffddbb';
-        ctx.fill();
-        // 帽子
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(-6, -12, 12, 4);
-        ctx.fillRect(-4, -16, 8, 4);
-        // 旗杆
-        ctx.strokeStyle = '#8B4513';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
+        ctx.save(); ctx.translate(x, y);
+        ctx.fillStyle = '#ffcc88'; ctx.fillRect(-4, 0, 8, 15);
+        ctx.beginPath(); ctx.arc(0, -5, 6, 0, Math.PI * 2); ctx.fillStyle = '#ffddbb'; ctx.fill();
+        ctx.fillStyle = '#e74c3c'; ctx.fillRect(-6, -12, 12, 4); ctx.fillRect(-4, -16, 8, 4);
+        ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 1.5;
         const flagX = leftSide ? 10 : -10;
-        ctx.moveTo(4, -8);
-        ctx.lineTo(flagX, -16);
-        ctx.stroke();
-        // 旗子
-        ctx.save();
-        ctx.translate(flagX, -16);
-        ctx.rotate(leftSide ? angle : -angle);
-        ctx.fillStyle = '#ff4444';
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(12, -4);
-        ctx.lineTo(12, 4);
-        ctx.closePath();
-        ctx.fill();
+        ctx.beginPath(); ctx.moveTo(4, -8); ctx.lineTo(flagX, -16); ctx.stroke();
+        ctx.save(); ctx.translate(flagX, -16); ctx.rotate(leftSide ? angle : -angle);
+        ctx.fillStyle = '#ff4444'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(12,-4); ctx.lineTo(12,4); ctx.closePath(); ctx.fill();
         ctx.restore();
-        // 另一只手
-        ctx.fillStyle = '#ffcc88';
-        ctx.fillRect(leftSide ? 6 : -10, -6, 4, 6);
+        ctx.fillStyle = '#ffcc88'; ctx.fillRect(leftSide ? 6 : -10, -6, 4, 6);
         ctx.restore();
     }
 
+    // 数学题
     function genProblem() {
         let fns = [
             ()=>{ let a=10+Math.random()*90|0, b=Math.random()*(100-a)|0; return {q:`${a}+${b}=?`, a:a+b, w:[a+b+5, a+b-3]}; },
@@ -701,24 +581,17 @@
         }
         ctx.strokeStyle=t.line; ctx.lineWidth=1; ctx.setLineDash([20,40]); ctx.lineDashOffset=-roadOffset*2;
         ctx.beginPath(); ctx.moveTo(0,CH*0.5); ctx.lineTo(CW,CH*0.5); ctx.stroke(); ctx.setLineDash([]);
-        // 路面
         ctx.fillStyle=t.road; ctx.fillRect(ROAD_L,0,ROAD_W,CH);
-        // 路缘石
         let bw=8, bh=18, off=roadOffset%(bh*2);
         for(let y=-bh;y<CH+bh;y+=bh){
             let idx=Math.floor((y+roadOffset)/bh)%2;
             ctx.fillStyle=idx===0?t.curb1:t.curb2;
-            ctx.fillRect(ROAD_L-bw,y+off,bw,bh);
-            ctx.fillRect(ROAD_R,y+off,bw,bh);
+            ctx.fillRect(ROAD_L-bw,y+off,bw,bh); ctx.fillRect(ROAD_R,y+off,bw,bh);
         }
-        // 车道虚线
-        ctx.strokeStyle=t.line; ctx.lineWidth=2;
-        ctx.setLineDash([25,20]); ctx.lineDashOffset=-roadOffset;
+        ctx.strokeStyle=t.line; ctx.lineWidth=2; ctx.setLineDash([25,20]); ctx.lineDashOffset=-roadOffset;
         ctx.beginPath(); ctx.moveTo(ROAD_L+LANE_W,0); ctx.lineTo(ROAD_L+LANE_W,CH); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(ROAD_L+2*LANE_W,0); ctx.lineTo(ROAD_L+2*LANE_W,CH); ctx.stroke();
         ctx.setLineDash([]);
-
-        // 两侧小人
         drawCheeringFans();
     }
 
@@ -809,7 +682,6 @@
         document.getElementById('selectScreen').classList.add('hidden');
         document.getElementById('resultScreen').classList.add('hidden');
         document.getElementById('answerRow').classList.remove('hidden');
-        resizeCanvas();
         updateScoreUI(); nextProblem(); gameLoop();
     }
 
@@ -889,9 +761,6 @@
     for(let i=0;i<3;i++) document.getElementById('ansBtn'+i).onclick=()=>answerClick(i);
 
     window.onload=()=>{
-        canvas=document.getElementById('gameCanvas'); ctx=canvas.getContext('2d');
-        resizeCanvas();
-        window.addEventListener('resize',()=>{ resizeCanvas(); if(gameActive){ drawScene(); drawRacersAll(); } });
         loadStreak(); loadUnlocks(); renderTracks(); updatePreview();
     };
 })();
