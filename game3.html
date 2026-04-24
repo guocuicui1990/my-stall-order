@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>数学飞车 · 赛博霓虹 (30赛道+小人)</title>
+    <title>数学飞车 · 赛博霓虹 (移动端修复)</title>
     <style>
         * {
             margin: 0;
@@ -485,7 +485,6 @@
         })
     ];
 
-    // 30款赛道皮肤
     const TRACKS = [
         { id:0, name:'城市', road:'#3a3a4a', line:'#00ffff', curb1:'#ff00ff', curb2:'#cc00cc', bg:'#0a0a1a', bgDetail:'#1a1a2e' },
         { id:1, name:'沙漠', road:'#8B7355', line:'#FFD700', curb1:'#e67e22', curb2:'#d35400', bg:'#D2A645', bgDetail:'#c49535' },
@@ -574,31 +573,40 @@
     let problem=null, countdown=10;
     let racers=[], animFrame=null;
 
-    const ROAD_L=110, ROAD_R=390, ROAD_W=280, LANE_W=ROAD_W/3;
-    const LANE_C=[ROAD_L+LANE_W/2, ROAD_L+1.5*LANE_W, ROAD_L+2.5*LANE_W];
+    // 道路动态变量
+    let ROAD_L, ROAD_R, ROAD_W, LANE_W, LANE_C;
 
     function resizeCanvas() {
         const box = document.getElementById('canvasBox');
         const rect = box.getBoundingClientRect();
-        CW = rect.width; CH = rect.height;
-        canvas.width = CW; canvas.height = CH;
+        CW = rect.width;
+        CH = rect.height;
+        canvas.width = CW;
+        canvas.height = CH;
+        // 动态道路：左右边界为画布宽度的20%和80%
+        ROAD_L = CW * 0.2;
+        ROAD_R = CW * 0.8;
+        ROAD_W = ROAD_R - ROAD_L;
+        LANE_W = ROAD_W / 3;
+        LANE_C = [
+            ROAD_L + LANE_W * 0.5,
+            ROAD_L + LANE_W * 1.5,
+            ROAD_L + LANE_W * 2.5
+        ];
         PLAYER_Y = CH * 0.82;
     }
 
-    // 绘制欢呼小人
+    // 绘制欢呼小人（动态位置）
     function drawCheeringFans() {
-        const fanSpacing = 70;          // 小人纵向间距
+        const fanSpacing = 70;
         const fanOffset = roadOffset % fanSpacing;
-        const leftX = ROAD_L - 30;     // 左侧小人X坐标
-        const rightX = ROAD_R + 30;    // 右侧小人X坐标
-        const swingAngle = Math.sin(Date.now() * 0.01) * 0.3; // 旗子摆动角度
+        const leftX = ROAD_L - 25;
+        const rightX = ROAD_R + 25;
+        const swingAngle = Math.sin(Date.now() * 0.01) * 0.3;
 
         for (let y = -fanSpacing; y < CH + fanSpacing; y += fanSpacing) {
             const fanY = y + fanOffset;
-
-            // 左侧小人
             drawFan(ctx, leftX, fanY, swingAngle, true);
-            // 右侧小人
             drawFan(ctx, rightX, fanY, swingAngle, false);
         }
     }
@@ -693,19 +701,24 @@
         }
         ctx.strokeStyle=t.line; ctx.lineWidth=1; ctx.setLineDash([20,40]); ctx.lineDashOffset=-roadOffset*2;
         ctx.beginPath(); ctx.moveTo(0,CH*0.5); ctx.lineTo(CW,CH*0.5); ctx.stroke(); ctx.setLineDash([]);
+        // 路面
         ctx.fillStyle=t.road; ctx.fillRect(ROAD_L,0,ROAD_W,CH);
+        // 路缘石
         let bw=8, bh=18, off=roadOffset%(bh*2);
         for(let y=-bh;y<CH+bh;y+=bh){
             let idx=Math.floor((y+roadOffset)/bh)%2;
             ctx.fillStyle=idx===0?t.curb1:t.curb2;
-            ctx.fillRect(ROAD_L-bw,y+off,bw,bh); ctx.fillRect(ROAD_R,y+off,bw,bh);
+            ctx.fillRect(ROAD_L-bw,y+off,bw,bh);
+            ctx.fillRect(ROAD_R,y+off,bw,bh);
         }
-        ctx.strokeStyle=t.line; ctx.lineWidth=2; ctx.setLineDash([25,20]); ctx.lineDashOffset=-roadOffset;
+        // 车道虚线
+        ctx.strokeStyle=t.line; ctx.lineWidth=2;
+        ctx.setLineDash([25,20]); ctx.lineDashOffset=-roadOffset;
         ctx.beginPath(); ctx.moveTo(ROAD_L+LANE_W,0); ctx.lineTo(ROAD_L+LANE_W,CH); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(ROAD_L+2*LANE_W,0); ctx.lineTo(ROAD_L+2*LANE_W,CH); ctx.stroke();
         ctx.setLineDash([]);
 
-        // 绘制赛道两侧的欢呼小人
+        // 两侧小人
         drawCheeringFans();
     }
 
