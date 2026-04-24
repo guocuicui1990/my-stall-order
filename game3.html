@@ -3,118 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>数学飞车 · 赛博霓虹 (完美居中修复)</title>
+    <title>数学飞车 · 赛博霓虹 (语音鼓励)</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0a0a0a;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Segoe UI', 'Arial', sans-serif;
-            padding: 8px;
-            user-select: none;
-            touch-action: manipulation;
-            overflow: hidden;
+            background: #0a0a0a; height: 100vh; display: flex; justify-content: center; align-items: center;
+            font-family: 'Segoe UI', 'Arial', sans-serif; padding: 8px; user-select: none;
+            touch-action: manipulation; overflow: hidden;
         }
         .game-container {
-            width: 100%;
-            max-width: 520px;
-            height: 100%;
-            max-height: 100vh;
-            background: rgba(10,10,20,0.8);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 28px;
+            width: 100%; max-width: 520px; height: 100%; max-height: 100vh;
+            background: rgba(10,10,20,0.8); backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px); border-radius: 28px;
             border: 2px solid rgba(255,150,0,0.5);
             box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 30px #ff5500aa, inset 0 0 20px #ff660033;
-            overflow: hidden;
-            position: relative;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
+            overflow: hidden; position: relative; padding: 12px;
+            display: flex; flex-direction: column;
         }
         .game-container::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: radial-gradient(circle at 30% 30%, rgba(255,120,0,0.15), transparent 50%);
             pointer-events: none;
         }
         .top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(30,30,40,0.7);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 8px 16px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(255,180,0,0.4);
-            color: #ffcc80;
-            font-weight: 700;
-            font-size: 14px;
-            z-index: 5;
-            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(30,30,40,0.7); backdrop-filter: blur(10px);
+            border-radius: 20px; padding: 8px 16px; margin-bottom: 10px;
+            border: 1px solid rgba(255,180,0,0.4); color: #ffcc80; font-weight: 700; font-size: 14px;
+            z-index: 5; flex-shrink: 0;
         }
         .streak-fire { display: flex; align-items: center; gap: 6px; }
         .streak-days {
             background: linear-gradient(135deg, #ff5500, #ffaa00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 20px;
-            font-weight: 900;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 20px; font-weight: 900;
         }
         .hint-badge {
-            background: #3a2a40;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 12px;
-            border: 1px solid #ff8800;
-            animation: hintGlow 2s infinite;
+            background: #3a2a40; padding: 4px 12px; border-radius: 30px; font-size: 12px;
+            border: 1px solid #ff8800; animation: hintGlow 2s infinite;
         }
         @keyframes hintGlow {
             0%,100% { box-shadow: 0 0 5px #ff8800; }
             50% { box-shadow: 0 0 15px #ffaa00; }
         }
         .garage-btn-top {
-            background: linear-gradient(135deg, #9b30ff, #6a0dad);
-            border: none; color: white; padding: 6px 14px; border-radius: 30px;
-            font-weight: bold; cursor: pointer; box-shadow: 0 0 10px #b366ff;
-            transition: 0.1s; font-size: 13px;
+            background: linear-gradient(135deg, #9b30ff, #6a0dad); border: none; color: white;
+            padding: 6px 14px; border-radius: 30px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 0 10px #b366ff; transition: 0.1s; font-size: 13px;
         }
         .garage-btn-top:active { transform: scale(0.95); box-shadow: 0 0 20px #c285ff; }
         .problem-card {
-            background: rgba(20,20,30,0.8);
-            backdrop-filter: blur(12px);
-            border-radius: 20px;
-            padding: 12px 18px;
-            margin-bottom: 10px;
-            border: 1px solid #ff6600;
-            box-shadow: 0 0 20px #ff4400aa;
-            text-align: center;
-            flex-shrink: 0;
+            background: rgba(20,20,30,0.8); backdrop-filter: blur(12px); border-radius: 20px;
+            padding: 12px 18px; margin-bottom: 10px; border: 1px solid #ff6600;
+            box-shadow: 0 0 20px #ff4400aa; text-align: center; flex-shrink: 0;
         }
         .problem-label { font-size: 12px; color: #ffaa33; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
         .problem-equation {
             font-size: 36px; font-weight: 900;
             background: linear-gradient(to right, #ffffff, #ffbb88);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px #ff7700;
         }
         .timer-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 8px; overflow: hidden; }
         .timer-fill {
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, #00ff88, #ffcc00, #ff3333);
+            width: 100%; height: 100%; background: linear-gradient(90deg, #00ff88, #ffcc00, #ff3333);
             transition: width 0.1s linear; border-radius: 4px;
         }
         .score-row {
@@ -122,97 +74,70 @@
             margin-bottom: 10px; flex-shrink: 0;
         }
         .score-badge {
-            background: rgba(0,0,0,0.6);
-            border: 1px solid #ffaa00; border-radius: 20px; padding: 6px 16px;
-            color: #ffbb33; font-weight: 800; font-size: 18px; backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.6); border: 1px solid #ffaa00; border-radius: 20px;
+            padding: 6px 16px; color: #ffbb33; font-weight: 800; font-size: 18px; backdrop-filter: blur(5px);
         }
         .speed-badge {
             background: #cc3333; color: white; padding: 5px 14px; border-radius: 20px;
             font-weight: 700; font-size: 14px; transition: 0.2s;
         }
         .speed-badge.boost {
-            background: #00aa44;
-            animation: boostPulse 0.3s infinite alternate;
+            background: #00aa44; animation: boostPulse 0.3s infinite alternate;
         }
         @keyframes boostPulse {
             from { box-shadow: 0 0 5px #00ff88; }
             to { box-shadow: 0 0 25px #00ff88; }
         }
         .finish-btn {
-            background: rgba(255,80,0,0.8); backdrop-filter: blur(5px);
-            border: none; color: white; padding: 6px 16px; border-radius: 20px;
-            font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.1s;
+            background: rgba(255,80,0,0.8); backdrop-filter: blur(5px); border: none; color: white;
+            padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 14px;
+            cursor: pointer; transition: 0.1s;
         }
         .finish-btn:active { transform: scale(0.95); }
         .game-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            overflow-y: scroll;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            flex: 1; display: flex; flex-direction: column; min-height: 0;
+            overflow-y: scroll; scrollbar-width: none; -ms-overflow-style: none;
         }
         .game-area::-webkit-scrollbar { display: none; }
-
-        /* 画布容器：固定宽度 100%，水平居中 Canvas */
         .canvas-box {
-            position: relative;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 0 20px #ff4400;
-            border: 2px solid #ff7700;
-            margin-bottom: 8px;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #0b0b15;
-            min-height: 200px;
+            position: relative; border-radius: 20px; overflow: hidden;
+            box-shadow: 0 0 20px #ff4400; border: 2px solid #ff7700;
+            margin-bottom: 8px; flex: 1; display: flex; align-items: center;
+            justify-content: center; background: #0b0b15; min-height: 200px;
         }
         #gameCanvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            max-height: 100%;
-            object-fit: contain;
+            display: block; width: 100%; height: auto; max-height: 100%; object-fit: contain;
         }
-
         .answer-row {
-            display: flex; justify-content: center; gap: 12px;
-            padding: 0 4px; flex-shrink: 0;
+            display: flex; justify-content: center; gap: 12px; padding: 0 4px; flex-shrink: 0;
         }
         .ans-btn {
-            flex: 1;
-            background: rgba(20,20,35,0.8); backdrop-filter: blur(8px);
+            flex: 1; background: rgba(20,20,35,0.8); backdrop-filter: blur(8px);
             border: 2px solid #ff9900; border-radius: 16px; color: white;
-            font-size: 26px; font-weight: 900; padding: 12px 0;
-            text-align: center; cursor: pointer; transition: 0.1s;
-            box-shadow: 0 0 12px #ff8800aa;
+            font-size: 26px; font-weight: 900; padding: 12px 0; text-align: center;
+            cursor: pointer; transition: 0.1s; box-shadow: 0 0 12px #ff8800aa;
         }
         .ans-btn:active { transform: translateY(3px); box-shadow: 0 0 20px #ffaa00; }
         .ans-btn.correct { background: #00cc66; border-color: #00ff88; animation: popCorrect 0.4s; }
         .ans-btn.wrong { background: #ff3333; border-color: #ff8888; animation: shakeWrong 0.4s; }
         @keyframes popCorrect { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
         @keyframes shakeWrong { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
-
         .select-screen, .result-screen {
-            background: rgba(15,15,25,0.9); backdrop-filter: blur(15px);
-            border-radius: 24px; padding: 20px; margin-bottom: 8px;
-            border: 1px solid #ff9500; box-shadow: 0 0 30px #ff5500;
-            flex-shrink: 0;
+            background: rgba(15,15,25,0.9); backdrop-filter: blur(15px); border-radius: 24px;
+            padding: 20px; margin-bottom: 8px; border: 1px solid #ff9500;
+            box-shadow: 0 0 30px #ff5500; flex-shrink: 0;
         }
         .bike-preview-large { text-align: center; margin-bottom: 12px; }
         .track-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-            justify-content: center; margin: 12px 0;
-            max-height: 300px; overflow-y: auto; padding: 4px;
+            justify-content: center; margin: 12px 0; max-height: 300px;
+            overflow-y: auto; padding: 4px;
         }
         .track-item {
             width: 100%; aspect-ratio: 1.6/1; border-radius: 14px; border: 2px solid #444;
             cursor: pointer; transition: all 0.2s; overflow: hidden; position: relative;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-            display: flex; align-items: center; justify-content: center; background: #000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5); display: flex; align-items: center;
+            justify-content: center; background: #000;
         }
         .track-item canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
         .track-item.selected { border-color: #ffaa00; box-shadow: 0 0 15px #ff7700, 0 0 25px #ff550066; }
@@ -222,8 +147,7 @@
             padding: 2px 8px; border-radius: 10px; white-space: nowrap; backdrop-filter: blur(4px);
         }
         .start-btn-big {
-            width: 100%; padding: 14px;
-            background: linear-gradient(135deg, #ff6600, #ff3300);
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #ff6600, #ff3300);
             border: none; border-radius: 30px; color: white; font-size: 20px; font-weight: 900;
             box-shadow: 0 0 25px #ff4400; cursor: pointer; letter-spacing: 2px; margin-top: 8px;
         }
@@ -249,8 +173,7 @@
             position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
             font-size: 42px; font-weight: 900; color: #ffea00;
             text-shadow: 0 0 20px #ffaa00, 0 0 40px #ff6600;
-            z-index: 300; pointer-events: none;
-            animation: comboFly 0.8s forwards;
+            z-index: 300; pointer-events: none; animation: comboFly 0.8s forwards;
         }
         @keyframes comboFly {
             0%{opacity:0; transform:translate(-50%,0) scale(0.5)}
@@ -277,7 +200,6 @@
         <button class="finish-btn" id="finishBtn">🏁 结束</button>
     </div>
     <div class="game-area" id="gameArea">
-        <!-- 画布容器使用 flex 居中 -->
         <div class="canvas-box" id="canvasBox">
             <canvas id="gameCanvas" width="500" height="500"></canvas>
         </div>
@@ -345,7 +267,7 @@
         return '#' + (0x1000000 + Math.max(0,(num>>16)-amt)*0x10000 + Math.max(0,((num>>8)&0xff)-amt)*0x100 + Math.max(0,(num&0xff)-amt)).toString(16).slice(1);
     };
 
-    // 音频
+    // 音频引擎
     let audioCtx, engineOsc, engineGain, engineOn = false;
     function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
     function startEngine() {
@@ -371,6 +293,19 @@
         if(type==='correct'){ o.frequency.value=1200; g.gain.setValueAtTime(0.2,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.12); }
         else if(type==='wrong'){ o.frequency.value=250; g.gain.setValueAtTime(0.25,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.2); }
         o.start(); o.stop(audioCtx.currentTime+0.2);
+    }
+
+    // 语音播报（使用 Web Speech API）
+    function speak(text) {
+        if (!window.speechSynthesis) return;
+        // 取消之前未播放的语音，避免堆积
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.9;   // 语速稍慢，更清晰
+        utterance.pitch = 1.1;
+        utterance.volume = 1;
+        window.speechSynthesis.speak(utterance);
     }
 
     // 粒子系统
@@ -399,7 +334,7 @@
         document.body.appendChild(el); setTimeout(()=>el.remove(), 800);
     }
 
-    // 皮肤数据
+    // 车辆皮肤数据
     const BIKE_SKINS = [
         { id:0, name:'烈焰红', color:'#ff3333', accent:'#cc0000', unlocked:true },
         { id:1, name:'闪电蓝', color:'#3399ff', accent:'#0055cc', unlocked:true },
@@ -410,6 +345,7 @@
             return { id:i+3, name:names[i%12]+(Math.floor(i/12)+1), color:cols[i%cols.length], accent:darken(cols[i%cols.length],30), unlocked:false };
         })
     ];
+    // 30款赛道数据
     const TRACKS = [
         { id:0, name:'城市', road:'#3a3a4a', line:'#00ffff', curb1:'#ff00ff', curb2:'#cc00cc', bg:'#0a0a1a', bgDetail:'#1a1a2e' },
         { id:1, name:'沙漠', road:'#8B7355', line:'#FFD700', curb1:'#e67e22', curb2:'#d35400', bg:'#D2A645', bgDetail:'#c49535' },
@@ -491,22 +427,19 @@
         }catch(e){ BIKE_SKINS.forEach(s=>s.unlocked=s.id<3); }
     }
 
-    // 固定画布尺寸
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const CW = 500, CH = 500;  // 固定500x500，通过CSS缩放
+    const CW = 500, CH = 500;
     let gameActive=false, currentBike=0, currentTrack=0;
     let score=0, correct=0, wrong=0, combo=0, maxCombo=0;
     let playerSpeed=60, boostTimer=0, roadOffset=0;
     let problem=null, countdown=10;
     let racers=[], animFrame=null;
 
-    // 固定道路坐标
     const ROAD_L=110, ROAD_R=390, ROAD_W=280, LANE_W=ROAD_W/3;
     const LANE_C=[ROAD_L+LANE_W/2, ROAD_L+1.5*LANE_W, ROAD_L+2.5*LANE_W];
     const PLAYER_Y = CH * 0.82;
 
-    // 小人绘制
     function drawCheeringFans() {
         const fanSpacing = 70, fanOffset = roadOffset % fanSpacing;
         const leftX = ROAD_L - 25, rightX = ROAD_R + 25;
@@ -531,7 +464,6 @@
         ctx.restore();
     }
 
-    // 数学题
     function genProblem() {
         let fns = [
             ()=>{ let a=10+Math.random()*90|0, b=Math.random()*(100-a)|0; return {q:`${a}+${b}=?`, a:a+b, w:[a+b+5, a+b-3]}; },
@@ -655,10 +587,14 @@
             let rect=btn.getBoundingClientRect();
             spawnParticles(rect.left+rect.width/2,rect.top+rect.height/2,20,'#ffaa00');
             if(combo%5===0) showComboPopup(`🔥 ${combo}连击！`);
+            // 正确语音鼓励
+            speak('你真棒，真牛比');
         } else {
             btn.classList.add('wrong'); playSfx('wrong'); wrong++; combo=0;
             let rect=btn.getBoundingClientRect();
             spawnParticles(rect.left+rect.width/2,rect.top+rect.height/2,10,'#ff3333');
+            // 错误语音提示
+            speak('答错了，请加油');
         }
         updateScoreUI();
         setTimeout(()=>{ if(gameActive) nextProblem(); },350);
@@ -727,8 +663,7 @@
         let g=document.getElementById('trackGrid'); g.innerHTML='';
         TRACKS.forEach(t=>{
             let d=document.createElement('div'); d.className='track-item' + (t.id===currentTrack?' selected':'');
-            let can=document.createElement('canvas');
-            can.width=70; can.height=44;
+            let can=document.createElement('canvas'); can.width=70; can.height=44;
             let cc=can.getContext('2d');
             cc.fillStyle=t.bg; cc.fillRect(0,0,70,44);
             cc.fillStyle=t.bgDetail; cc.fillRect(0,25,70,19);
